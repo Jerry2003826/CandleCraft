@@ -13,9 +13,9 @@
         ]) ?>
     </div>
     <div class="form-group">
-        <label for="password_hash">Password</label>
-        <?= $this->Form->password('password_hash', [
-            'id' => 'password_hash',
+        <label for="password">Password</label>
+        <?= $this->Form->password('password', [
+            'id' => 'password',
             'placeholder' => 'Enter your password',
             'required' => true,
         ]) ?>

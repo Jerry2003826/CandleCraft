@@ -109,19 +109,25 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             'queryParam' => 'redirect',
         ]);
 
-        $fields = [
+        // Keep request credential fields standard while validating against
+        // the hashed password column in database.
+        $formFields = [
+            'username' => 'email',
+            'password' => 'password',
+        ];
+        $identifierFields = [
             'username' => 'email',
             'password' => 'password_hash',
         ];
 
         $service->loadAuthenticator('Authentication.Session');
         $service->loadAuthenticator('Authentication.Form', [
-            'fields' => $fields,
+            'fields' => $formFields,
             'loginUrl' => '/users/login',
         ]);
 
         $service->loadIdentifier('Authentication.Password', [
-            'fields' => $fields,
+            'fields' => $identifierFields,
             'resolver' => [
                 'className' => 'Authentication.Orm',
                 'userModel' => 'Users',

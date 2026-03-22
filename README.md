@@ -42,6 +42,35 @@ Visit **http://localhost:8765** and login:
 | Email | `admin@candlecraft.com` |
 | Password | `admin123` |
 
+## One-Click Setup & Run (macOS/Windows)
+
+These scripts will install dependencies, create database, import schema + demo data, verify admin account, and start server.
+
+### macOS / Linux
+
+```bash
+chmod +x scripts/setup-and-run.sh
+./scripts/setup-and-run.sh
+```
+
+Optional custom DB settings:
+
+```bash
+DB_USER=myuser DB_PASS=mypass DB_PORT=3307 ./scripts/setup-and-run.sh
+```
+
+### Windows (PowerShell)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-and-run.ps1
+```
+
+Optional custom DB settings:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-and-run.ps1 -DbUser myuser -DbPass mypass -DbPort 3307
+```
+
 ## Admin Features
 
 - **Dashboard** - Statistics cards (Total Enquiries / New / Replied) + recent messages
