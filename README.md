@@ -35,40 +35,45 @@ cp config/app_local.example.php config/app_local.php   # Only if app_local.php i
 bin/cake server
 ```
 
-Visit **http://localhost:8765** and login:
+Visit [http://localhost:8765](http://localhost:8765) and login:
 
-| Field | Value |
-|-------|-------|
-| Email | `admin@candlecraft.com` |
-| Password | `admin123` |
+| Field    | Value                   |
+|:---------|:------------------------|
+| Email    | `admin@candlecraft.com` |
+| Password | `admin123`              |
 
-## One-Click Setup & Run (macOS/Windows)
+## One-Click Setup (Auto Detect OS)
 
-These scripts will install dependencies, create database, import schema + demo data, verify admin account, and start server.
+Use one cross-platform script for both macOS and Windows (also works on Linux).
 
-### macOS / Linux
+### 1) Environment pre-check (recommended)
 
 ```bash
-chmod +x scripts/setup-and-run.sh
-./scripts/setup-and-run.sh
+python3 scripts/dev-setup.py check-env
+```
+
+Windows:
+
+```powershell
+py .\scripts\dev-setup.py check-env
+```
+
+### 2) Full setup + run
+
+```bash
+python3 scripts/dev-setup.py setup-run
+```
+
+Windows:
+
+```powershell
+py .\scripts\dev-setup.py setup-run
 ```
 
 Optional custom DB settings:
 
 ```bash
-DB_USER=myuser DB_PASS=mypass DB_PORT=3307 ./scripts/setup-and-run.sh
-```
-
-### Windows (PowerShell)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-and-run.ps1
-```
-
-Optional custom DB settings:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-and-run.ps1 -DbUser myuser -DbPass mypass -DbPort 3307
+python3 scripts/dev-setup.py setup-run --db-user myuser --db-pass mypass --db-port 3307
 ```
 
 ## Admin Features
@@ -96,7 +101,7 @@ Edit `config/app_local.php`:
 
 ## Project Structure
 
-```
+```text
 src/
 ├── Controller/
 │   ├── Admin/           # Admin prefix controllers
