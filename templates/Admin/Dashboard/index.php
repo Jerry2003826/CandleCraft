@@ -34,6 +34,7 @@ $this->assign('title', 'Dashboard');
             <tr>
                 <th>From</th>
                 <th>Enquiry</th>
+                <th>Source</th>
                 <th>Received</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -42,7 +43,7 @@ $this->assign('title', 'Dashboard');
         <tbody>
             <?php if ($recentMessages->isEmpty()): ?>
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">No messages yet.</td>
+                    <td colspan="6" style="text-align: center; padding: 30px; color: #7f8c8d;">No messages yet.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($recentMessages as $message): ?>
@@ -55,6 +56,7 @@ $this->assign('title', 'Dashboard');
                             <?php endif; ?>
                         </td>
                         <td><?= h(\Cake\Utility\Text::truncate($message->subject, 40)) ?></td>
+                        <td><?= h($message->source_page ?: '-') ?></td>
                         <td><?= $message->sent_at ? $message->sent_at->format('j M, g:ia') : '-' ?></td>
                         <td>
                             <span class="badge badge-<?= h($message->message_status) ?>">
