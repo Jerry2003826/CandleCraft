@@ -37,6 +37,11 @@ Thumbs.db
 
 # Tool specific files #
 #######################
+# Local teammate DB profiles
+scripts/db-profiles.local.json
+# Python bytecode
+scripts/__pycache__/
+
 # PHPUnit
 .phpunit.cache
 tests.sqlite

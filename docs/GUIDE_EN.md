@@ -17,6 +17,22 @@ git pull
 
 ## 2) Run Environment Check (Recommended)
 
+## 0) Super Easy Mode (Single Command)
+
+If you just want the easiest path:
+
+```bash
+python3 scripts/easy-run.py
+```
+
+Windows:
+
+```powershell
+py .\scripts\easy-run.py
+```
+
+This one command will guide profile setup and then run `check-env` + `setup-run`.
+
 If you are in a class/team setup, first create your local DB profile:
 
 ```bash

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Cross-platform environment bootstrap and run helper for this project."""
+"""Cross-platform setup/check script with team DB profile support."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import platform
 import shutil
@@ -11,11 +12,23 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Any
 from typing import Mapping
 from urllib.parse import quote
 
-
 ROOT_DIR: Path = Path(__file__).resolve().parents[1]
+DEFAULT_PROFILES_FILE: Path = ROOT_DIR / "scripts" / "db-profiles.local.json"
+EXAMPLE_PROFILES_FILE: Path = ROOT_DIR / "scripts" / "db-profiles.example.json"
+DEFAULTS: dict[str, Any] = {
+    "db_host": "localhost",
+    "db_port": 3306,
+    "db_user": "root",
+    "db_pass": "root",
+    "db_name": "academy_management_db",
+    "mysql_cmd": None,
+    "app_host": "0.0.0.0",
+    "app_port": 8765,
+}
 
 
 def print_step(message: str) -> None:
@@ -23,10 +36,49 @@ def print_step(message: str) -> None:
     print(f"== {message} ==")
 
 
-def require_command(name: str) -> None:
-    """Ensure a command exists in PATH."""
-    if shutil.which(name) is None:
-        raise RuntimeError(f"Required command not found: {name}")
+def mysql_fallback_paths() -> list[Path]:
+    """Return common mysql executable paths for non-PATH installs."""
+    system_name = platform.system().lower()
+    if system_name == "windows":
+        return [
+            Path(r"C:\xampp\mysql\bin\mysql.exe"),
+            Path(r"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"),
+            Path(r"C:\Program Files\MariaDB 10.11\bin\mysql.exe"),
+        ]
+    if system_name == "darwin":
+        return [
+            Path("/Applications/XAMPP/xamppfiles/bin/mysql"),
+            Path("/usr/local/mysql/bin/mysql"),
+        ]
+    return [Path("/usr/bin/mysql"), Path("/usr/local/bin/mysql")]
+
+
+def resolve_command(name: str) -> str | None:
+    """Resolve command path from PATH or known fallback locations."""
+    path_in_path = shutil.which(name)
+    if path_in_path is not None:
+        return path_in_path
+
+    if name == "mysql":
+        for fallback in mysql_fallback_paths():
+            if fallback.exists():
+                return str(fallback)
+
+    return None
+
+
+def require_command(name: str) -> str:
+    """Ensure a command exists and return its executable path."""
+    resolved = resolve_command(name)
+    if resolved is not None:
+        return resolved
+
+    if name == "mysql":
+        raise RuntimeError(
+            "Required command not found: mysql. If you use XAMPP, provide "
+            "--mysql-cmd or use scripts/onboard-teammate.py."
+        )
+    raise RuntimeError(f"Required command not found: {name}")
 
 
 def run_command(
@@ -37,7 +89,7 @@ def run_command(
     check: bool = True,
     capture_output: bool = False,
 ) -> subprocess.CompletedProcess[bytes]:
-    """Run a subprocess command with optional stdin and env override."""
+    """Run subprocess command with optional stdin and environment."""
     return subprocess.run(
         args,
         input=input_bytes,
@@ -47,48 +99,46 @@ def run_command(
     )
 
 
-def mysql_args(host: str, port: int, user: str, password: str) -> list[str]:
-    """Build base mysql client argument list."""
-    return [
-        "mysql",
-        f"-h{host}",
-        f"-P{port}",
-        f"-u{user}",
-        f"-p{password}",
-    ]
+def mysql_args(mysql_cmd: str, host: str, port: int, user: str, password: str) -> list[str]:
+    """Build mysql CLI arguments."""
+    return [mysql_cmd, f"-h{host}", f"-P{port}", f"-u{user}", f"-p{password}"]
 
 
 def best_effort_start_mysql() -> None:
     """Try to start local MySQL service when possible."""
-    system_name: str = platform.system().lower()
+    system_name = platform.system().lower()
     if system_name == "darwin" and shutil.which("brew"):
         print_step("Starting MySQL via Homebrew (best effort)")
         run_command(["brew", "services", "start", "mysql"], check=False, capture_output=True)
         return
-
     if system_name == "windows":
         print_step("Trying to start common MySQL Windows services (best effort)")
         for service_name in ("MySQL80", "MySQL", "MariaDB"):
             run_command(["sc", "start", service_name], check=False, capture_output=True)
 
 
-def wait_for_mysql(host: str, port: int, user: str, password: str, retries: int = 20) -> None:
+def wait_for_mysql(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    retries: int = 20,
+) -> None:
     """Wait until MySQL accepts connection or fail."""
     print_step("Waiting for MySQL connection")
-    base_args = mysql_args(host, port, user, password)
+    base_args = mysql_args(mysql_cmd, host, port, user, password)
     for attempt in range(1, retries + 1):
         result = run_command(base_args + ["-e", "SELECT 1;"], check=False, capture_output=True)
         if result.returncode == 0:
             return
         if attempt == retries:
-            raise RuntimeError(
-                f"Cannot connect to MySQL at {host}:{port} with user '{user}'."
-            )
+            raise RuntimeError(f"Cannot connect to MySQL at {host}:{port} with user '{user}'.")
         time.sleep(1)
 
 
 def check_project_root() -> None:
-    """Validate script is executed in project root context."""
+    """Validate script is executed from project root context."""
     os.chdir(ROOT_DIR)
     if not (ROOT_DIR / "composer.json").exists():
         raise RuntimeError("composer.json not found; script must run in project root.")
@@ -102,28 +152,52 @@ def ensure_app_local() -> None:
         target.write_bytes(source.read_bytes())
 
 
-def import_sql_file(host: str, port: int, user: str, password: str, database: str, sql_path: Path) -> None:
-    """Import one SQL file into target database via mysql stdin."""
-    sql_bytes = sql_path.read_bytes()
-    run_command(mysql_args(host, port, user, password) + [database], input_bytes=sql_bytes)
+def import_sql_file(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    database: str,
+    sql_path: Path,
+) -> None:
+    """Import one SQL file into target database."""
+    run_command(
+        mysql_args(mysql_cmd, host, port, user, password) + [database],
+        input_bytes=sql_path.read_bytes(),
+    )
 
 
-def create_database(host: str, port: int, user: str, password: str, database: str) -> None:
+def create_database(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    database: str,
+) -> None:
     """Create database if it does not exist."""
-    create_sql = (
+    sql = (
         f"CREATE DATABASE IF NOT EXISTS `{database}` "
         "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     ).encode("utf-8")
-    run_command(mysql_args(host, port, user, password), input_bytes=create_sql)
+    run_command(mysql_args(mysql_cmd, host, port, user, password), input_bytes=sql)
 
 
-def verify_admin_account(host: str, port: int, user: str, password: str, database: str) -> None:
-    """Print demo admin row to confirm seed data import."""
+def verify_admin_account(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    database: str,
+) -> None:
+    """Print seeded admin user row for validation."""
     query = (
         "SELECT user_id,email,user_role,account_status "
         "FROM users WHERE email='admin@candlecraft.com';"
     ).encode("utf-8")
-    run_command(mysql_args(host, port, user, password) + [database], input_bytes=query)
+    run_command(mysql_args(mysql_cmd, host, port, user, password) + [database], input_bytes=query)
 
 
 def build_database_url(host: str, port: int, user: str, password: str, database: str) -> str:
@@ -134,16 +208,138 @@ def build_database_url(host: str, port: int, user: str, password: str, database:
     )
 
 
+def read_json_file(path: Path) -> dict[str, Any]:
+    """Read JSON file and return dictionary."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"Invalid JSON file: {path}") from error
+    if not isinstance(data, dict):
+        raise RuntimeError(f"JSON root must be object: {path}")
+    return data
+
+
+def parse_env_int(var_name: str) -> int | None:
+    """Read integer from environment variable."""
+    value = os.getenv(var_name)
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except ValueError as error:
+        raise RuntimeError(f"Environment variable {var_name} must be an integer.") from error
+
+
+def resolve_profiles_file_path(path_value: str | None) -> Path:
+    """Resolve profile file path from CLI or default."""
+    if path_value is None:
+        return DEFAULT_PROFILES_FILE
+    candidate = Path(path_value)
+    return candidate if candidate.is_absolute() else ROOT_DIR / candidate
+
+
+def resolve_runtime_config(args: argparse.Namespace) -> dict[str, Any]:
+    """Resolve config with precedence: CLI > ENV > profile > defaults."""
+    config: dict[str, Any] = dict(DEFAULTS)
+    profiles_path = resolve_profiles_file_path(args.profiles_file)
+    profile_name = args.profile if args.profile is not None else os.getenv("DB_PROFILE")
+
+    if profile_name and profiles_path.exists():
+        all_profiles = read_json_file(profiles_path)
+        profile_value = all_profiles.get(profile_name)
+        if not isinstance(profile_value, dict):
+            raise RuntimeError(f"Profile '{profile_name}' not found in {profiles_path}.")
+        for key in DEFAULTS:
+            if key in profile_value:
+                config[key] = profile_value[key]
+
+    env_mapping: dict[str, str] = {
+        "DB_HOST": "db_host",
+        "DB_USER": "db_user",
+        "DB_PASS": "db_pass",
+        "DB_NAME": "db_name",
+        "MYSQL_CMD": "mysql_cmd",
+        "APP_HOST": "app_host",
+    }
+    for env_name, config_key in env_mapping.items():
+        env_value = os.getenv(env_name)
+        if env_value is not None and env_value != "":
+            config[config_key] = env_value
+
+    db_port_env = parse_env_int("DB_PORT")
+    if db_port_env is not None:
+        config["db_port"] = db_port_env
+    app_port_env = parse_env_int("APP_PORT")
+    if app_port_env is not None:
+        config["app_port"] = app_port_env
+
+    cli_mapping: dict[str, str] = {
+        "db_host": "db_host",
+        "db_user": "db_user",
+        "db_pass": "db_pass",
+        "db_name": "db_name",
+        "mysql_cmd": "mysql_cmd",
+        "app_host": "app_host",
+    }
+    for arg_key, config_key in cli_mapping.items():
+        arg_value = getattr(args, arg_key)
+        if arg_value is not None:
+            config[config_key] = arg_value
+
+    if args.db_port is not None:
+        config["db_port"] = args.db_port
+    if args.app_port is not None:
+        config["app_port"] = args.app_port
+
+    config["profile_name"] = profile_name
+    config["profiles_path"] = str(profiles_path)
+    return config
+
+
+def get_mysql_command(config: Mapping[str, Any]) -> str:
+    """Resolve mysql command from config override or environment detection."""
+    mysql_cmd_value = config.get("mysql_cmd")
+    if isinstance(mysql_cmd_value, str) and mysql_cmd_value:
+        mysql_path = Path(mysql_cmd_value)
+        if not mysql_path.exists():
+            fallback = resolve_command("mysql")
+            if fallback is not None:
+                return fallback
+            raise RuntimeError(
+                f"MySQL command not found at: {mysql_cmd_value}. "
+                "Please update profile mysql_cmd or install mysql client in PATH."
+            )
+        return str(mysql_path)
+    return require_command("mysql")
+
+
+def print_effective_config(config: Mapping[str, Any], mysql_cmd: str) -> None:
+    """Print selected runtime configuration for troubleshooting."""
+    print_step("Effective database config")
+    print(f"Profile: {config.get('profile_name') or '(none)'}")
+    print(f"MySQL command: {mysql_cmd}")
+    print(f"Host: {config['db_host']}  Port: {config['db_port']}")
+    print(f"User: {config['db_user']}  Database: {config['db_name']}")
+
+
 def check_env(args: argparse.Namespace) -> None:
     """Run preflight checks without modifying database."""
     check_project_root()
+    config = resolve_runtime_config(args)
     print_step("Checking required commands")
     require_command("php")
     require_command("composer")
-    require_command("mysql")
+    mysql_cmd = get_mysql_command(config)
+    print_effective_config(config, mysql_cmd)
 
     best_effort_start_mysql()
-    wait_for_mysql(args.db_host, args.db_port, args.db_user, args.db_pass)
+    wait_for_mysql(
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+    )
 
     print_step("Checking core files")
     required_files = [
@@ -155,44 +351,65 @@ def check_env(args: argparse.Namespace) -> None:
         if not file_path.exists():
             raise RuntimeError(f"Required file missing: {file_path}")
 
+    if not resolve_profiles_file_path(args.profiles_file).exists():
+        print_step("Tip")
+        print(f"Create local profiles file from template: {EXAMPLE_PROFILES_FILE.name}")
+
     print_step("Environment check passed")
-    print("You can now run: python scripts/dev-setup.py setup-run")
+    print("Run next: python scripts/dev-setup.py setup-run")
 
 
 def setup_run(args: argparse.Namespace) -> None:
     """Install dependencies, initialize DB, and run app server."""
     check_project_root()
+    config = resolve_runtime_config(args)
     print_step("Checking required commands")
     require_command("php")
     require_command("composer")
-    require_command("mysql")
+    mysql_cmd = get_mysql_command(config)
+    print_effective_config(config, mysql_cmd)
 
     best_effort_start_mysql()
-    wait_for_mysql(args.db_host, args.db_port, args.db_user, args.db_pass)
+    wait_for_mysql(
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+    )
 
     print_step("Installing dependencies")
     run_command(["composer", "install"])
 
     print_step("Creating database")
-    create_database(args.db_host, args.db_port, args.db_user, args.db_pass, args.db_name)
+    create_database(
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
+    )
 
     print_step("Importing schema")
     import_sql_file(
-        args.db_host,
-        args.db_port,
-        args.db_user,
-        args.db_pass,
-        args.db_name,
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
         ROOT_DIR / "config" / "schema" / "academy_management_db.sql",
     )
 
     print_step("Importing demo seed data")
     import_sql_file(
-        args.db_host,
-        args.db_port,
-        args.db_user,
-        args.db_pass,
-        args.db_name,
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
         ROOT_DIR / "config" / "schema" / "seed_admin.sql",
     )
 
@@ -200,38 +417,55 @@ def setup_run(args: argparse.Namespace) -> None:
     ensure_app_local()
 
     print_step("Verifying demo admin account")
-    verify_admin_account(args.db_host, args.db_port, args.db_user, args.db_pass, args.db_name)
-
-    database_url = build_database_url(
-        args.db_host, args.db_port, args.db_user, args.db_pass, args.db_name
+    verify_admin_account(
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
     )
+
     env = os.environ.copy()
-    env["DATABASE_URL"] = database_url
+    env["DATABASE_URL"] = build_database_url(
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
+    )
 
     print_step("Starting CakePHP server")
-    print(f"URL: http://localhost:{args.app_port}")
+    print(f"URL: http://localhost:{config['app_port']}")
     print("Login: admin@candlecraft.com / admin123")
     run_command(
-        ["bin/cake", "server", "-H", args.app_host, "-p", str(args.app_port)],
+        ["bin/cake", "server", "-H", str(config["app_host"]), "-p", str(config["app_port"])],
         env=env,
     )
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    """Parse CLI arguments for subcommands and shared DB options."""
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Cross-platform setup/check script for CandleCraft Academy."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     def add_common_options(subparser: argparse.ArgumentParser) -> None:
-        subparser.add_argument("--db-host", default="localhost")
-        subparser.add_argument("--db-port", type=int, default=3306)
-        subparser.add_argument("--db-user", default="root")
-        subparser.add_argument("--db-pass", default="root")
-        subparser.add_argument("--db-name", default="academy_management_db")
-        subparser.add_argument("--app-host", default="0.0.0.0")
-        subparser.add_argument("--app-port", type=int, default=8765)
+        subparser.add_argument("--profile", default=None, help="DB profile name.")
+        subparser.add_argument(
+            "--profiles-file",
+            default=None,
+            help="Path to JSON profiles file (default: scripts/db-profiles.local.json).",
+        )
+        subparser.add_argument("--db-host", default=None)
+        subparser.add_argument("--db-port", type=int, default=None)
+        subparser.add_argument("--db-user", default=None)
+        subparser.add_argument("--db-pass", default=None)
+        subparser.add_argument("--db-name", default=None)
+        subparser.add_argument("--mysql-cmd", default=None, help="Full path to mysql client.")
+        subparser.add_argument("--app-host", default=None)
+        subparser.add_argument("--app-port", type=int, default=None)
 
     check_parser = subparsers.add_parser(
         "check-env",
@@ -241,7 +475,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
     setup_parser = subparsers.add_parser(
         "setup-run",
-        help="Install deps, init DB with demo data, then run server.",
+        help="Install dependencies, init DB with demo data, then run server.",
     )
     add_common_options(setup_parser)
 
@@ -249,7 +483,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str]) -> int:
-    """Program entrypoint."""
+    """Run script entrypoint."""
     args = parse_args(argv)
     try:
         if args.command == "check-env":

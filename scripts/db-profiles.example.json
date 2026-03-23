@@ -1,0 +1,17 @@
+{
+  "alice": {
+    "db_host": "localhost",
+    "db_port": 3306,
+    "db_user": "root",
+    "db_pass": "",
+    "db_name": "academy_management_db",
+    "mysql_cmd": "C:\\xampp\\mysql\\bin\\mysql.exe"
+  },
+  "bob": {
+    "db_host": "localhost",
+    "db_port": 3306,
+    "db_user": "bob_user",
+    "db_pass": "bob_password",
+    "db_name": "academy_management_db"
+  }
+}

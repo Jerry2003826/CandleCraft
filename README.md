@@ -46,6 +46,45 @@ Visit [http://localhost:8765](http://localhost:8765) and login:
 
 Use one cross-platform script for both macOS and Windows (also works on Linux).
 
+### Super easy mode (single command)
+
+Just run:
+
+```bash
+python3 scripts/easy-run.py
+```
+
+Windows:
+
+```powershell
+py .\scripts\easy-run.py
+```
+
+It will guide the teammate to configure DB profile and then automatically run `check-env` + `setup-run`.
+
+### Team setup (recommended for multiple classmates)
+
+Generate a local DB profile interactively:
+
+```bash
+python3 scripts/onboard-teammate.py
+```
+
+Then run with your profile name:
+
+```bash
+python3 scripts/dev-setup.py check-env --profile <your_profile>
+python3 scripts/dev-setup.py setup-run --profile <your_profile>
+```
+
+Windows:
+
+```powershell
+py .\scripts\onboard-teammate.py
+py .\scripts\dev-setup.py check-env --profile <your_profile>
+py .\scripts\dev-setup.py setup-run --profile <your_profile>
+```
+
 ### 1) Environment pre-check (recommended)
 
 ```bash
@@ -74,6 +113,18 @@ Optional custom DB settings:
 
 ```bash
 python3 scripts/dev-setup.py setup-run --db-user myuser --db-pass mypass --db-port 3307
+```
+
+Profile + override example (CLI has highest priority):
+
+```bash
+python3 scripts/dev-setup.py setup-run --profile alice --db-pass "newpass"
+```
+
+If `mysql` is not in PATH (for example, XAMPP), provide full client path:
+
+```bash
+python3 scripts/dev-setup.py setup-run --mysql-cmd "C:\xampp\mysql\bin\mysql.exe" --db-user root --db-pass ""
 ```
 
 ## Admin Features
