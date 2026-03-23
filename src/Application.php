@@ -104,8 +104,10 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
     public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
     {
+        $loginUrl = ['prefix' => false, 'controller' => 'Users', 'action' => 'login'];
+
         $service = new AuthenticationService([
-            'unauthenticatedRedirect' => '/users/login',
+            'unauthenticatedRedirect' => $loginUrl,
             'queryParam' => 'redirect',
         ]);
 
@@ -123,15 +125,20 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         $service->loadAuthenticator('Authentication.Session');
         $service->loadAuthenticator('Authentication.Form', [
             'fields' => $formFields,
-            'loginUrl' => '/users/login',
-        ]);
-
-        $service->loadIdentifier('Authentication.Password', [
-            'fields' => $identifierFields,
-            'resolver' => [
-                'className' => 'Authentication.Orm',
-                'userModel' => 'Users',
-                'finder' => 'auth',
+            'loginUrl' => [
+                '/',
+                $loginUrl,
+            ],
+            'urlChecker' => 'Authentication.CakeRouter',
+            'identifier' => [
+                'Authentication.Password' => [
+                    'fields' => $identifierFields,
+                    'resolver' => [
+                        'className' => 'Authentication.Orm',
+                        'userModel' => 'Users',
+                        'finder' => 'auth',
+                    ],
+                ],
             ],
         ]);
 

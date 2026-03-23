@@ -3,7 +3,10 @@
  * @var \App\View\AppView $this
  */
 ?>
-<?= $this->Form->create(null, ['class' => 'login-form']) ?>
+<?= $this->Form->create(null, [
+    'class' => 'login-form',
+    'url' => ['controller' => 'Users', 'action' => 'login'],
+]) ?>
     <div class="form-group">
         <label for="email">Email</label>
         <?= $this->Form->email('email', [
