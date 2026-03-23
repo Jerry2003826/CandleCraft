@@ -61,6 +61,7 @@ py .\scripts\easy-run.py
 ```
 
 It will guide the teammate to configure DB profile and then automatically run `check-env` + `setup-run`.
+It also supports one-click auto-auth detection for common local MySQL/XAMPP credentials.
 
 ### Team setup (recommended for multiple classmates)
 

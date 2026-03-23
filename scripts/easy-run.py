@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -39,6 +40,90 @@ def guess_mysql_cmd() -> str:
     if system_name == "darwin":
         return "/Applications/XAMPP/xamppfiles/bin/mysql"
     return "mysql"
+
+
+def mysql_command_candidates() -> list[str]:
+    """Build mysql executable candidates for auto-detection."""
+    candidates: list[str] = []
+    mysql_in_path = shutil.which("mysql")
+    if mysql_in_path:
+        candidates.append(mysql_in_path)
+    candidates.append(guess_mysql_cmd())
+    system_name: str = platform.system().lower()
+    if system_name == "windows":
+        candidates.extend(
+            [
+                r"C:\xampp\mysql\bin\mysql.exe",
+                r"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe",
+                r"C:\Program Files\MariaDB 10.11\bin\mysql.exe",
+            ]
+        )
+    elif system_name == "darwin":
+        candidates.extend(
+            [
+                "/Applications/XAMPP/xamppfiles/bin/mysql",
+                "/usr/local/mysql/bin/mysql",
+                "/opt/homebrew/bin/mysql",
+            ]
+        )
+
+    unique_existing: list[str] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate == "mysql" or Path(candidate).exists():
+            unique_existing.append(candidate)
+    return unique_existing
+
+
+def can_connect_mysql(mysql_cmd: str, host: str, port: int, user: str, password: str) -> bool:
+    """Return whether mysql CLI can authenticate using provided credentials."""
+    command: list[str] = [
+        mysql_cmd,
+        f"-h{host}",
+        f"-P{port}",
+        f"-u{user}",
+        f"--password={password}",
+        "-e",
+        "SELECT 1;",
+    ]
+    try:
+        result = subprocess.run(command, check=False, capture_output=True, timeout=4)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def auto_detect_profile_values(profile_name: str) -> dict[str, Any] | None:
+    """Try common local mysql credential combinations and return first success."""
+    mysql_candidates: list[str] = mysql_command_candidates()
+    host_candidates: list[str] = ["localhost", "127.0.0.1"]
+    port_candidates: list[int] = [3306, 3307]
+    credential_candidates: list[tuple[str, str]] = [
+        ("root", ""),
+        ("root", "root"),
+        ("root", "123456"),
+        (profile_name, ""),
+        (profile_name, profile_name),
+    ]
+
+    print("\nTrying one-click DB authentication...")
+    for mysql_cmd in mysql_candidates:
+        for host in host_candidates:
+            for port in port_candidates:
+                for user, password in credential_candidates:
+                    if can_connect_mysql(mysql_cmd, host, port, user, password):
+                        return {
+                            "db_host": host,
+                            "db_port": port,
+                            "db_user": user,
+                            "db_pass": password,
+                            "db_name": "academy_management_db",
+                            "mysql_cmd": mysql_cmd,
+                        }
+    return None
 
 
 def read_profiles() -> dict[str, Any]:
@@ -108,6 +193,26 @@ def select_or_create_profile(profiles: dict[str, Any]) -> str:
     return profile_name
 
 
+def create_profile_with_auto_auth(profiles: dict[str, Any]) -> str | None:
+    """Create profile by auto-detecting mysql credentials."""
+    default_profile: str = os.getenv("USER") or os.getenv("USERNAME") or "teammate"
+    profile_name: str = prompt_text("\nAuto-auth profile name", default_profile)
+    detected: dict[str, Any] | None = auto_detect_profile_values(profile_name)
+    if detected is None:
+        print("Auto-auth failed: no working MySQL credentials found.")
+        return None
+
+    profiles[profile_name] = detected
+    write_profiles(profiles)
+    print(f"Auto-auth success. Saved profile: {profile_name}")
+    print(f"Detected mysql: {detected['mysql_cmd']}")
+    print(
+        "Detected DB: "
+        f"{detected['db_host']}:{detected['db_port']} user={detected['db_user']}"
+    )
+    return profile_name
+
+
 def run_dev_setup(command: str, profile_name: str) -> int:
     """Run dev-setup subcommand with selected profile."""
     cmd: list[str] = [
@@ -136,7 +241,16 @@ def main() -> int:
 
     try:
         profiles: dict[str, Any] = read_profiles()
-        profile_name: str = select_or_create_profile(profiles)
+        profile_name: str
+        if prompt_yes_no("Use one-click auto authentication (skip manual DB input)", default_yes=True):
+            auto_profile = create_profile_with_auto_auth(profiles)
+            if auto_profile is not None:
+                profile_name = auto_profile
+            else:
+                print("Switching to manual profile setup...")
+                profile_name = select_or_create_profile(profiles)
+        else:
+            profile_name = select_or_create_profile(profiles)
     except RuntimeError as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
@@ -144,8 +258,22 @@ def main() -> int:
     print("\n== Running environment check ==")
     check_code: int = run_dev_setup("check-env", profile_name)
     if check_code != 0:
-        print("\nEnvironment check failed. Fix the error and run again.", file=sys.stderr)
-        return check_code
+        print("\nEnvironment check failed.", file=sys.stderr)
+        if prompt_yes_no("Try one-click auto authentication now", default_yes=True):
+            profiles = read_profiles()
+            auto_profile = create_profile_with_auto_auth(profiles)
+            if auto_profile is None:
+                print("Auto-auth failed again. Please fix DB manually.", file=sys.stderr)
+                return check_code
+            print("\n== Re-running environment check ==")
+            check_code = run_dev_setup("check-env", auto_profile)
+            if check_code != 0:
+                print("Environment check still failed. Please fix DB manually.", file=sys.stderr)
+                return check_code
+            profile_name = auto_profile
+        else:
+            print("Fix the error and run again.", file=sys.stderr)
+            return check_code
 
     print("\n== Running full setup and start ==")
     return run_dev_setup("setup-run", profile_name)

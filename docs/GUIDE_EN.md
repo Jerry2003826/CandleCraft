@@ -32,6 +32,7 @@ py .\scripts\easy-run.py
 ```
 
 This one command will guide profile setup and then run `check-env` + `setup-run`.
+It can also auto-detect common local MySQL credentials (one-click auth).
 
 If you are in a class/team setup, first create your local DB profile:
 
