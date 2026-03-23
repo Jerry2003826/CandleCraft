@@ -15,18 +15,18 @@ $this->assign('title', 'Dashboard');
         <div class="stat-value"><?= $totalEnquiries ?></div>
     </div>
     <div class="stat-card new-messages">
-        <div class="stat-label">New Messages</div>
+        <div class="stat-label">New Enquiries</div>
         <div class="stat-value"><?= $newMessages ?></div>
     </div>
     <div class="stat-card replied">
-        <div class="stat-label">Replied Messages</div>
+        <div class="stat-label">Replied Enquiries</div>
         <div class="stat-value"><?= $repliedMessages ?></div>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3>Recent Messages</h3>
+        <h3>Recent Enquiries</h3>
         <a href="<?= $this->Url->build(['controller' => 'Messages', 'action' => 'index']) ?>" class="btn btn-sm btn-primary">View All</a>
     </div>
     <table class="data-table">

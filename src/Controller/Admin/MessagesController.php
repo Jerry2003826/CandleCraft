@@ -12,6 +12,7 @@ class MessagesController extends AppController
         $messagesTable = $this->fetchTable('Messages');
         $query = $messagesTable->find()
             ->contain(['SenderUsers', 'ReceiverUsers'])
+            ->where(['Messages.message_type' => 'contact_form'])
             ->order(['Messages.sent_at' => 'DESC']);
 
         $status = $this->request->getQuery('status');

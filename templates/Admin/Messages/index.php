@@ -4,12 +4,12 @@
  * @var iterable<\App\Model\Entity\Message> $messages
  * @var string|null $status
  */
-$this->assign('title', 'Messages');
+$this->assign('title', 'Enquiries');
 ?>
 
 <div class="toolbar">
     <div class="filters">
-        <span>Filter by status:</span>
+        <span>Filter enquiries by status:</span>
         <a href="<?= $this->Url->build(['action' => 'index']) ?>"
            class="btn btn-sm <?= !$status ? 'btn-primary' : '' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'unread']]) ?>"
@@ -28,7 +28,9 @@ $this->assign('title', 'Messages');
         <thead>
             <tr>
                 <th>From</th>
+                <th>Phone</th>
                 <th>Subject</th>
+                <th>Source</th>
                 <th>Type</th>
                 <th>Received</th>
                 <th>Status</th>
@@ -48,7 +50,9 @@ $this->assign('title', 'Messages');
                             <?php endif; ?>
                         <?php endif; ?>
                     </td>
+                    <td><?= h($message->sender_phone ?: '-') ?></td>
                     <td><?= h(\Cake\Utility\Text::truncate($message->subject, 50)) ?></td>
+                    <td><?= h($message->source_page ?: '-') ?></td>
                     <td><span class="badge"><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></span></td>
                     <td><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></td>
                     <td>

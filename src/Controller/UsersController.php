@@ -21,9 +21,21 @@ class UsersController extends AppController
 
         if ($result && $result->isValid()) {
             $user = $this->Authentication->getIdentity();
-            if ($user->get('user_role') === 'admin') {
+            $role = $user->get('user_role');
+
+            if ($role === 'admin') {
                 return $this->redirect(['prefix' => 'Admin', 'controller' => 'Dashboard', 'action' => 'index']);
             }
+
+            if ($role === 'teacher') {
+                return $this->redirect(['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index']);
+            }
+
+            if ($role === 'student') {
+                return $this->redirect(['prefix' => 'Student', 'controller' => 'Dashboard', 'action' => 'index']);
+            }
+
+            $this->Flash->info(__('This portal currently supports admin, teacher, and student logins.'));
 
             return $this->redirect('/');
         }

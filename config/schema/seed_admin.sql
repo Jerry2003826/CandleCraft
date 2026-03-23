@@ -44,16 +44,23 @@ VALUES ('lisa.parent', 'lisa.parent@example.com',
         'parent', 'active', NOW(), NOW());
 SET @parent1_user_id = LAST_INSERT_ID();
 
+-- ---- Student Users ----
+INSERT INTO users (username, email, password_hash, user_role, account_status, created_at, updated_at)
+VALUES ('alice.wong', 'alice.wong@candlecraft.com',
+        '$2y$12$akBG7iJyrZNNUhwuhiaQ1ebYH4L4M1NUqOeE/9uiTaMCFu7emsqrG',
+        'student', 'active', NOW(), NOW());
+SET @student1_user_id = LAST_INSERT_ID();
+
 INSERT INTO parents (user_id, parent_name, phone_number, address, created_at, updated_at)
 VALUES (@parent1_user_id, 'Lisa Wong', '0411111111', '123 Main St, Melbourne VIC 3000', NOW(), NOW());
 SET @parent1_id = LAST_INSERT_ID();
 
 -- ---- Students ----
-INSERT INTO students (student_name, date_of_birth, student_status, created_at, updated_at)
+INSERT INTO students (user_id, student_name, date_of_birth, student_status, created_at, updated_at)
 VALUES
-('Alice Wong', '2015-04-12', 'active', NOW(), NOW()),
-('Bob Chen', '2014-09-25', 'active', NOW(), NOW()),
-('Charlie Lee', '2016-01-08', 'active', NOW(), NOW());
+(@student1_user_id, 'Alice Wong', '2015-04-12', 'active', NOW(), NOW()),
+(NULL, 'Bob Chen', '2014-09-25', 'active', NOW(), NOW()),
+(NULL, 'Charlie Lee', '2016-01-08', 'active', NOW(), NOW());
 
 SET @student1_id = (SELECT student_id FROM students WHERE student_name = 'Alice Wong');
 SET @student2_id = (SELECT student_id FROM students WHERE student_name = 'Bob Chen');
@@ -93,29 +100,34 @@ INSERT INTO bookings (class_id, parent_id, student_id, booking_date, booking_sta
 VALUES (@class1_id, @parent1_id, @student1_id, NOW(), 'confirmed', 150.00, NOW(), NOW());
 
 -- ---- Messages ----
-INSERT INTO messages (sender_name, sender_email, subject, message_text, message_type, message_status, sent_at, updated_at)
+INSERT INTO messages (sender_name, sender_email, sender_phone, source_page, subject, message_text, message_type, message_status, sent_at, updated_at)
 VALUES
 ('Sarah Jones', 'sarah.jones@example.com',
+ '0400000001', 'homepage',
  'Enquiry about pottery classes',
  'Hi, I would like to know more about your beginner pottery classes. What times are available and what is the cost?',
  'contact_form', 'unread', NOW(), NOW()),
 
 ('John Smith', 'john.smith@example.com',
+ '0400000002', 'homepage',
  'Knitting class availability',
  'Hello, are there any spots available in the intermediate knitting class starting next month?',
  'contact_form', 'replied', DATE_SUB(NOW(), INTERVAL 2 DAY), DATE_SUB(NOW(), INTERVAL 1 DAY)),
 
 ('Bill Gates', 'bill.gates@example.com',
+ '0400000003', 'homepage',
  'Private lessons inquiry',
  'I am interested in private pottery lessons for my daughter. Could you provide more information about pricing?',
  'contact_form', 'read', DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY)),
 
 ('Mary Johnson', 'mary.j@example.com',
+ '0400000004', 'homepage',
  'Group booking discount',
  'We have a group of 8 students interested in the beginner pottery class. Do you offer any group discounts?',
  'contact_form', 'unread', DATE_SUB(NOW(), INTERVAL 1 HOUR), NOW()),
 
 ('David Wilson', 'david.w@example.com',
+ '0400000005', 'homepage',
  'Schedule change request',
  'Could we possibly move the Wednesday knitting class to Thursday afternoon? Several parents have requested this change.',
  'contact_form', 'unread', DATE_SUB(NOW(), INTERVAL 3 HOUR), NOW());

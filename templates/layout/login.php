@@ -8,7 +8,7 @@
 <head>
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CandleCraft Academy - Login</title>
+    <title>CandleCraft Academy - Portal Login</title>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['admin']) ?>
     <?= $this->fetch('meta') ?>
@@ -20,12 +20,11 @@
         <nav class="login-nav">
             <div class="brand">CandleCraft Academy</div>
             <div class="nav-links">
-                <a href="#">Courses</a>
-                <a href="#">Home</a>
-                <a href="#">Gallery</a>
-                <a href="#">Contact Us</a>
-                <a href="#">FAQ</a>
-                <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="btn-login">Log In</a>
+                <a href="<?= $this->Url->build('/') ?>">Home</a>
+                <a href="<?= $this->Url->build('/#programs') ?>">Programs</a>
+                <a href="<?= $this->Url->build('/#platform') ?>">AI Studio</a>
+                <a href="<?= $this->Url->build('/#contact') ?>">Contact</a>
+                <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="btn-login">Portal Login</a>
             </div>
         </nav>
 

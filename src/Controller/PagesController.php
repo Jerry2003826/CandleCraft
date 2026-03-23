@@ -17,6 +17,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Core\Configure;
+use Cake\Event\EventInterface;
+use Cake\I18n\DateTime;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
@@ -31,6 +33,82 @@ use Cake\View\Exception\MissingTemplateException;
  */
 class PagesController extends AppController
 {
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+        $this->Authentication->addUnauthenticatedActions(['home', 'display']);
+    }
+
+    public function home(): ?Response
+    {
+        $messagesTable = $this->fetchTable('Messages');
+        $session = $this->request->getSession();
+        $sourcePage = 'homepage';
+        $enquirySubjects = [
+            'Pottery lesson enquiry' => 'Pottery lesson enquiry',
+            'Knitting lesson enquiry' => 'Knitting lesson enquiry',
+            'Trial lesson booking' => 'Trial lesson booking',
+            'General question' => 'General question',
+        ];
+        $enquiry = $messagesTable->newEmptyEntity();
+
+        if ($this->request->is('post')) {
+            $enquiryData = [
+                'sender_name' => trim((string)$this->request->getData('sender_name')),
+                'sender_email' => trim((string)$this->request->getData('sender_email')),
+                'sender_phone' => trim((string)$this->request->getData('sender_phone')),
+                'source_page' => substr($sourcePage, 0, 255),
+                'subject' => trim((string)$this->request->getData('subject')),
+                'message_text' => trim((string)$this->request->getData('message_text')),
+                'message_type' => 'contact_form',
+                'message_status' => 'unread',
+                'sent_at' => DateTime::now(),
+            ];
+            $enquiry = $messagesTable->newEntity($enquiryData, ['validate' => 'contactForm']);
+
+            $honeypot = trim((string)$this->request->getData('website'));
+            if ($honeypot !== '') {
+                $this->Flash->success(__('Thank you. Your enquiry has been received.'));
+
+                return $this->redirect('/#contact');
+            }
+
+            $expectedCaptcha = (string)$session->read('Enquiry.captchaAnswer');
+            $submittedCaptcha = trim((string)$this->request->getData('captcha_answer'));
+            if ($expectedCaptcha === '' || $submittedCaptcha !== $expectedCaptcha) {
+                $enquiry->setError('captcha_answer', ['Please solve the CAPTCHA question correctly.']);
+            }
+
+            if (!$enquiry->getErrors() && $messagesTable->save($enquiry)) {
+                $session->delete('Enquiry');
+                $this->Flash->success(__('Thanks, your enquiry has been sent. Our team will be in touch soon.'));
+
+                return $this->redirect('/#contact');
+            }
+
+            $this->Flash->error(__('Please review the form and try again.'));
+        }
+
+        $challenge = $this->buildCaptchaChallenge();
+        $session->write('Enquiry.captchaAnswer', (string)$challenge['answer']);
+
+        $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage'));
+        $this->set('captchaQuestion', $challenge['question']);
+
+        return null;
+    }
+
+    private function buildCaptchaChallenge(): array
+    {
+        $left = random_int(2, 9);
+        $right = random_int(1, 8);
+
+        return [
+            'question' => sprintf('%d + %d = ?', $left, $right),
+            'answer' => $left + $right,
+        ];
+    }
+
     /**
      * Displays a view
      *

@@ -17,10 +17,28 @@ class Booking extends Entity
         'notes' => true,
         'created_at' => true,
         'updated_at' => true,
+        'class' => true,
         'class_entity' => true,
         'student' => true,
+        'parent' => true,
         'parent_entity' => true,
         'payments' => true,
+        'attendance_record' => true,
         'attendance_records' => true,
     ];
+
+    protected function _getClassEntity()
+    {
+        return $this->get('class');
+    }
+
+    protected function _getParentEntity()
+    {
+        return $this->get('parent');
+    }
+
+    protected function _getAttendanceRecords()
+    {
+        return $this->get('attendance_record');
+    }
 }
