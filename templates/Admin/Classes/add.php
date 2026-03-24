@@ -24,6 +24,8 @@ $this->assign('title', 'Add Class');
                     'id' => 'class-code',
                     'required' => true,
                     'placeholder' => 'e.g. POT-BEG-001',
+                    'maxlength' => 30,
+                    'pattern' => '[A-Za-z0-9-]{3,30}',
                 ]) ?>
             </div>
             <div class="form-group">
@@ -64,6 +66,7 @@ $this->assign('title', 'Add Class');
                     'id' => 'location',
                     'required' => true,
                     'placeholder' => 'e.g. Studio A',
+                    'maxlength' => 150,
                 ]) ?>
             </div>
             <div class="form-group">
@@ -72,6 +75,7 @@ $this->assign('title', 'Add Class');
                     'id' => 'capacity',
                     'value' => 20,
                     'min' => 1,
+                    'max' => 200,
                 ]) ?>
             </div>
             <div class="form-group">
@@ -89,6 +93,7 @@ $this->assign('title', 'Add Class');
                 <?= $this->Form->textarea('notes', [
                     'id' => 'notes',
                     'rows' => 3,
+                    'maxlength' => 2000,
                 ]) ?>
             </div>
             <?= $this->Form->button(__('Save Class'), ['class' => 'btn btn-success']) ?>

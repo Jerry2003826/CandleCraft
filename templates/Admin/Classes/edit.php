@@ -23,6 +23,8 @@ $this->assign('title', 'Edit Class');
                 <?= $this->Form->text('class_code', [
                     'id' => 'class-code',
                     'required' => true,
+                    'maxlength' => 30,
+                    'pattern' => '[A-Za-z0-9-]{3,30}',
                 ]) ?>
             </div>
             <div class="form-group">
@@ -62,6 +64,7 @@ $this->assign('title', 'Edit Class');
                 <?= $this->Form->text('location', [
                     'id' => 'location',
                     'required' => true,
+                    'maxlength' => 150,
                 ]) ?>
             </div>
             <div class="form-group">
@@ -69,6 +72,7 @@ $this->assign('title', 'Edit Class');
                 <?= $this->Form->number('capacity', [
                     'id' => 'capacity',
                     'min' => 1,
+                    'max' => 200,
                 ]) ?>
             </div>
             <div class="form-group">
@@ -86,6 +90,7 @@ $this->assign('title', 'Edit Class');
                 <?= $this->Form->textarea('notes', [
                     'id' => 'notes',
                     'rows' => 3,
+                    'maxlength' => 2000,
                 ]) ?>
             </div>
             <?= $this->Form->button(__('Update Class'), ['class' => 'btn btn-success']) ?>

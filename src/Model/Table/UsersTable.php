@@ -41,6 +41,16 @@ class UsersTable extends Table
             ->scalar('username')
             ->maxLength('username', 50)
             ->minLength('username', 3)
+            ->add('username', 'validFormat', [
+                'rule' => static function (mixed $value): bool {
+                    if (!is_string($value)) {
+                        return false;
+                    }
+
+                    return (bool)preg_match('/^[a-zA-Z0-9_.-]+$/', $value);
+                },
+                'message' => 'Username can only contain letters, numbers, dot, underscore and hyphen.',
+            ])
             ->requirePresence('username', 'create')
             ->notEmptyString('username');
 
@@ -51,6 +61,7 @@ class UsersTable extends Table
 
         $validator
             ->scalar('password_hash')
+            ->minLength('password_hash', 8, 'Password must be at least 8 characters long.')
             ->requirePresence('password_hash', 'create')
             ->notEmptyString('password_hash');
 

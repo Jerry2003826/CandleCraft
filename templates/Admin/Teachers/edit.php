@@ -21,12 +21,15 @@ $this->assign('title', 'Edit Teacher');
                 <?= $this->Form->text('teacher_name', [
                     'id' => 'teacher-name',
                     'required' => true,
+                    'maxlength' => 100,
                 ]) ?>
             </div>
             <div class="form-group">
                 <label for="phone-number">Phone Number</label>
                 <?= $this->Form->text('phone_number', [
                     'id' => 'phone-number',
+                    'maxlength' => 30,
+                    'pattern' => '\+?[0-9\s()-]{8,30}',
                 ]) ?>
             </div>
             <div class="form-group">

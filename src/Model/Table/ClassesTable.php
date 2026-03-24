@@ -45,6 +45,16 @@ class ClassesTable extends Table
         $validator
             ->scalar('class_code')
             ->maxLength('class_code', 30)
+            ->add('class_code', 'validFormat', [
+                'rule' => static function (mixed $value): bool {
+                    if (!is_string($value)) {
+                        return false;
+                    }
+
+                    return (bool)preg_match('/^[A-Za-z0-9-]{3,30}$/', $value);
+                },
+                'message' => 'Class code must be 3-30 characters and only contain letters, numbers and hyphen.',
+            ])
             ->requirePresence('class_code', 'create')
             ->notEmptyString('class_code');
 
@@ -64,7 +74,19 @@ class ClassesTable extends Table
         $validator
             ->dateTime('end_datetime')
             ->requirePresence('end_datetime', 'create')
-            ->notEmptyDateTime('end_datetime');
+            ->notEmptyDateTime('end_datetime')
+            ->add('end_datetime', 'afterStart', [
+                // Server-side guard: class end must be later than start.
+                'rule' => static function (mixed $value, array $context): bool {
+                    $start = $context['data']['start_datetime'] ?? null;
+                    if ($start === null || $value === null) {
+                        return true;
+                    }
+
+                    return strtotime((string)$value) > strtotime((string)$start);
+                },
+                'message' => 'End date/time must be after start date/time.',
+            ]);
 
         $validator
             ->scalar('location')
@@ -74,11 +96,18 @@ class ClassesTable extends Table
 
         $validator
             ->integer('capacity')
+            ->greaterThan('capacity', 0, 'Capacity must be greater than 0.')
+            ->lessThanOrEqual('capacity', 200, 'Capacity must be 200 or less.')
             ->notEmptyString('capacity');
 
         $validator
             ->inList('class_status', ['scheduled', 'ongoing', 'completed', 'cancelled', 'full'])
             ->notEmptyString('class_status');
+
+        $validator
+            ->scalar('notes')
+            ->maxLength('notes', 2000)
+            ->allowEmptyString('notes');
 
         return $validator;
     }

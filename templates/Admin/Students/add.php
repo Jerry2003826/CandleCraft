@@ -21,6 +21,7 @@ $this->assign('title', 'Add Student');
                 <?= $this->Form->text('student_name', [
                     'id' => 'student-name',
                     'required' => true,
+                    'maxlength' => 100,
                 ]) ?>
             </div>
             <div class="form-group">
@@ -42,6 +43,7 @@ $this->assign('title', 'Add Student');
                 <?= $this->Form->textarea('medical_notes', [
                     'id' => 'medical-notes',
                     'rows' => 4,
+                    'maxlength' => 1000,
                 ]) ?>
             </div>
             <?= $this->Form->button(__('Save Student'), ['class' => 'btn btn-success']) ?>

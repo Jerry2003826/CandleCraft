@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use RuntimeException;
+
 class TeachersController extends AppController
 {
     public function index(): void
@@ -39,31 +41,62 @@ class TeachersController extends AppController
             $data = $this->request->getData();
 
             $userData = [
-                'username' => $data['username'],
-                'email' => $data['email'],
-                'password_hash' => $data['password'],
+                'username' => $data['username'] ?? null,
+                'email' => $data['email'] ?? null,
+                'password_hash' => $data['password'] ?? null,
                 'user_role' => 'teacher',
                 'account_status' => 'active',
             ];
 
             $user = $usersTable->newEntity($userData);
-            if ($usersTable->save($user)) {
-                $teacher = $teachersTable->patchEntity($teacher, [
-                    'user_id' => $user->user_id,
-                    'teacher_name' => $data['teacher_name'],
-                    'phone_number' => $data['phone_number'] ?? null,
-                    'specialization' => $data['specialization'] ?? null,
-                    'teacher_status' => $data['teacher_status'] ?? 'active',
-                    'hire_date' => $data['hire_date'] ?? null,
-                ]);
+            $teacher = $teachersTable->patchEntity($teacher, [
+                'teacher_name' => $data['teacher_name'] ?? null,
+                'phone_number' => $data['phone_number'] ?? null,
+                'specialization' => $data['specialization'] ?? null,
+                'teacher_status' => $data['teacher_status'] ?? 'active',
+                'hire_date' => $data['hire_date'] ?? null,
+            ]);
 
-                if ($teachersTable->save($teacher)) {
-                    $this->Flash->success(__('The teacher has been saved.'));
+            if ($user->hasErrors()) {
+                $this->Flash->error($this->extractFirstValidationError($user->getErrors(), 'The account information is invalid.'));
 
-                    return $this->redirect(['action' => 'index']);
-                }
+                return null;
             }
-            $this->Flash->error(__('The teacher could not be saved. Please try again.'));
+
+            if ($teacher->hasErrors()) {
+                $this->Flash->error($this->extractFirstValidationError($teacher->getErrors(), 'The teacher profile information is invalid.'));
+
+                return null;
+            }
+
+            // Keep user + teacher creation atomic to avoid partial records.
+            $connection = $teachersTable->getConnection();
+            $saved = false;
+            $connection->begin();
+            try {
+                $savedUser = $usersTable->save($user);
+                if (!$savedUser) {
+                    throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'Could not create teacher account.'));
+                }
+
+                $teacher->user_id = $savedUser->user_id;
+                $savedTeacher = $teachersTable->save($teacher);
+                if (!$savedTeacher) {
+                    throw new RuntimeException($this->extractFirstValidationError($teacher->getErrors(), 'Could not save teacher profile.'));
+                }
+
+                $connection->commit();
+                $saved = true;
+            } catch (\Throwable $exception) {
+                $connection->rollback();
+                $this->Flash->error($exception->getMessage());
+            }
+
+            if ($saved) {
+                $this->Flash->success(__('The teacher has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
         }
 
         $this->set(compact('teacher'));
@@ -100,5 +133,22 @@ class TeachersController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function extractFirstValidationError(array $errors, string $fallback): string
+    {
+        foreach ($errors as $fieldErrors) {
+            if (!is_array($fieldErrors)) {
+                continue;
+            }
+
+            foreach ($fieldErrors as $message) {
+                if (is_string($message) && $message !== '') {
+                    return $message;
+                }
+            }
+        }
+
+        return $fallback;
     }
 }
