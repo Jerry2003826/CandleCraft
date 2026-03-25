@@ -37,6 +37,8 @@ Thumbs.db
 #######################
 # Local teammate DB profiles
 scripts/db-profiles.local.json
+# Local Composer cache
+.composer-cache/
 # Python bytecode
 scripts/__pycache__/
 
