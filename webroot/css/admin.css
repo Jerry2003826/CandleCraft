@@ -103,7 +103,7 @@ a:hover {
     border-radius: 12px;
     padding: 48px 40px;
     width: 100%;
-    max-width: 440px;
+    max-width: 960px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
@@ -116,6 +116,66 @@ a:hover {
     margin: 8px 0 0;
     font-size: 22px;
     color: var(--text-dark);
+}
+
+.login-form {
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.portal-entry-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.portal-entry-card {
+    padding: 18px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+}
+
+.portal-entry-card__label {
+    display: inline-block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary-dark);
+}
+
+.portal-entry-card h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+.portal-entry-card p {
+    margin: 0;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.portal-entry-card__hint {
+    display: block;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dark);
+}
+
+.portal-login-note {
+    max-width: 520px;
+    margin: 0 auto 24px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.portal-login-hint {
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 .login-card .logo .icon {
@@ -176,7 +236,8 @@ a:hover {
 .form-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
+    gap: 12px;
     margin-bottom: 16px;
 }
 
@@ -563,6 +624,26 @@ a:hover {
     color: #c62828;
 }
 
+.badge-present {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge-late {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.badge-absent {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge-excused {
+    background: #ede7f6;
+    color: #5e35b1;
+}
+
 /* Pagination */
 .pagination {
     display: flex;
@@ -734,8 +815,145 @@ a:hover {
     line-height: 1.6;
 }
 
+.portal-class-list {
+    display: grid;
+    gap: 18px;
+}
+
+.portal-class-card {
+    padding: 22px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+}
+
+.portal-class-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.portal-class-card__header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.portal-class-card__eyebrow {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.portal-class-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.portal-muted {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.portal-attendance-list {
+    display: grid;
+    gap: 12px;
+}
+
+.portal-attendance-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #e7edf3;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.portal-attendance-card__student {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+}
+
+.portal-attendance-card__student span {
+    color: var(--text-muted);
+}
+
+.attendance-form {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.attendance-form__fields {
+    display: grid;
+    grid-template-columns: minmax(150px, 180px) minmax(240px, 1fr);
+    gap: 12px;
+    flex: 1;
+}
+
+.attendance-form select,
+.attendance-form input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.portal-status-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.portal-status-row__label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+    .login-card {
+        padding: 32px 22px;
+    }
+
+    .portal-entry-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .portal-attendance-card,
+    .portal-class-card__header {
+        flex-direction: column;
+    }
+
+    .attendance-form__fields,
+    .portal-status-row {
+        grid-template-columns: 1fr;
+    }
+
     .sidebar {
         width: 60px;
     }

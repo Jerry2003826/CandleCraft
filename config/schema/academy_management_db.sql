@@ -339,6 +339,8 @@ CREATE TABLE messages (
     receiver_user_id      BIGINT UNSIGNED NULL,
     sender_name           VARCHAR(100) NULL,
     sender_email          VARCHAR(255) NULL,
+    sender_phone          VARCHAR(30) NULL,
+    source_page           VARCHAR(255) NULL,
     subject               VARCHAR(150) NOT NULL,
     message_text          TEXT NOT NULL,
     message_type          ENUM('internal', 'contact_form') NOT NULL DEFAULT 'internal',
@@ -367,6 +369,7 @@ CREATE INDEX idx_messages_receiver_user_id ON messages (receiver_user_id);
 CREATE INDEX idx_messages_message_status ON messages (message_status);
 CREATE INDEX idx_messages_sent_at ON messages (sent_at);
 CREATE INDEX idx_messages_message_type ON messages (message_type);
+CREATE INDEX idx_messages_source_page ON messages (source_page);
 
 CREATE TABLE ai_interactions (
     interaction_id        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -12,6 +12,8 @@ class Message extends Entity
         'receiver_user_id' => true,
         'sender_name' => true,
         'sender_email' => true,
+        'sender_phone' => true,
+        'source_page' => true,
         'subject' => true,
         'message_text' => true,
         'message_type' => true,

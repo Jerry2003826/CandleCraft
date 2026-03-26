@@ -32,6 +32,25 @@ class MessagesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('sender_name')
+            ->maxLength('sender_name', 100)
+            ->allowEmptyString('sender_name');
+
+        $validator
+            ->email('sender_email')
+            ->allowEmptyString('sender_email');
+
+        $validator
+            ->scalar('sender_phone')
+            ->maxLength('sender_phone', 30)
+            ->allowEmptyString('sender_phone');
+
+        $validator
+            ->scalar('source_page')
+            ->maxLength('source_page', 255)
+            ->allowEmptyString('source_page');
+
+        $validator
             ->scalar('subject')
             ->maxLength('subject', 150)
             ->requirePresence('subject', 'create')
@@ -49,6 +68,34 @@ class MessagesTable extends Table
         $validator
             ->inList('message_status', ['unread', 'read', 'replied', 'archived'])
             ->notEmptyString('message_status');
+
+        return $validator;
+    }
+
+    public function validationContactForm(Validator $validator): Validator
+    {
+        $validator = $this->validationDefault($validator);
+
+        $validator
+            ->requirePresence('sender_name', 'create')
+            ->notEmptyString('sender_name');
+
+        $validator
+            ->requirePresence('sender_email', 'create')
+            ->notEmptyString('sender_email');
+
+        $validator
+            ->requirePresence('sender_phone', 'create')
+            ->notEmptyString('sender_phone')
+            ->regex(
+                'sender_phone',
+                '/^[0-9+\-\s()]{6,30}$/',
+                'Please enter a valid phone number.',
+            );
+
+        $validator
+            ->requirePresence('source_page', 'create')
+            ->notEmptyString('source_page');
 
         return $validator;
     }

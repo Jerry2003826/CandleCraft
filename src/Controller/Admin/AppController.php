@@ -16,7 +16,8 @@ class AppController extends BaseAppController
         if (!$identity || $identity->get('user_role') !== 'admin') {
             $this->Flash->error(__('You do not have permission to access the admin area.'));
             $this->Authentication->logout();
-            $this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']);
+            $event->stopPropagation();
+            $this->setResponse($this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']));
 
             return;
         }

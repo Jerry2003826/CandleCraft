@@ -52,6 +52,14 @@ $this->assign('title', 'View Message');
                 <td><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></td>
             </tr>
             <tr>
+                <th>Phone:</th>
+                <td><?= h($message->sender_phone ?: '-') ?></td>
+            </tr>
+            <tr>
+                <th>Source page:</th>
+                <td><?= h($message->source_page ?: '-') ?></td>
+            </tr>
+            <tr>
                 <th>Received:</th>
                 <td><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></td>
             </tr>

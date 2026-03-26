@@ -50,7 +50,8 @@ return function (RouteBuilder $routes): void {
     $routes->setRouteClass(DashedRoute::class);
 
     $routes->scope('/', function (RouteBuilder $builder): void {
-        $builder->connect('/', ['controller' => 'Users', 'action' => 'login']);
+        $builder->connect('/', ['controller' => 'Pages', 'action' => 'home']);
+        $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'contact']);
         $builder->connect('/login', ['controller' => 'Users', 'action' => 'login']);
         $builder->connect('/logout', ['controller' => 'Users', 'action' => 'logout']);
 
@@ -60,6 +61,16 @@ return function (RouteBuilder $routes): void {
     });
 
     $routes->prefix('Admin', function (RouteBuilder $routes): void {
+        $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->fallbacks(DashedRoute::class);
+    });
+
+    $routes->prefix('Teacher', function (RouteBuilder $routes): void {
+        $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->fallbacks(DashedRoute::class);
+    });
+
+    $routes->prefix('Student', function (RouteBuilder $routes): void {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
         $routes->fallbacks(DashedRoute::class);
     });

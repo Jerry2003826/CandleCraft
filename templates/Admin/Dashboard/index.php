@@ -15,18 +15,18 @@ $this->assign('title', 'Dashboard');
         <div class="stat-value"><?= $totalEnquiries ?></div>
     </div>
     <div class="stat-card new-messages">
-        <div class="stat-label">New Messages</div>
+        <div class="stat-label">New Enquiries</div>
         <div class="stat-value"><?= $newMessages ?></div>
     </div>
     <div class="stat-card replied">
-        <div class="stat-label">Replied Messages</div>
+        <div class="stat-label">Replied Enquiries</div>
         <div class="stat-value"><?= $repliedMessages ?></div>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3>Recent Messages</h3>
+        <h3>Recent Enquiries</h3>
         <a href="<?= $this->Url->build(['controller' => 'Messages', 'action' => 'index']) ?>" class="btn btn-sm btn-primary">View All</a>
     </div>
     <table class="data-table">
@@ -34,6 +34,7 @@ $this->assign('title', 'Dashboard');
             <tr>
                 <th>From</th>
                 <th>Enquiry</th>
+                <th>Source</th>
                 <th>Received</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -42,7 +43,7 @@ $this->assign('title', 'Dashboard');
         <tbody>
             <?php if ($recentMessages->isEmpty()): ?>
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 30px; color: #7f8c8d;">No messages yet.</td>
+                    <td colspan="6" style="text-align: center; padding: 30px; color: #7f8c8d;">No messages yet.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($recentMessages as $message): ?>
@@ -55,6 +56,7 @@ $this->assign('title', 'Dashboard');
                             <?php endif; ?>
                         </td>
                         <td><?= h(\Cake\Utility\Text::truncate($message->subject, 40)) ?></td>
+                        <td><?= h($message->source_page ?: '-') ?></td>
                         <td><?= $message->sent_at ? $message->sent_at->format('j M, g:ia') : '-' ?></td>
                         <td>
                             <span class="badge badge-<?= h($message->message_status) ?>">
