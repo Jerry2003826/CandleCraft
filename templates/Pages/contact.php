@@ -19,6 +19,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
     <title>CandleCraft Academy - Contact</title>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['fonts', 'home']) ?>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="site-home site-contact">
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -31,7 +32,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                 </a>
                 <div class="hero-nav__links">
                     <a href="<?= h($homeUrl) ?>#overview">About</a>
-                    <a href="#enquiry">Enquiry</a>
+                    <a href="#enquiry">Enquire</a>
                     <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Portal Login</a>
                 </div>
             </nav>
@@ -138,15 +139,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
-                                    <label for="captcha-answer">CAPTCHA: <?= h($captchaQuestion) ?><span style="color: #f0cf9c;">*</span></label>
-                                    <p id="captcha-help" class="field-help">This quick question helps protect the form from spam.</p>
-                                    <?= $this->Form->text('captcha_answer', [
-                                        'id' => 'captcha-answer',
-                                        'aria-describedby' => 'captcha-help',
-                                        'inputmode' => 'numeric',
-                                        'placeholder' => 'Enter the answer',
-                                        'required' => true,
-                                    ]) ?>
+                                     <div class="g-recaptcha" data-sitekey="6Ld-GZosAAAAAO_CNYc_Ax-DYUAW6AHQg1glDTeM"></div>
                                     <?= $this->Form->error('captcha_answer') ?>
                                 </div>
                             </div>
