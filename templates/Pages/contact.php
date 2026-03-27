@@ -141,6 +141,14 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                 <div class="enquiry-field enquiry-field--full">
                                      <div class="g-recaptcha" data-sitekey="6Ld-GZosAAAAAO_CNYc_Ax-DYUAW6AHQg1glDTeM"></div>
                                     <?= $this->Form->error('captcha_answer') ?>
+                                    <?php if ($enquiry->getError('g-recaptcha-response')): ?>
+                                     <p style="display: inline-block; margin-top: 6px; padding: 6px 12px; 
+                                     background: rgba(138, 48, 44, 0.4); 
+                                     border: 1px solid rgba(225, 110, 103, 0.34); 
+                                     border-radius: 8px; color: #ffd8d4; font-size: 0.85rem;">
+                                    Please complete the CAPTCHA.
+                                    </p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
