@@ -68,11 +68,8 @@ $contactUrl = $this->Url->build([
                         <span></span>
                         <span></span>
                     </div>
-                    <p class="hero-copy__eyebrow">Pottery and knitting</p>
+                    <p class="hero-copy__eyebrow">A Sanctuary For The Creative Soul.</p>
                     <h1 id="landing-title">CandleCraft Academy</h1>
-                    <p class="hero-copy__body">
-                        A Sanctuary For The Creative Soul.
-                    </p>
                     <div class="hero-copy__actions">
                         <a href="<?= h($contactUrl) ?>" class="button button--solid">Enquire Today</a>
                     </div>

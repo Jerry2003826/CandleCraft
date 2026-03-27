@@ -45,7 +45,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                     <div class="enquiry-card" id="enquiry" aria-labelledby="enquiry-title">
                         <div class="enquiry-card__header">
                             <p class="overline">Enquiry</p>
-                            <h3 id="enquiry-title">Send us a secure message.</h3>
+                            <h3 id="enquiry-title">Send us a message.</h3>
                             <p id="enquiry-help">Use the form below and someone from our team will be in touch shortly!</p>
                         </div>
 
@@ -132,13 +132,14 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                     <?= $this->Form->textarea('message_text', [
                                         'id' => 'message-text',
                                         'rows' => 5,
-                                        'placeholder' => 'Lesson type, timing, or booking question.',
+                                        'placeholder' => 'Your message here.',
                                         'required' => true,
                                     ]) ?>
                                     <?= $this->Form->error('message_text') ?>
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
+                                    <label for="message-text">CAPTCHA<span style="color: #f0cf9c;">*</span></label>
                                      <div class="g-recaptcha" data-sitekey="6Ld-GZosAAAAAO_CNYc_Ax-DYUAW6AHQg1glDTeM"></div>
                                     <?= $this->Form->error('captcha_answer') ?>
                                     <?php if ($enquiry->getError('g-recaptcha-response')): ?>
@@ -168,6 +169,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
             <p>CandleCraft Academy</p>
             <a href="<?= h($loginUrl) ?>">Portal Login</a>
         </footer>
+        
     </div>
 </body>
 </html>

@@ -50,10 +50,10 @@ class PagesController extends AppController
         $session = $this->request->getSession();
         $sourcePage = $this->resolveSourcePage();
         $enquirySubjects = [
-            'Pottery lesson booking' => 'Pottery lesson booking',
-            'Knitting lesson booking' => 'Knitting lesson booking',
-            'Trial lesson booking' => 'Trial lesson booking',
-            'General enquiry' => 'General enquiry',
+            'General enquiry' => 'General',
+            'Pottery enquiry' => 'Pottery',
+            'Knitting enquiry' => 'Knitting',
+            'Feedback/Suggestions' => 'Feedback/Suggestions',
         ];
         $enquiry = $messagesTable->newEmptyEntity();
 
@@ -92,7 +92,7 @@ class PagesController extends AppController
 
             if (!$enquiry->getErrors() && $messagesTable->save($enquiry)) {
                 $session->delete('Enquiry');
-                $this->Flash->success(__('Thanks, your enquiry has been sent. Our team will be in touch soon.'));
+                $this->Flash->success(__('Thank you. Your enquiry has been received.'));
 
                 return $this->redirect([
                     'action' => 'contact',
