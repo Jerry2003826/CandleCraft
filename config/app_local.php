@@ -48,7 +48,7 @@ return [
             //'port' => 'non_standard_port_number',
 
             'username' => 'root',
-            'password' => '',
+            'password' => 'root',
 
             'database' => 'academy_management_db',
             /*
