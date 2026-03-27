@@ -27,7 +27,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
             <nav class="hero-nav" aria-label="Primary">
                 <a href="<?= h($homeUrl) ?>" class="brand-mark">
                     <span class="brand-mark__title">CandleCraft Academy</span>
-                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Platform</span>
+                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Tutoring</span>
                 </a>
                 <div class="hero-nav__links">
                     <a href="<?= h($homeUrl) ?>#overview">About</a>
@@ -38,44 +38,14 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
         </header>
 
         <main id="main-content" tabindex="-1">
-            <section class="section section--contact-page" aria-labelledby="contact-page-title">
-                <div class="section-heading section-heading--contact">
-                    <p class="overline">Contact / Enquiry</p>
-                    <h1 class="section-heading__title" id="contact-page-title">Book a lesson.</h1>
-                    <p class="section-heading__text">
-                        A secure enquiry page for pottery and knitting bookings.
-                    </p>
-                </div>
-
+            <section aria-labelledby="contact-page-title" style="padding: 50px 82px;">
+        
                 <div class="contact-shell contact-shell--page">
-                    <div class="contact-copy">
-                        <p class="overline">Tracked source</p>
-                        <h2 id="enquiry-summary">Ask about lessons.</h2>
-                        <p class="contact-copy__body">
-                            Your enquiry is protected, routed to admin, and saved with its source page.
-                        </p>
-
-                        <div class="contact-highlights">
-                            <div class="contact-highlight">
-                                <span>Source page</span>
-                                <strong><?= h($sourcePage) ?></strong>
-                            </div>
-                            <div class="contact-highlight">
-                                <span>Security</span>
-                                <strong>CAPTCHA, server validation, and anti-spam checks.</strong>
-                            </div>
-                            <div class="contact-highlight">
-                                <span>Follow-up</span>
-                                <strong>Admins can review and reply inside the dashboard.</strong>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="enquiry-card" id="enquiry" aria-labelledby="enquiry-title">
                         <div class="enquiry-card__header">
-                            <p class="overline">Lesson enquiry</p>
-                            <h3 id="enquiry-title">Send a secure message.</h3>
-                            <p id="enquiry-help">Share your details and booking question below.</p>
+                            <p class="overline">Enquiry</p>
+                            <h3 id="enquiry-title">Send us a secure message.</h3>
+                            <p id="enquiry-help">Use the form below and someone from our team will be in touch shortly!</p>
                         </div>
 
                         <div class="flash-region" aria-live="polite" aria-atomic="true">
