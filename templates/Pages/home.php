@@ -36,38 +36,7 @@ $contactUrl = $this->Url->build([
             </nav>
 
             <section class="hero-stage" aria-labelledby="landing-title">
-                <div class="hero-stage__grain"></div>
-                <div class="hero-stage__halo hero-stage__halo--left"></div>
-                <div class="hero-stage__halo hero-stage__halo--right"></div>
-
-                <div class="hero-art" aria-hidden="true">
-                    <div class="hero-art__panel hero-art__panel--arch"></div>
-                    <div class="hero-art__panel hero-art__panel--slats"></div>
-                    <div class="hero-art__rings">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <div class="hero-art__arch-outline"></div>
-                    <div class="hero-art__console">
-                        <div class="hero-art__console-top"></div>
-                        <div class="hero-art__console-body"></div>
-                    </div>
-                    <div class="hero-art__vessel hero-art__vessel--left"></div>
-                    <div class="hero-art__vessel hero-art__vessel--center"></div>
-                    <div class="hero-art__vessel hero-art__vessel--right"></div>
-                    <div class="hero-art__botanical"></div>
-                    <div class="hero-art__floor"></div>
-                </div>
-
                 <div class="hero-copy">
-                    <div class="hero-copy__rating" aria-hidden="true">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
                     <p class="hero-copy__eyebrow">A Sanctuary For The Creative Soul.</p>
                     <h1 id="landing-title">CandleCraft Academy</h1>
                     <div class="hero-copy__actions">

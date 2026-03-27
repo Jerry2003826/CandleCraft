@@ -44,7 +44,6 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                 <div class="contact-shell contact-shell--page">
                     <div class="enquiry-card" id="enquiry" aria-labelledby="enquiry-title">
                         <div class="enquiry-card__header">
-                            <p class="overline">Enquiry</p>
                             <h3 id="enquiry-title">Send us a message.</h3>
                             <p id="enquiry-help">Use the form below and someone from our team will be in touch shortly!</p>
                         </div>
@@ -164,12 +163,6 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                 </div>
             </section>
         </main>
-
-        <footer class="home-footer">
-            <p>CandleCraft Academy</p>
-            <a href="<?= h($loginUrl) ?>">Portal Login</a>
-        </footer>
-        
     </div>
 </body>
 </html>
