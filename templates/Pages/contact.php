@@ -33,7 +33,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                 <div class="hero-nav__links">
                     <a href="<?= h($homeUrl) ?>#overview">About</a>
                     <a href="#enquiry">Enquire</a>
-                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Portal Login</a>
+                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>
             </nav>
         </header>
