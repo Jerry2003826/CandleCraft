@@ -52,6 +52,9 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                             <?= $this->Flash->render() ?>
                         </div>
 
+                        <p style="font-size: 0.85rem; color: rgba(245,236,223,0.7); margin-bottom: 8px;">
+                         <span style="color: #f0cf9c;">*</span> Required fields
+                        </p>
                         <?= $this->Form->create($enquiry, [
                             'class' => 'enquiry-form',
                             'url' => [
@@ -75,18 +78,19 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
 
                             <div class="enquiry-form__grid">
                                 <div class="enquiry-field">
-                                    <label for="sender-name">Name</label>
+                                    <label for="sender-name">Name<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->text('sender_name', [
                                         'id' => 'sender-name',
                                         'autocomplete' => 'name',
                                         'placeholder' => 'Your name',
                                         'required' => true,
+                                        'maxlength' => 500,
                                     ]) ?>
                                     <?= $this->Form->error('sender_name') ?>
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="sender-email">Email</label>
+                                    <label for="sender-email">Email<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->email('sender_email', [
                                         'id' => 'sender-email',
                                         'autocomplete' => 'email',
@@ -97,29 +101,33 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="sender-phone">Phone</label>
+                                    <label for="sender-phone">Phone<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->text('sender_phone', [
                                         'id' => 'sender-phone',
                                         'autocomplete' => 'tel',
                                         'inputmode' => 'tel',
                                         'placeholder' => 'Phone number',
                                         'required' => true,
+                                        'maxlength' => 15,
+                                        'pattern' => '[0-9+\s\-()]+',
+                                        'title' => 'Numbers only please',
                                     ]) ?>
                                     <?= $this->Form->error('sender_phone') ?>
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="subject">Enquiry type</label>
+                                    <label for="subject">Enquiry type <span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->select('subject', $enquirySubjects, [
                                         'id' => 'subject',
                                         'empty' => 'Select an enquiry type',
                                         'required' => true,
+                                        'maxlength' => 1000,
                                     ]) ?>
                                     <?= $this->Form->error('subject') ?>
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
-                                    <label for="message-text">Message</label>
+                                    <label for="message-text">Message<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->textarea('message_text', [
                                         'id' => 'message-text',
                                         'rows' => 5,
@@ -130,7 +138,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
-                                    <label for="captcha-answer">CAPTCHA: <?= h($captchaQuestion) ?></label>
+                                    <label for="captcha-answer">CAPTCHA: <?= h($captchaQuestion) ?><span style="color: #f0cf9c;">*</span></label>
                                     <p id="captcha-help" class="field-help">This quick question helps protect the form from spam.</p>
                                     <?= $this->Form->text('captcha_answer', [
                                         'id' => 'captcha-answer',
