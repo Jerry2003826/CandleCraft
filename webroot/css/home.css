@@ -74,8 +74,9 @@ a {
     justify-content: space-between;
     gap: 24px;
     padding: 20px 28px;
-    margin: 0 auto 22px;
-    max-width: 1320px;
+    margin: 0 0 0;
+    max-width: 100%;
+    border-radius: 0;
     background: rgba(6, 5, 4, 0.82);
     border: 1px solid rgba(210, 154, 88, 0.2);
     border-radius: 20px;
@@ -139,12 +140,12 @@ textarea:focus-visible {
 .hero-stage {
     position: relative;
     overflow: hidden;
-    max-width: 1320px;
+    max-width: 100%;
     min-height: calc(100vh - 145px);
     height: calc(100vh - 145px);
     margin: 0 auto;
     border: 1px solid rgba(210, 154, 88, 0.22);
-    border-radius: 36px;
+    border-radius: 0;
     background:
         linear-gradient(180deg, rgba(215, 189, 158, 0.08) 0%, rgba(24, 18, 13, 0.3) 100%),
         linear-gradient(115deg, #3e3025 0%, #6b5644 45%, #433127 100%);
@@ -1379,9 +1380,7 @@ main {
 @media (max-width: 640px) {
     .hero-home,
     main {
-        padding: 10px 22px 10px;
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 0 0 10px;
     }
 
     .hero-nav,
