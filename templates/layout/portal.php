@@ -31,8 +31,9 @@ if ($identity) {
     <?= $this->fetch('script') ?>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="admin-wrapper portal-wrapper">
-        <aside class="sidebar portal-sidebar">
+        <aside class="sidebar portal-sidebar" role="navigation" aria-label="Portal navigation">
             <div class="sidebar-brand">
                 <div class="brand-icon"><?= $portalContext['icon'] ?></div>
                 <h2><?= h($portalContext['title']) ?></h2>
@@ -49,10 +50,11 @@ if ($identity) {
             </nav>
 
             <div class="sidebar-footer">
-                <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Users', 'action' => 'logout']) ?>">
-                    <span class="nav-icon">&#x1F6AA;</span>
-                    <span>Logout</span>
-                </a>
+                <?= $this->Form->postLink(
+                    '<span class="nav-icon">&#x1F6AA;</span><span>Logout</span>',
+                    ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                    ['escape' => false]
+                ) ?>
             </div>
         </aside>
 
@@ -64,8 +66,8 @@ if ($identity) {
                 </div>
             </div>
 
-            <div class="content-area">
-                <?= $this->Flash->render() ?>
+            <div class="content-area" id="main-content" role="main" tabindex="-1">
+                <div aria-live="polite"><?= $this->Flash->render() ?></div>
                 <?= $this->fetch('content') ?>
             </div>
         </div>

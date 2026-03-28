@@ -38,6 +38,8 @@ $appTitle = 'CandleCraft Academy';
         <div class="brand"><?= $appTitle ?></div>
         <div class="nav-links">
             <a href="<?= $this->Url->build('/') ?>">Home</a>
+            <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>">Courses</a>
+            <a href="<?= $this->Url->build(['controller' => 'Pages', 'action' => 'contact']) ?>">Contact</a>
             <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="btn-login">Log In</a>
         </div>
     </nav>

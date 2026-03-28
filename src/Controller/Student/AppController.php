@@ -34,6 +34,30 @@ class AppController extends BaseAppController
                     'url' => ['prefix' => 'Student', 'controller' => 'Dashboard', 'action' => 'index'],
                     'controller' => 'Dashboard',
                 ],
+                [
+                    'label' => 'Browse Courses',
+                    'icon' => '&#x1F3A8;',
+                    'url' => ['prefix' => false, 'controller' => 'Courses', 'action' => 'index'],
+                    'controller' => 'Courses',
+                ],
+                [
+                    'label' => 'My Bookings',
+                    'icon' => '&#x1F4C5;',
+                    'url' => ['prefix' => 'Student', 'controller' => 'Bookings', 'action' => 'index'],
+                    'controller' => 'Bookings',
+                ],
+                [
+                    'label' => 'Learning Center',
+                    'icon' => '&#x1F4C1;',
+                    'url' => ['prefix' => 'Student', 'controller' => 'Resources', 'action' => 'index'],
+                    'controller' => 'Resources',
+                ],
+                [
+                    'label' => 'Notifications',
+                    'icon' => '&#x1F514;',
+                    'url' => ['prefix' => 'Student', 'controller' => 'Notifications', 'action' => 'index'],
+                    'controller' => 'Notifications',
+                ],
             ],
         ]);
     }

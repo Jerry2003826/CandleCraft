@@ -95,6 +95,14 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
             ->add(new CsrfProtectionMiddleware([
                 'httponly' => true,
+                'skipCheckCallback' => function ($request) {
+                    $path = $request->getPath();
+                    if ($path === '/student/payments/webhook') {
+                        return true;
+                    }
+
+                    return false;
+                },
             ]))
 
             ->add(new AuthenticationMiddleware($this));

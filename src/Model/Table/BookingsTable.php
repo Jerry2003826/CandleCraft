@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\Rule\ExistsIn;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -31,7 +32,7 @@ class BookingsTable extends Table
         $this->belongsTo('Parents', [
             'foreignKey' => 'parent_id',
             'bindingKey' => 'parent_id',
-            'joinType' => 'INNER',
+            'joinType' => 'LEFT',
         ]);
 
         $this->hasMany('Payments', [
@@ -52,8 +53,7 @@ class BookingsTable extends Table
             ->notEmptyString('class_id');
 
         $validator
-            ->requirePresence('parent_id', 'create')
-            ->notEmptyString('parent_id');
+            ->allowEmptyString('parent_id');
 
         $validator
             ->requirePresence('student_id', 'create')
@@ -75,7 +75,7 @@ class BookingsTable extends Table
     {
         $rules->add($rules->existsIn('class_id', 'Classes'), ['errorField' => 'class_id']);
         $rules->add($rules->existsIn('student_id', 'Students'), ['errorField' => 'student_id']);
-        $rules->add($rules->existsIn('parent_id', 'Parents'), ['errorField' => 'parent_id']);
+        $rules->add(new ExistsIn('parent_id', 'Parents', ['allowNullableNulls' => true]), ['errorField' => 'parent_id']);
 
         return $rules;
     }

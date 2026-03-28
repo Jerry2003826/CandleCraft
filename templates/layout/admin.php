@@ -25,8 +25,9 @@ if ($identity) {
     <?= $this->fetch('script') ?>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="admin-wrapper">
-        <aside class="sidebar">
+        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
             <div class="sidebar-brand">
                 <div class="brand-icon">&#x1F3A8;</div>
                 <h2>CandleCraft Academy</h2>
@@ -53,18 +54,34 @@ if ($identity) {
                     <span class="nav-icon">&#x1F4D6;</span>
                     <span>Classes</span>
                 </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>"
+                   class="<?= $controller === 'Attendance' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#x1F4CB;</span>
+                    <span>Attendance</span>
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Resources', 'action' => 'index']) ?>"
+                   class="<?= $controller === 'Resources' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#x1F4DA;</span>
+                    <span>Resources</span>
+                </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index']) ?>"
                    class="<?= $controller === 'Messages' ? 'active' : '' ?>">
                     <span class="nav-icon">&#x2709;</span>
                     <span>Messages</span>
                 </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'AiAssistant', 'action' => 'index']) ?>"
+                   class="<?= $controller === 'AiAssistant' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#x1F916;</span>
+                    <span>AI Assistant</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
-                <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Users', 'action' => 'logout']) ?>">
-                    <span class="nav-icon">&#x1F6AA;</span>
-                    <span>Logout</span>
-                </a>
+                <?= $this->Form->postLink(
+                    '<span class="nav-icon">&#x1F6AA;</span><span>Logout</span>',
+                    ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                    ['escape' => false]
+                ) ?>
             </div>
         </aside>
 
@@ -76,8 +93,8 @@ if ($identity) {
                 </div>
             </div>
 
-            <div class="content-area">
-                <?= $this->Flash->render() ?>
+            <div class="content-area" id="main-content" role="main" tabindex="-1">
+                <div aria-live="polite"><?= $this->Flash->render() ?></div>
                 <?= $this->fetch('content') ?>
             </div>
         </div>

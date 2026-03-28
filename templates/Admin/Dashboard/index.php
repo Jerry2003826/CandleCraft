@@ -4,10 +4,33 @@
  * @var int $totalEnquiries
  * @var int $newMessages
  * @var int $repliedMessages
+ * @var int $totalStudents
+ * @var int $totalTeachers
+ * @var int $totalClasses
+ * @var int $totalBookings
  * @var \Cake\ORM\ResultSet $recentMessages
  */
 $this->assign('title', 'Dashboard');
 ?>
+
+<div class="stats-row">
+    <div class="stat-card enquiries">
+        <div class="stat-label">Active Students</div>
+        <div class="stat-value"><?= $totalStudents ?></div>
+    </div>
+    <div class="stat-card new-messages">
+        <div class="stat-label">Active Teachers</div>
+        <div class="stat-value"><?= $totalTeachers ?></div>
+    </div>
+    <div class="stat-card replied">
+        <div class="stat-label">Upcoming Classes</div>
+        <div class="stat-value"><?= $totalClasses ?></div>
+    </div>
+    <div class="stat-card enquiries">
+        <div class="stat-label">Active Bookings</div>
+        <div class="stat-value"><?= $totalBookings ?></div>
+    </div>
+</div>
 
 <div class="stats-row">
     <div class="stat-card enquiries">

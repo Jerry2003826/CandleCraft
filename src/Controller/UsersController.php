@@ -16,6 +16,11 @@ class UsersController extends AppController
     public function login(): ?Response
     {
         $this->viewBuilder()->setLayout('login');
+        // Prevent browsers/proxies from serving stale auth pages.
+        $this->response = $this->response
+            ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->withHeader('Pragma', 'no-cache')
+            ->withHeader('Expires', '0');
 
         $result = $this->Authentication->getResult();
 
@@ -49,6 +54,7 @@ class UsersController extends AppController
 
     public function logout(): ?Response
     {
+        $this->request->allowMethod(['post']);
         $this->Authentication->logout();
         $this->Flash->success(__('You have been logged out.'));
 

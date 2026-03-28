@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use Cake\ORM\TableRegistry;
-
 class DashboardController extends AppController
 {
     public function index(): void
@@ -16,6 +14,11 @@ class DashboardController extends AppController
         $newMessages = $messagesTable->find()->where($enquiryConditions + ['Messages.message_status' => 'unread'])->count();
         $repliedMessages = $messagesTable->find()->where($enquiryConditions + ['Messages.message_status' => 'replied'])->count();
 
+        $totalStudents = $this->fetchTable('Students')->find()->where(['Students.student_status' => 'active'])->count();
+        $totalTeachers = $this->fetchTable('Teachers')->find()->where(['Teachers.teacher_status' => 'active'])->count();
+        $totalClasses = $this->fetchTable('Classes')->find()->where(['Classes.class_status IN' => ['scheduled', 'ongoing']])->count();
+        $totalBookings = $this->fetchTable('Bookings')->find()->where(['Bookings.booking_status IN' => ['pending', 'confirmed']])->count();
+
         $recentMessages = $messagesTable->find()
             ->contain(['SenderUsers'])
             ->where($enquiryConditions)
@@ -23,6 +26,10 @@ class DashboardController extends AppController
             ->limit(10)
             ->all();
 
-        $this->set(compact('totalEnquiries', 'newMessages', 'repliedMessages', 'recentMessages'));
+        $this->set(compact(
+            'totalEnquiries', 'newMessages', 'repliedMessages',
+            'totalStudents', 'totalTeachers', 'totalClasses', 'totalBookings',
+            'recentMessages'
+        ));
     }
 }
