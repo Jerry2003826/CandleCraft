@@ -104,5 +104,7 @@ class AvailabilityController extends AppController
 
         $this->set(compact('daysMap', 'existingSlots'));
         $this->set('title', 'Edit Schedule');
+
+        return null;
     }
 }

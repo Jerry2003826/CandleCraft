@@ -41,6 +41,12 @@ class AppController extends BaseAppController
                     'controller' => 'Attendance',
                 ],
                 [
+                    'label' => 'Resources',
+                    'icon' => '&#x1F4DA;',
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Resources', 'action' => 'index'],
+                    'controller' => 'Resources',
+                ],
+                [
                     'label' => 'My Schedule',
                     'icon' => '&#x1F4C1;',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],

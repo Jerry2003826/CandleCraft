@@ -3,22 +3,22 @@
    ======================================== */
 
 :root {
-    --sidebar-bg: #2c3e50;
-    --sidebar-hover: #34495e;
-    --sidebar-active: #1a252f;
-    --sidebar-text: #ecf0f1;
+    --sidebar-bg: #2f2219;
+    --sidebar-hover: #4f3726;
+    --sidebar-active: #1a120c;
+    --sidebar-text: #f5ecdf;
     --sidebar-width: 220px;
-    --primary: #3498db;
-    --primary-dark: #2980b9;
+    --primary: #c0873a;
+    --primary-dark: #a06e2a;
     --success: #27ae60;
     --warning: #f39c12;
     --danger: #e74c3c;
     --info: #2ecc71;
-    --light-bg: #f5f6fa;
+    --light-bg: #faf6f1;
     --card-bg: #ffffff;
-    --text-dark: #2c3e50;
-    --text-muted: #7f8c8d;
-    --border-color: #dcdde1;
+    --text-dark: #2d190e;
+    --text-muted: #8a7565;
+    --border-color: #e3d5c5;
 }
 
 * {
@@ -83,15 +83,16 @@ a:hover {
 }
 
 .login-nav .nav-links a.btn-login {
-    background: var(--primary);
-    color: #fff;
+    background: linear-gradient(135deg, #f0cf9c 0%, #d29a58 100%);
+    color: #2d190e;
     padding: 6px 18px;
     border-radius: 4px;
+    font-weight: 600;
 }
 
 .login-hero {
     flex: 1;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4f3726 0%, #2f2219 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,7 +135,7 @@ a:hover {
     padding: 18px;
     border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+    background: linear-gradient(180deg, #fdf8f2 0%, #f5ece0 100%);
 }
 
 .portal-entry-card__label {
@@ -311,7 +312,7 @@ a:hover {
 }
 
 .login-footer {
-    background: #ecf0f1;
+    background: #f0e8dd;
     padding: 30px;
     text-align: center;
     font-size: 13px;
@@ -456,7 +457,7 @@ a:hover {
     background: var(--card-bg);
     border-radius: 10px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(45, 25, 14, 0.06);
     text-align: center;
     border-top: 4px solid var(--primary);
 }
@@ -493,7 +494,7 @@ a:hover {
 .card {
     background: var(--card-bg);
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(45, 25, 14, 0.06);
     margin-bottom: 24px;
     overflow: hidden;
 }
@@ -541,7 +542,7 @@ a:hover {
 }
 
 .data-table tr:hover {
-    background: #fafbfc;
+    background: #fdf8f2;
 }
 
 .data-table .actions {
@@ -824,7 +825,7 @@ a:hover {
     padding: 22px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    background: linear-gradient(180deg, #fcfdff 0%, #f7f9fc 100%);
+    background: linear-gradient(180deg, #fffcf8 0%, #f9f3eb 100%);
 }
 
 .portal-class-card__header {

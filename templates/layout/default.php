@@ -40,7 +40,23 @@ $appTitle = 'CandleCraft Academy';
             <a href="<?= $this->Url->build('/') ?>">Home</a>
             <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>">Courses</a>
             <a href="<?= $this->Url->build(['controller' => 'Pages', 'action' => 'contact']) ?>">Contact</a>
-            <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="btn-login">Log In</a>
+            <?php
+            $identity = $this->request->getAttribute('identity');
+            if ($identity):
+                $role = $identity->get('user_role');
+                $portalPrefix = match ($role) {
+                    'admin' => 'Admin',
+                    'teacher' => 'Teacher',
+                    'student' => 'Student',
+                    default => null,
+                };
+            ?>
+                <?php if ($portalPrefix): ?>
+                    <a href="<?= $this->Url->build(['prefix' => $portalPrefix, 'controller' => 'Dashboard', 'action' => 'index']) ?>" class="btn-login">My Portal</a>
+                <?php endif; ?>
+            <?php else: ?>
+                <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="btn-login">Log In</a>
+            <?php endif; ?>
         </div>
     </nav>
     <main style="max-width: 1100px; margin: 30px auto; padding: 0 20px;">
