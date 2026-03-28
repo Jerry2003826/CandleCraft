@@ -19,6 +19,7 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
     <title>CandleCraft Academy - Contact</title>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['fonts', 'home']) ?>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="site-home site-contact">
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -27,61 +28,33 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
             <nav class="hero-nav" aria-label="Primary">
                 <a href="<?= h($homeUrl) ?>" class="brand-mark">
                     <span class="brand-mark__title">CandleCraft Academy</span>
-                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Platform</span>
+                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Tutoring</span>
                 </a>
                 <div class="hero-nav__links">
                     <a href="<?= h($homeUrl) ?>#overview">About</a>
-                    <a href="#enquiry">Enquiry</a>
-                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Portal Login</a>
+                    <a href="#enquiry">Enquire</a>
+                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>
             </nav>
         </header>
 
         <main id="main-content" tabindex="-1">
-            <section class="section section--contact-page" aria-labelledby="contact-page-title">
-                <div class="section-heading section-heading--contact">
-                    <p class="overline">Contact / Enquiry</p>
-                    <h1 class="section-heading__title" id="contact-page-title">Book a lesson.</h1>
-                    <p class="section-heading__text">
-                        A secure enquiry page for pottery and knitting bookings.
-                    </p>
-                </div>
-
+            <section aria-labelledby="contact-page-title" style="padding: 50px 82px;">
+        
                 <div class="contact-shell contact-shell--page">
-                    <div class="contact-copy">
-                        <p class="overline">Tracked source</p>
-                        <h2 id="enquiry-summary">Ask about lessons.</h2>
-                        <p class="contact-copy__body">
-                            Your enquiry is protected, routed to admin, and saved with its source page.
-                        </p>
-
-                        <div class="contact-highlights">
-                            <div class="contact-highlight">
-                                <span>Source page</span>
-                                <strong><?= h($sourcePage) ?></strong>
-                            </div>
-                            <div class="contact-highlight">
-                                <span>Security</span>
-                                <strong>CAPTCHA, server validation, and anti-spam checks.</strong>
-                            </div>
-                            <div class="contact-highlight">
-                                <span>Follow-up</span>
-                                <strong>Admins can review and reply inside the dashboard.</strong>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="enquiry-card" id="enquiry" aria-labelledby="enquiry-title">
                         <div class="enquiry-card__header">
-                            <p class="overline">Lesson enquiry</p>
-                            <h3 id="enquiry-title">Send a secure message.</h3>
-                            <p id="enquiry-help">Share your details and booking question below.</p>
+                            <h3 id="enquiry-title">Send us a message.</h3>
+                            <p id="enquiry-help">Use the form below and someone from our team will be in touch shortly!</p>
                         </div>
 
                         <div class="flash-region" aria-live="polite" aria-atomic="true">
                             <?= $this->Flash->render() ?>
                         </div>
 
+                        <p style="font-size: 0.85rem; color: rgba(245,236,223,0.7); margin-bottom: 8px;">
+                         <span style="color: #f0cf9c;">*</span> Required fields
+                        </p>
                         <?= $this->Form->create($enquiry, [
                             'class' => 'enquiry-form',
                             'url' => [
@@ -105,18 +78,19 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
 
                             <div class="enquiry-form__grid">
                                 <div class="enquiry-field">
-                                    <label for="sender-name">Name</label>
+                                    <label for="sender-name">Name<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->text('sender_name', [
                                         'id' => 'sender-name',
                                         'autocomplete' => 'name',
                                         'placeholder' => 'Your name',
                                         'required' => true,
+                                        'maxlength' => 500,
                                     ]) ?>
                                     <?= $this->Form->error('sender_name') ?>
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="sender-email">Email</label>
+                                    <label for="sender-email">Email<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->email('sender_email', [
                                         'id' => 'sender-email',
                                         'autocomplete' => 'email',
@@ -127,49 +101,54 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="sender-phone">Phone</label>
+                                    <label for="sender-phone">Phone<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->text('sender_phone', [
                                         'id' => 'sender-phone',
                                         'autocomplete' => 'tel',
                                         'inputmode' => 'tel',
                                         'placeholder' => 'Phone number',
                                         'required' => true,
+                                        'maxlength' => 15,
+                                        'pattern' => '[0-9+\s\-()]+',
+                                        'title' => 'Numbers only please',
                                     ]) ?>
                                     <?= $this->Form->error('sender_phone') ?>
                                 </div>
 
                                 <div class="enquiry-field">
-                                    <label for="subject">Enquiry type</label>
+                                    <label for="subject">Enquiry type <span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->select('subject', $enquirySubjects, [
                                         'id' => 'subject',
                                         'empty' => 'Select an enquiry type',
                                         'required' => true,
+                                        'maxlength' => 1000,
                                     ]) ?>
                                     <?= $this->Form->error('subject') ?>
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
-                                    <label for="message-text">Message</label>
+                                    <label for="message-text">Message<span style="color: #f0cf9c;">*</span></label>
                                     <?= $this->Form->textarea('message_text', [
                                         'id' => 'message-text',
                                         'rows' => 5,
-                                        'placeholder' => 'Lesson type, timing, or booking question.',
+                                        'placeholder' => 'Your message here.',
                                         'required' => true,
                                     ]) ?>
                                     <?= $this->Form->error('message_text') ?>
                                 </div>
 
                                 <div class="enquiry-field enquiry-field--full">
-                                    <label for="captcha-answer">CAPTCHA: <?= h($captchaQuestion) ?></label>
-                                    <p id="captcha-help" class="field-help">This quick question helps protect the form from spam.</p>
-                                    <?= $this->Form->text('captcha_answer', [
-                                        'id' => 'captcha-answer',
-                                        'aria-describedby' => 'captcha-help',
-                                        'inputmode' => 'numeric',
-                                        'placeholder' => 'Enter the answer',
-                                        'required' => true,
-                                    ]) ?>
+                                    <label for="message-text">CAPTCHA<span style="color: #f0cf9c;">*</span></label>
+                                     <div class="g-recaptcha" data-sitekey="6Ld-GZosAAAAAO_CNYc_Ax-DYUAW6AHQg1glDTeM"></div>
                                     <?= $this->Form->error('captcha_answer') ?>
+                                    <?php if ($enquiry->getError('g-recaptcha-response')): ?>
+                                     <p style="display: inline-block; margin-top: 6px; padding: 6px 12px; 
+                                     background: rgba(138, 48, 44, 0.4); 
+                                     border: 1px solid rgba(225, 110, 103, 0.34); 
+                                     border-radius: 8px; color: #ffd8d4; font-size: 0.85rem;">
+                                    Please complete the CAPTCHA.
+                                    </p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -184,11 +163,6 @@ $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
                 </div>
             </section>
         </main>
-
-        <footer class="home-footer">
-            <p>CandleCraft Academy</p>
-            <a href="<?= h($loginUrl) ?>">Portal Login</a>
-        </footer>
     </div>
 </body>
 </html>

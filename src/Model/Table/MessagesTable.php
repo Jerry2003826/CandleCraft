@@ -33,22 +33,22 @@ class MessagesTable extends Table
     {
         $validator
             ->scalar('sender_name')
-            ->maxLength('sender_name', 100)
-            ->allowEmptyString('sender_name');
+            ->maxLength('sender_name', 500, 'Name cannot exceed 500 characters.')
+            ->notEmptyString('sender_name');
 
         $validator
             ->email('sender_email')
-            ->allowEmptyString('sender_email');
+            ->notEmptyString('sender_email');
 
         $validator
             ->scalar('sender_phone')
-            ->maxLength('sender_phone', 30)
-            ->allowEmptyString('sender_phone');
+            ->maxLength('sender_phone', 15, 'Phone number cannot exceed 15 digits.')
+            ->notEmptyString('sender_phone');
 
         $validator
             ->scalar('source_page')
             ->maxLength('source_page', 255)
-            ->allowEmptyString('source_page');
+            ->notEmptyString('source_page');
 
         $validator
             ->scalar('subject')
@@ -58,6 +58,7 @@ class MessagesTable extends Table
 
         $validator
             ->scalar('message_text')
+            ->maxLength('message_text', 1000, 'Message cannot exceed 1000 characters.')
             ->requirePresence('message_text', 'create')
             ->notEmptyString('message_text');
 
@@ -89,7 +90,7 @@ class MessagesTable extends Table
             ->notEmptyString('sender_phone')
             ->regex(
                 'sender_phone',
-                '/^[0-9+\-\s()]{6,30}$/',
+                '/^[0-9+\-\s()]{6,15}$/',
                 'Please enter a valid phone number.',
             );
 

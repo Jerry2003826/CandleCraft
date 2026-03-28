@@ -50,10 +50,10 @@ class PagesController extends AppController
         $session = $this->request->getSession();
         $sourcePage = $this->resolveSourcePage();
         $enquirySubjects = [
-            'Pottery lesson booking' => 'Pottery lesson booking',
-            'Knitting lesson booking' => 'Knitting lesson booking',
-            'Trial lesson booking' => 'Trial lesson booking',
-            'General enquiry' => 'General enquiry',
+            'General enquiry' => 'General',
+            'Pottery enquiry' => 'Pottery',
+            'Knitting enquiry' => 'Knitting',
+            'Feedback/Suggestions' => 'Feedback/Suggestions',
         ];
         $enquiry = $messagesTable->newEmptyEntity();
 
@@ -82,15 +82,17 @@ class PagesController extends AppController
                 ]);
             }
 
-            $expectedCaptcha = (string)$session->read('Enquiry.captchaAnswer');
-            $submittedCaptcha = trim((string)$this->request->getData('captcha_answer'));
-            if ($expectedCaptcha === '' || $submittedCaptcha !== $expectedCaptcha) {
-                $enquiry->setError('captcha_answer', ['Please solve the CAPTCHA question correctly.']);
+           $recaptchaResponse = $this->request->getData('g-recaptcha-response');
+            $secretKey = '6Ld-GZosAAAAAKJt-HlWj0eXlDG8EROq_R3cbQ1b';
+            $verify = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $recaptchaResponse);
+            $captchaSuccess = json_decode($verify);
+            if (!$captchaSuccess->success) {
+            $enquiry->setError('g-recaptcha-response', ['Please complete the CAPTCHA.']);
             }
 
             if (!$enquiry->getErrors() && $messagesTable->save($enquiry)) {
                 $session->delete('Enquiry');
-                $this->Flash->success(__('Thanks, your enquiry has been sent. Our team will be in touch soon.'));
+                $this->Flash->success(__('Thank you. Your enquiry has been received.'));
 
                 return $this->redirect([
                     'action' => 'contact',
@@ -102,11 +104,7 @@ class PagesController extends AppController
             $this->Flash->error(__('Please review the form and try again.'));
         }
 
-        $challenge = $this->buildCaptchaChallenge();
-        $session->write('Enquiry.captchaAnswer', (string)$challenge['answer']);
-
         $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage'));
-        $this->set('captchaQuestion', $challenge['question']);
 
         return null;
     }
