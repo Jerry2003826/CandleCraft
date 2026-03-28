@@ -19,6 +19,8 @@
     --text-dark: #2d190e;
     --text-muted: #8a7565;
     --border-color: #e3d5c5;
+    --font-grown: 'Grown', serif;
+
 }
 
 * {
@@ -28,7 +30,7 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-grown);
     background: var(--light-bg);
     color: var(--text-dark);
     font-size: 14px;
@@ -86,7 +88,6 @@ a:hover {
     background: linear-gradient(135deg, #f0cf9c 0%, #d29a58 100%);
     color: #2d190e;
     padding: 6px 18px;
-    border-radius: 4px;
     font-weight: 600;
 }
 
