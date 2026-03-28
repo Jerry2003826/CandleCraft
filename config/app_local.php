@@ -94,23 +94,4 @@ return [
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
-
-    /*
-     * Stripe payment gateway configuration.
-     * Set your API keys via environment variables for security.
-     */
-    'Stripe' => [
-        'secret_key' => env('STRIPE_SECRET_KEY', ''),
-        'public_key' => env('STRIPE_PUBLIC_KEY', ''),
-        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', ''),
-    ],
-
-    /*
-     * Deepseek AI configuration (OpenAI-compatible API).
-     * Set your API key via environment variables for security.
-     */
-    'Deepseek' => [
-        'api_key' => env('DEEPSEEK_API_KEY', ''),
-        'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com/v1'),
-    ],
 ];

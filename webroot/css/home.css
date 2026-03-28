@@ -784,10 +784,10 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18px;
+    gap: 0px;
     max-width: 1320px;
     margin: 0 auto;
-    padding: 0 24px 40px;
+    padding: 0 24px 20px;
     color: rgba(245, 236, 223, 0.64);
     font-size: 0.84rem;
     letter-spacing: 0.12em;
