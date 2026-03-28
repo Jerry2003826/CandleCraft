@@ -83,7 +83,11 @@ class PaymentsController extends AppController
             ])
             ->first();
 
-        if ($existingPayment && $existingPayment->payment_status === 'paid') {
+        if (
+            $existingPayment &&
+            $existingPayment->payment_status === 'paid' &&
+            in_array($booking->booking_status, ['confirmed', 'completed'], true)
+        ) {
             $this->Flash->info(__('Payment already completed for this booking.'));
 
             return $this->redirect(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index']);

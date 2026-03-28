@@ -32,13 +32,14 @@ $this->assign('title', 'Payments');
             <tbody>
                 <?php foreach ($bookings as $booking): ?>
                     <?php
-                    $isPaid = false;
+                    $hasPaidRecord = false;
                     foreach ($booking->payments ?? [] as $payment) {
                         if ($payment->payment_status === 'paid') {
-                            $isPaid = true;
+                            $hasPaidRecord = true;
                             break;
                         }
                     }
+                    $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
                     ?>
                     <tr>
                         <td><?= h($booking->student?->student_name ?? '-') ?></td>

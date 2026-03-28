@@ -77,6 +77,13 @@ class BookingsController extends AppController
             return $this->redirect(['action' => 'index']);
         }
 
+        $existingAnyStatusBooking = $bookingsTable->find()
+            ->where([
+                'Bookings.student_id' => $student->student_id,
+                'Bookings.class_id' => $classId,
+            ])
+            ->first();
+
         $parentStudents = $this->fetchTable('ParentStudents')->find()
             ->where(['ParentStudents.student_id' => $student->student_id])
             ->all();
@@ -87,6 +94,30 @@ class BookingsController extends AppController
         }
 
         if ($this->request->is('post')) {
+            if ($existingAnyStatusBooking) {
+                if ($existingAnyStatusBooking->booking_status === 'cancelled') {
+                    $existingAnyStatusBooking->booking_status = 'pending';
+                    $existingAnyStatusBooking->parent_id = $parentId ?? $this->request->getData('parent_id');
+                    $existingAnyStatusBooking->price_at_booking = $class->course?->course_price ?? 0;
+                    $existingAnyStatusBooking->booking_date = new \Cake\I18n\DateTime();
+
+                    if ($bookingsTable->save($existingAnyStatusBooking)) {
+                        $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+
+                        return $this->redirect([
+                            'prefix' => 'Student',
+                            'controller' => 'Payments',
+                            'action' => 'process',
+                            $existingAnyStatusBooking->booking_id,
+                        ]);
+                    }
+                }
+
+                $this->Flash->error(__('A booking record for this class already exists and cannot be duplicated.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+
             $bookingData = [
                 'class_id' => $classId,
                 'student_id' => $student->student_id,

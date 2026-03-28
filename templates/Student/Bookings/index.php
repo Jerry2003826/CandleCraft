@@ -70,15 +70,16 @@ $this->assign('title', 'My Bookings');
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <?php
-                            $isPaid = false;
+                            $hasPaidRecord = false;
                             if (!empty($booking->payments)) {
                                 foreach ($booking->payments as $p) {
                                     if ($p->payment_status === 'paid') {
-                                        $isPaid = true;
+                                        $hasPaidRecord = true;
                                         break;
                                     }
                                 }
                             }
+                            $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
                             ?>
                             <?php if ($booking->booking_status === 'pending' && !$isPaid && empty($booking->parent_id)): ?>
                                 <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>"

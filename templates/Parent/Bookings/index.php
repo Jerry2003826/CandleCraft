@@ -49,12 +49,13 @@ $this->assign('title', 'Family Bookings');
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <?php
-                            $hasPaid = false;
+                            $hasPaidRecord = false;
                             foreach ($booking->payments ?? [] as $payment) {
                                 if ($payment->payment_status === 'paid') {
-                                    $hasPaid = true;
+                                    $hasPaidRecord = true;
                                 }
                             }
+                            $hasPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
                             ?>
                             <?php if ($booking->booking_status === 'pending' && !$hasPaid): ?>
                                 <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>" class="btn btn-sm btn-primary">Pay Now</a>

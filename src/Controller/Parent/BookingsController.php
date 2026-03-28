@@ -110,6 +110,37 @@ class BookingsController extends AppController
                 if ($existingBooking) {
                     $this->Flash->error(__('This child is already booked for this class.'));
                 } else {
+                    $existingAnyStatusBooking = $bookingsTable->find()
+                        ->where([
+                            'Bookings.student_id' => $selectedStudentId,
+                            'Bookings.class_id' => $classId,
+                        ])
+                        ->first();
+
+                    if ($existingAnyStatusBooking) {
+                        if ($existingAnyStatusBooking->booking_status === 'cancelled') {
+                            $existingAnyStatusBooking->booking_status = 'pending';
+                            $existingAnyStatusBooking->parent_id = $parent->parent_id;
+                            $existingAnyStatusBooking->price_at_booking = $class->course?->course_price ?? 0;
+                            $existingAnyStatusBooking->booking_date = new \Cake\I18n\DateTime();
+
+                            if ($bookingsTable->save($existingAnyStatusBooking)) {
+                                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+
+                                return $this->redirect([
+                                    'prefix' => 'Parent',
+                                    'controller' => 'Payments',
+                                    'action' => 'process',
+                                    $existingAnyStatusBooking->booking_id,
+                                ]);
+                            }
+                        }
+
+                        $this->Flash->error(__('A booking record for this class already exists and cannot be duplicated.'));
+
+                        return $this->redirect(['action' => 'index']);
+                    }
+
                     $booking = $bookingsTable->newEntity([
                         'class_id' => $classId,
                         'student_id' => $selectedStudentId,

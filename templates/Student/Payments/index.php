@@ -29,14 +29,15 @@ $this->assign('title', 'Payments');
             <tbody>
                 <?php foreach ($bookings as $booking): ?>
                     <?php
-                    $isPaid = false;
+                    $hasPaidRecord = false;
                     $needsParentAuth = !empty($booking->parent_id);
                     foreach ($booking->payments ?? [] as $payment) {
                         if ($payment->payment_status === 'paid') {
-                            $isPaid = true;
+                            $hasPaidRecord = true;
                             break;
                         }
                     }
+                    $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
                     ?>
                     <tr>
                         <td><?= h($booking->class_entity?->course?->course_name ?? '-') ?></td>
