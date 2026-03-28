@@ -80,9 +80,11 @@ $this->assign('title', 'My Bookings');
                                 }
                             }
                             ?>
-                            <?php if ($booking->booking_status === 'pending' && !$isPaid): ?>
+                            <?php if ($booking->booking_status === 'pending' && !$isPaid && empty($booking->parent_id)): ?>
                                 <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>"
                                    class="btn btn-sm btn-primary">Pay Now</a>
+                            <?php elseif ($booking->booking_status === 'pending' && !$isPaid && !empty($booking->parent_id)): ?>
+                                <span class="badge badge-pending">Parent Authorization Required</span>
                             <?php endif; ?>
                             <?php if (in_array($booking->booking_status, ['pending', 'confirmed'])): ?>
                                 <?= $this->Form->postLink(

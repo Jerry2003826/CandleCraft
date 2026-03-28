@@ -47,6 +47,12 @@ class AppController extends BaseAppController
                     'controller' => 'Bookings',
                 ],
                 [
+                    'label' => 'Payments',
+                    'icon' => '&#x1F4B3;',
+                    'url' => ['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'index'],
+                    'controller' => 'Payments',
+                ],
+                [
                     'label' => 'Learning Center',
                     'icon' => '&#x1F4C1;',
                     'url' => ['prefix' => 'Student', 'controller' => 'Resources', 'action' => 'index'],

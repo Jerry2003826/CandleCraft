@@ -48,6 +48,7 @@ $appTitle = 'CandleCraft Academy';
                     'admin' => 'Admin',
                     'teacher' => 'Teacher',
                     'student' => 'Student',
+                    'parent' => 'Parent',
                     default => null,
                 };
             ?>

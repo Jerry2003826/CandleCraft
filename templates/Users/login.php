@@ -17,6 +17,12 @@ $portalCards = [
         'email' => 'emma.clay@candlecraft.com',
     ],
     [
+        'label' => 'Parent Portal',
+        'title' => 'Manage family bookings',
+        'description' => 'Book classes for your children and complete payments in one place.',
+        'email' => 'parent@candlecraft.com',
+    ],
+    [
         'label' => 'Admin Portal',
         'title' => 'Manage operations',
         'description' => 'Oversee bookings, classes, enquiries, and academy records.',
@@ -35,7 +41,7 @@ $portalCards = [
     <?php endforeach; ?>
 </div>
 
-<p class="portal-login-note">Unified login for students, teachers, and administrators.</p>
+<p class="portal-login-note">Unified login for students, teachers, parents, and administrators.</p>
 
 <?= $this->Form->create(null, [
     'class' => 'login-form',

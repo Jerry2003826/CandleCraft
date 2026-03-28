@@ -74,6 +74,11 @@ return function (RouteBuilder $routes): void {
         $routes->fallbacks(DashedRoute::class);
     });
 
+    $routes->prefix('Parent', function (RouteBuilder $routes): void {
+        $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->fallbacks(DashedRoute::class);
+    });
+
     $routes->prefix('Student', function (RouteBuilder $routes): void {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
         $routes->fallbacks(DashedRoute::class);

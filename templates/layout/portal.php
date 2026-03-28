@@ -41,8 +41,14 @@ if ($identity) {
 
             <nav class="sidebar-nav">
                 <?php foreach ($portalContext['nav'] as $item): ?>
+                    <?php
+                    $isActive = $controller === $item['controller'];
+                    if ($isActive && isset($item['action'])) {
+                        $isActive = $this->request->getParam('action') === $item['action'];
+                    }
+                    ?>
                     <a href="<?= $this->Url->build($item['url']) ?>"
-                       class="<?= $controller === $item['controller'] ? 'active' : '' ?>">
+                       class="<?= $isActive ? 'active' : '' ?>">
                         <span class="nav-icon"><?= $item['icon'] ?></span>
                         <span><?= h($item['label']) ?></span>
                     </a>

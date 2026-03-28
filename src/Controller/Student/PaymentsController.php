@@ -22,6 +22,29 @@ class PaymentsController extends AppController
         return !empty($key) && $key !== 'sk_test_placeholder';
     }
 
+    public function index(): void
+    {
+        $identity = $this->Authentication->getIdentity();
+        $studentsTable = $this->fetchTable('Students');
+        $bookingsTable = $this->fetchTable('Bookings');
+
+        $student = $studentsTable->find()
+            ->where(['Students.user_id' => $identity?->get('user_id')])
+            ->firstOrFail();
+
+        $bookings = $bookingsTable->find()
+            ->where(['Bookings.student_id' => $student->student_id])
+            ->contain([
+                'Classes' => ['Courses'],
+                'Payments',
+            ])
+            ->order(['Bookings.booking_date' => 'DESC'])
+            ->all();
+
+        $this->set(compact('bookings'));
+        $this->set('title', 'Payments');
+    }
+
     public function process(?int $bookingId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -40,6 +63,13 @@ class PaymentsController extends AppController
                 'Bookings.student_id' => $student->student_id,
             ])
             ->firstOrFail();
+
+        // If this booking is linked to a parent account, payment must be authorized by parent.
+        if (!empty($booking->parent_id)) {
+            $this->Flash->warning(__('Payment for this booking requires parent authorization. Please ask your parent to complete payment in the Parent Portal.'));
+
+            return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
+        }
 
         $existingPayment = $paymentsTable->find()
             ->where([

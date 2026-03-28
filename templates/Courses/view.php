@@ -72,10 +72,14 @@ $this->assign('title', h($course->course_name));
                         <td>
                             <?php
                                 $identity = $this->request->getAttribute('identity');
-                                if ($identity && $identity->get('user_role') === 'student' && ($class->available_slots ?? 0) > 0):
+                                $role = $identity?->get('user_role');
+                                if ($identity && $role === 'student' && ($class->available_slots ?? 0) > 0):
                             ?>
                                 <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>"
                                    class="btn btn-sm btn-primary">Book Now</a>
+                            <?php elseif ($identity && $role === 'parent' && ($class->available_slots ?? 0) > 0): ?>
+                                <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>"
+                                   class="btn btn-sm btn-primary">Book for Child</a>
                             <?php elseif (!$identity && ($class->available_slots ?? 0) > 0): ?>
                                 <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>"
                                    class="btn btn-sm btn-primary">Login to Book</a>
