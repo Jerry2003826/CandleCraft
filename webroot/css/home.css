@@ -749,7 +749,7 @@ main {
 }
 
 .enquiry-form label {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -768,6 +768,9 @@ main {
     color: var(--home-text);
     font: inherit;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.enquiry-form input, .enquiry-form select {
+    padding-left: 20px !important;
 }
 
 .enquiry-form textarea {
@@ -847,6 +850,7 @@ main {
     font-size: 0.84rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    
 }
 
 .home-footer a {
@@ -1131,6 +1135,8 @@ main {
     background: var(--home-accent);
     color: #2d190e;
 }
+
+
 
 @media (max-width: 1180px) {
     .hero-copy {

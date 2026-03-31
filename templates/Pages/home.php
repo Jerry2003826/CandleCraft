@@ -54,11 +54,6 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
 
         <footer class="home-footer" role="contentinfo">
             <p>&copy; <?= date('Y') ?> CandleCraft Academy. All rights reserved.</p>
-            <p>
-                <a href="<?= h($contactUrl) ?>">Contact Us</a> &middot;
-                <a href="<?= h($coursesUrl) ?>">Our Courses</a> &middot;
-                <a href="<?= h($loginUrl) ?>">Portal Login</a>
-            </p>
         </footer>
     </div>
 </body>
