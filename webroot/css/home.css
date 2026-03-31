@@ -1,3 +1,4 @@
+
 @font-face {
     font-family: 'Grown';
     src: url('/fonts/Grown.ttf') format('truetype');
@@ -32,9 +33,12 @@ html {
 body.site-home {
     margin: 0;
     min-height: 100vh;
-    background:
-        radial-gradient(circle at top, rgba(240, 207, 156, 0.12), transparent 28%),
-        linear-gradient(180deg, #16100d 0%, #120d0a 100%);
+    background-image: linear-gradient(rgba(18, 13, 10, 0.85), rgba(18, 13, 10, 0.85)), 
+                      url('../image/potbg.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     color: var(--home-text);
     font-family: var(--font-grown);
 }
@@ -881,7 +885,6 @@ main {
     font-family: var(--font-grown);
 }
 
-
 @keyframes riseIn {
     from {
         opacity: 0;
@@ -973,6 +976,112 @@ main {
         background: transparent;
         border-color: currentColor;
     }
+}
+
+.section-heading h1 {
+    font-family: var(--font-grown) !important;
+    font-weight: 400; /* Grown is usually best at normal weight */
+    color: #f5ecdf; /* Solid creamy white */
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.flip-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px; /* More space between cards feels more "premium" */
+    padding: 40px 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.flip-card {
+    width: 100%;
+    max-width: 350px; 
+    aspect-ratio: 1 / 1;
+    perspective: 1000px;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;  
+    height: 100%; 
+    transition: transform 0.6s ease;
+    transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card:hover .flip-card-front {
+    border-color: var(--home-accent-soft);
+    box-shadow: 0 0 30px rgba(210, 154, 88, 0.15);
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+.flip-card-front,
+.flip-card-back {
+    padding: 40px; 
+    border-radius: 24px; 
+    background: rgba(47, 34, 25, 0.85); 
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(210, 154, 88, 0.3);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 2px solid rgba(210, 154, 88, 0.8);
+}
+
+.flip-card-front {
+    background: rgba(47, 34, 25, 0.9); /* Slightly darker bg for better contrast */
+    padding: 32px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    /* This ensures everything inside uses the Grown font */
+    font-family: var(--font-grown); 
+}
+.flip-card-front h3 {
+    font-family: var(--font-grown);
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+    color: #ffffff !important; /* Pure white for maximum contrast */
+    letter-spacing: 0.05em;
+}
+
+.flip-card-back {
+    background: rgba(210, 154, 88, 0.15);
+    border-color: rgba(210, 154, 88, 1);
+    transform: rotateY(180deg);
+    text-align: center;
+    align-items: center;
+}
+.flip-card-front p, 
+.flip-card-front span {
+    font-family: var(--font-grown);
+    /* Using a solid color rather than a muted one makes it 'darker' or clearer */
+    color: #d29a58 !important; 
+    font-weight: 700;
+}
+
+
+.flip-card-back p {
+    font-family: var(--font-grown);
+    color: #f5ecdf; /* Ensuring description is readable */
+    line-height: 1.6;
+}
+
+.flip-card-front .overline {
+    color: var(--home-accent-soft) !important; /* Gold/Beige color */
+    font-weight: 700;
+    letter-spacing: 0.2em;
 }
 
 @media (forced-colors: active) {
@@ -1237,4 +1346,16 @@ main {
         padding-right: 18px;
         letter-spacing: 0.08em;
     }
+
+    @media (max-width: 980px) {
+    .flip-card-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on tablets */
+    }
+}
+
+@media (max-width: 640px) {
+    .flip-card-grid {
+        grid-template-columns: 1fr; /* 1 column on phones */
+    }
+}
 }
