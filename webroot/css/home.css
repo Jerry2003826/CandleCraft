@@ -1,10 +1,19 @@
 
+/* ------------------------------------------------------------
+   1. FONT DECLARATION
+   ------------------------------------------------------------ */
+
 @font-face {
     font-family: 'Grown';
     src: url('/fonts/Grown.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
+
+
+/* ------------------------------------------------------------
+   2. CSS CUSTOM PROPERTIES
+   ------------------------------------------------------------ */
 
 :root {
     --home-bg: #120d0a;
@@ -22,6 +31,11 @@
     --font-grown: 'Grown', serif;
 }
 
+
+/* ------------------------------------------------------------
+   3. BASE & RESET
+   ------------------------------------------------------------ */
+
 * {
     box-sizing: border-box;
 }
@@ -33,7 +47,7 @@ html {
 body.site-home {
     margin: 0;
     min-height: 100vh;
-    background-image: linear-gradient(rgba(18, 13, 10, 0.85), rgba(18, 13, 10, 0.85)), 
+    background-image: linear-gradient(rgba(18, 13, 10, 0.85), rgba(18, 13, 10, 0.85)),
                       url('../image/potbg.jpeg');
     background-size: cover;
     background-position: center;
@@ -41,60 +55,6 @@ body.site-home {
     background-repeat: no-repeat;
     color: var(--home-text);
     font-family: var(--font-grown);
-}
-
-body.site-home .card {
-    background: linear-gradient(180deg, #fffcf8 0%, #f9f3eb 100%);
-}
-
-body.site-home .portal-class-card {
-   background: #2f2219; 
-}
-
-body.site-home .card-body label,
-body.site-home .card-body p,
-body.site-home .card-body input,
-body.site-home .card-body select,
-body.site-home .card-body textarea,
-body.site-home .card-body .form-group,
-body.site-home .card-header h3 {
-    font-family: var(--font-grown);
-}
-
-body.site-home .portal-class-card h3,
-body.site-home .portal-class-card p,
-body.site-home .portal-class-card__eyebrow,
-body.site-home .portal-class-card__meta {
-    color: var(--home-text);
-}
-
-body.site-home .portal-class-card__meta {
-    text-transform: uppercase !important;
-    letter-spacing: 0.1em !important;
-}
-
-body.site-home .portal-class-card p,
-body.site-home .portal-class-card [style*="color: #555"] {
-    color: var(--home-text) !important;
-}
-
-body.site-home .portal-class-card {
-    border: 5px solid rgba(210, 154, 88, 0.8) !important;
-    border-bottom: 5px solid rgba(210, 154, 88, 1) !important;
-}
-
-body.site-home .portal-class-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-body.site-home .portal-class-card__header h3 {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin: 0 !important;
 }
 
 a {
@@ -105,6 +65,15 @@ a {
 .home-shell {
     min-height: 100vh;
 }
+
+main {
+    padding: 0 22px 80px;
+}
+
+
+/* ------------------------------------------------------------
+   4. ACCESSIBILITY
+   ------------------------------------------------------------ */
 
 .skip-link {
     position: absolute;
@@ -124,12 +93,37 @@ a {
     transform: translateY(0);
 }
 
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid var(--home-accent-soft);
+    outline-offset: 3px;
+}
+
+
+/* ------------------------------------------------------------
+   5. NAVIGATION
+   ------------------------------------------------------------ */
+
 .hero-home {
     padding: 18px 22px 36px;
 }
 
 .hero-home--compact {
-    padding-bottom: 0px;
+    padding-bottom: 0;
 }
 
 .hero-nav {
@@ -138,7 +132,7 @@ a {
     justify-content: space-between;
     gap: 24px;
     padding: 20px 28px;
-    margin: 0 0 0;
+    margin: 0;
     max-width: 100%;
     border-radius: 0;
     background: rgba(6, 5, 4, 0.82);
@@ -173,7 +167,6 @@ a {
     font-size: 1.1rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-
 }
 
 .hero-nav__links a {
@@ -186,20 +179,16 @@ a {
     transform: translateY(-1px);
 }
 
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-    outline: 3px solid var(--home-accent-soft);
-    outline-offset: 3px;
-}
-
 .hero-nav__login {
     padding: 10px 18px;
     border: 1px solid rgba(240, 207, 156, 0.45);
     border-radius: 999px;
 }
+
+
+/* ------------------------------------------------------------
+   6. HERO & STAGE
+   ------------------------------------------------------------ */
 
 .hero-stage {
     position: relative;
@@ -211,8 +200,8 @@ textarea:focus-visible {
     border: 1px solid rgba(210, 154, 88, 0.22);
     border-radius: 0;
     background:
-         linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
-         url('/image/background.jpg') center center / cover no-repeat;
+        linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+        url('/image/background.jpg') center center / cover no-repeat;
     box-shadow: var(--home-shadow);
     isolation: isolate;
 }
@@ -264,22 +253,12 @@ textarea:focus-visible {
     text-transform: uppercase;
 }
 
-.hero-copy h1,
-.section-heading h2,
-.section-heading__title,
-.platform-copy h2,
-.cta-panel h2 {
+.hero-copy h1 {
     margin: 0;
     font-family: var(--font-grown);
-    font-weight: 400;
-    letter-spacing: 0.1em;
-}
-
-.hero-copy h1 {
-    font-family: var(--font-grown);
     font-size: clamp(3rem, 7vw, 5.6rem);
+    font-weight: 400;
     line-height: 1;
-    text-transform: none;
     letter-spacing: 0.06em;
     text-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
 }
@@ -300,6 +279,11 @@ textarea:focus-visible {
     gap: 16px;
     margin-top: 34px;
 }
+
+
+/* ------------------------------------------------------------
+   7. BUTTONS
+   ------------------------------------------------------------ */
 
 .button {
     display: inline-flex;
@@ -337,6 +321,65 @@ textarea:focus-visible {
     justify-content: flex-start;
 }
 
+.btn-primary {
+    background: linear-gradient(135deg, var(--home-accent-soft) 0%, var(--home-accent) 100%);
+    color: #2d190e;
+    border-radius: 999px;
+    font-family: var(--font-grown);
+    letter-spacing: 0.1em;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--home-accent);
+    color: #2d190e;
+}
+
+
+/* ------------------------------------------------------------
+   8. SHARED TYPOGRAPHY & LABELS
+   ------------------------------------------------------------ */
+
+.hero-copy h1,
+.section-heading h2,
+.section-heading__title,
+.platform-copy h2,
+.cta-panel h2 {
+    margin: 0;
+    font-family: var(--font-grown);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+}
+
+.section-heading__title,
+.platform-copy h2,
+.cta-panel h2 {
+    font-size: clamp(2.2rem, 4.8vw, 4.2rem);
+    line-height: 1.04;
+}
+
+.section-heading h1 {
+    font-family: var(--font-grown) !important;
+    font-weight: 400;
+    color: #f5ecdf;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.section-heading__text {
+    margin-top: 20px;
+    color: rgba(36, 24, 18, 0.74);
+}
+
+.section-title {
+    font-family: var(--font-grown);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-align: center;
+    margin: 0 0 48px;
+    line-height: 1.1;
+}
+
 .program-card__label,
 .pillar-card__number,
 .journey-card__step,
@@ -349,21 +392,12 @@ textarea:focus-visible {
     text-transform: uppercase;
 }
 
-main {
-    padding: 0 22px 80px;
-}
-
-.section {
-    max-width: 1320px;
-    margin: 0 auto 28px;
-    overflow: hidden;
-}
-
-.section-heading__title,
-.platform-copy h2,
-.cta-panel h2 {
-    font-size: clamp(2.2rem, 4.8vw, 4.2rem);
-    line-height: 1.04;
+.atelier-caption strong {
+    display: block;
+    font-family: var(--font-grown);
+    font-size: 1.45rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
 }
 
 .platform-copy p,
@@ -376,34 +410,14 @@ main {
     line-height: 1.82;
 }
 
-.section-heading__text {
-    margin-top: 20px;
-    color: rgba(36, 24, 18, 0.74);
-}
+/* ------------------------------------------------------------
+   9. LAYOUT & SECTIONS
+   ------------------------------------------------------------ */
 
-.overview-card--story h3 {
-    margin: 0 0 20px;
-    font-family: var(--font-grown);
-    font-size: clamp(1.9rem, 3vw, 3rem);
-    font-weight: 400;
-    letter-spacing: 0.04em;
-    line-height: 1.08;
-}
-
-.overview-card--story p:last-child {
-    margin-bottom: 0;
-}
-
-/* Landing page sections */
-
-.section-title {
-    font-family: var(--font-grown);
-    font-size: clamp(2rem, 4vw, 3.4rem);
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-align: center;
-    margin: 0 0 48px;
-    line-height: 1.1;
+.section {
+    max-width: 1320px;
+    margin: 0 auto 28px;
+    overflow: hidden;
 }
 
 .section--overview,
@@ -418,196 +432,17 @@ main {
     padding-top: 100px;
 }
 
-.overview-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-bottom: 40px;
-}
-
-.overview-card {
-    padding: 36px 32px;
-    background: rgba(47, 34, 25, 0.6);
-    border: 1px solid rgba(210, 154, 88, 0.18);
-    border-radius: 20px;
-    transition: transform 0.25s ease, border-color 0.25s ease;
-}
-
-.overview-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(240, 207, 156, 0.35);
-}
-
-.overview-card h3 {
-    font-family: var(--font-grown);
-    font-size: 1.3rem;
-    font-weight: 400;
-    letter-spacing: 0.06em;
-    margin: 0 0 16px;
-    color: var(--home-accent-soft);
-}
-
-.overview-card p {
-    margin: 0;
-    color: var(--home-text-muted);
-    line-height: 1.8;
-}
-
-.overview-card--story {
-    margin-top: 16px;
-    padding: 48px 44px;
-    background: rgba(47, 34, 25, 0.45);
-    border: 1px solid rgba(210, 154, 88, 0.14);
-    border-radius: 24px;
-}
-
-.overview-card--story p {
-    margin: 0 0 16px;
-    color: var(--home-text-muted);
-    line-height: 1.85;
-    font-size: 1.05rem;
-}
-
 .section--cta {
     text-align: center;
     padding-bottom: 60px;
 }
 
-
-.atelier-caption strong {
-    display: block;
-    font-family: var(--font-grown);
-    font-size: 1.45rem;
-    font-weight: 400;
-    letter-spacing: 0.05em;
-}
-
-.program-card:nth-child(2) {
-    animation-delay: 0.08s;
-}
-
-.program-card:nth-child(3) {
-    animation-delay: 0.16s;
-}
-
-.program-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(240, 207, 156, 0.34);
-}
-
-.program-card h3,
-.pillar-card h3,
-.journey-card h3 {
-    margin: 0 0 16px;
-    font-family: var(--font-grown);
-    font-weight: 400;
-    letter-spacing: 0.03em;
-    line-height: 1.15;
-}
-
-.program-card h3 {
-    font-size: 2rem;
-}
-
-.program-card p {
-    color: var(--home-text-muted);
-}
-
-.platform-shell {
-    display: grid;
-    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
-    gap: 26px;
-    padding: 78px 82px 82px;
-}
-
-.platform-copy {
-    padding: 42px;
-    border-radius: 28px;
-    background:
-        radial-gradient(circle at top left, rgba(240, 207, 156, 0.12), transparent 30%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-    border: 1px solid rgba(240, 207, 156, 0.14);
-}
-
-.platform-copy p {
-    color: var(--home-text-muted);
-}
-
-.platform-pillars {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-}
-
-.pillar-card {
-    padding: 28px 24px 30px;
-    border-radius: 24px;
-    background: linear-gradient(180deg, rgba(235, 220, 200, 0.12), rgba(77, 52, 35, 0.4));
-    border: 1px solid rgba(240, 207, 156, 0.14);
-    animation: riseIn 0.8s ease-out both;
-}
-
-.pillar-card__number {
-    margin-bottom: 14px;
-}
-
-.pillar-card h3 {
-    font-size: 1.55rem;
-}
-
-.pillar-card p {
-    color: rgba(245, 236, 223, 0.8);
-}
-
-.journey-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-    padding: 34px 82px 82px;
-}
-
-.journey-card {
-    position: relative;
-    padding: 28px 24px 30px;
-    border-radius: 24px;
-    background: rgba(255, 249, 241, 0.5);
-    border: 1px solid rgba(84, 55, 34, 0.08);
-    animation: riseIn 0.8s ease-out both;
-}
-
-.journey-card:nth-child(2) {
-    animation-delay: 0.06s;
-}
-
-.journey-card:nth-child(3) {
-    animation-delay: 0.12s;
-}
-
-.journey-card:nth-child(4) {
-    animation-delay: 0.18s;
-}
-
-.journey-card::before {
-    content: '';
-    position: absolute;
-    top: 22px;
-    right: 22px;
-    width: 42px;
-    height: 42px;
-    border: 1px solid rgba(210, 154, 88, 0.34);
-    border-radius: 50%;
-}
-
-.journey-card h3 {
-    font-size: 1.44rem;
-}
-
-.journey-card p {
-    color: rgba(36, 24, 18, 0.76);
-}
+/* ------------------------------------------------------------
+   14. CONTACT & ENQUIRY SECTION
+   ------------------------------------------------------------ */
 
 .contact-shell {
-     display: flex;
+    display: flex;
     justify-content: center;
     padding: 20px 82px;
     width: 100%;
@@ -769,7 +604,9 @@ main {
     font: inherit;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
-.enquiry-form input, .enquiry-form select {
+
+.enquiry-form input,
+.enquiry-form select {
     padding-left: 20px !important;
 }
 
@@ -791,8 +628,7 @@ main {
     box-shadow: 0 0 0 3px rgba(210, 154, 88, 0.16);
 }
 
-.enquiry-form 
-.error-message {
+.enquiry-form .error-message {
     display: inline-block;
     margin-top: 6px;
     padding: 6px 12px;
@@ -827,55 +663,176 @@ main {
     line-height: 1.7;
 }
 
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
+
+/* ------------------------------------------------------------
+   15. FLIP CARDS (COURSES)
+   ------------------------------------------------------------ */
+
+.flip-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+    padding: 40px 0;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.home-footer {
+.flip-card {
+    width: 100%;
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
+    perspective: 1000px;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s ease;
+    transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card:hover .flip-card-front {
+    border-color: var(--home-accent-soft);
+    box-shadow: 0 0 30px rgba(210, 154, 88, 0.15);
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 28px;
+    border-radius: 16px;
+    border: 2px solid rgba(210, 154, 88, 0.8);
+    background: rgba(47, 34, 25, 0.85);
+    backdrop-filter: blur(8px);
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.flip-card-front {
+    background: rgba(47, 34, 25, 0.9);
+    font-family: var(--font-grown);
+}
+
+.flip-card-front h3 {
+    font-family: var(--font-grown);
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.flip-card-front p,
+.flip-card-front span {
+    font-family: var(--font-grown);
+    color: #d29a58 !important;
+    font-weight: 700;
+}
+
+.flip-card-front .overline {
+    color: var(--home-accent-soft) !important;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+}
+
+.flip-card-back {
+    background: rgba(210, 154, 88, 0.15);
+    border-color: rgba(210, 154, 88, 1);
+    transform: rotateY(180deg);
+    text-align: center;
+    align-items: center;
+}
+
+.flip-card-back p {
+    font-family: var(--font-grown);
+    color: #f5ecdf;
+    line-height: 1.6;
+}
+
+
+/* ------------------------------------------------------------
+   16. LOGIN PAGE
+   ------------------------------------------------------------ */
+
+/* Bootstrap card overrides */
+body.site-home .card {
+    background: linear-gradient(180deg, #fffcf8 0%, #f9f3eb 100%);
+}
+
+body.site-home .card-body label,
+body.site-home .card-body p,
+body.site-home .card-body input,
+body.site-home .card-body select,
+body.site-home .card-body textarea,
+body.site-home .card-body .form-group,
+body.site-home .card-header h3 {
+    font-family: var(--font-grown);
+}
+
+/* Portal class cards */
+body.site-home .portal-class-card {
+    background: #2f2219;
+}
+
+body.site-home .portal-class-card h3,
+body.site-home .portal-class-card p,
+body.site-home .portal-class-card__eyebrow,
+body.site-home .portal-class-card__meta {
+    color: var(--home-text);
+}
+
+body.site-home .portal-class-card__meta {
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+}
+
+body.site-home .portal-class-card p,
+body.site-home .portal-class-card [style*="color: #555"] {
+    color: var(--home-text) !important;
+}
+
+body.site-home .portal-class-card {
+    border: 5px solid rgba(210, 154, 88, 0.8) !important;
+    border-bottom: 5px solid rgba(210, 154, 88, 1) !important;
+}
+
+body.site-home .portal-class-card__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0px;
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 0 24px 20px;
-    color: rgba(245, 236, 223, 0.64);
-    font-size: 0.84rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    
+    gap: 16px;
 }
 
-.home-footer a {
-    color: rgba(240, 207, 156, 0.88);
+body.site-home .portal-class-card__header h3 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 !important;
 }
 
-/* Login page portal cards */
+/* Portal entry cards */
 .portal-entry-card h3 {
     font-family: var(--font-grown);
     font-weight: 400;
 }
 
-.portal-entry-card__label {
-    font-family: var(--font-grown);
-}
-
-.portal-entry-card p {
-    font-family: var(--font-grown);
-}
-
+.portal-entry-card__label,
+.portal-entry-card p,
 .portal-entry-card__hint {
     font-family: var(--font-grown);
 }
 
-/* Login form card */
+/* Login form */
 .card-header h3 {
     font-family: var(--font-grown);
     font-weight: 400;
@@ -889,12 +846,39 @@ main {
     font-family: var(--font-grown);
 }
 
+
+/* ------------------------------------------------------------
+   17. FOOTER
+   ------------------------------------------------------------ */
+
+.home-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 24px 20px;
+    color: rgba(245, 236, 223, 0.64);
+    font-size: 0.84rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.home-footer a {
+    color: rgba(240, 207, 156, 0.88);
+}
+
+
+/* ------------------------------------------------------------
+   18. ANIMATIONS & KEYFRAMES
+   ------------------------------------------------------------ */
+
 @keyframes riseIn {
     from {
         opacity: 0;
         transform: translateY(28px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -902,29 +886,31 @@ main {
 }
 
 @keyframes driftPlant {
-    0%,
-    100% {
+    0%, 100% {
         transform: rotate(0deg) translateY(0);
     }
-
     50% {
         transform: rotate(-2deg) translateY(-6px);
     }
 }
 
 @keyframes pulseRing {
-    0%,
-    100% {
+    0%, 100% {
         transform: scale(1);
         box-shadow: inset 0 0 0 1px rgba(27, 18, 11, 0.35);
     }
-
     50% {
         transform: scale(1.03);
         box-shadow: inset 0 0 0 1px rgba(27, 18, 11, 0.35), 0 0 24px rgba(210, 154, 88, 0.15);
     }
 }
 
+
+/* ------------------------------------------------------------
+   19. MEDIA QUERIES
+   ------------------------------------------------------------ */
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
@@ -938,6 +924,7 @@ main {
     }
 }
 
+/* High contrast */
 @media (prefers-contrast: more) {
     :root {
         --home-text: #fffaf2;
@@ -982,112 +969,7 @@ main {
     }
 }
 
-.section-heading h1 {
-    font-family: var(--font-grown) !important;
-    font-weight: 400; /* Grown is usually best at normal weight */
-    color: #f5ecdf; /* Solid creamy white */
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-.flip-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 32px; /* More space between cards feels more "premium" */
-    padding: 40px 0;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.flip-card {
-    width: 100%;
-    max-width: 350px; 
-    aspect-ratio: 1 / 1;
-    perspective: 1000px;
-}
-
-.flip-card-inner {
-    position: relative;
-    width: 100%;  
-    height: 100%; 
-    transition: transform 0.6s ease;
-    transform-style: preserve-3d;
-}
-
-.flip-card:hover .flip-card-inner {
-    transform: rotateY(180deg);
-}
-
-.flip-card:hover .flip-card-front {
-    border-color: var(--home-accent-soft);
-    box-shadow: 0 0 30px rgba(210, 154, 88, 0.15);
-    transform: translateY(-5px);
-    transition: all 0.3s ease;
-}
-
-.flip-card-front,
-.flip-card-back {
-    padding: 40px; 
-    border-radius: 24px; 
-    background: rgba(47, 34, 25, 0.85); 
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(210, 154, 88, 0.3);
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border-radius: 16px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    border: 2px solid rgba(210, 154, 88, 0.8);
-}
-
-.flip-card-front {
-    background: rgba(47, 34, 25, 0.9); /* Slightly darker bg for better contrast */
-    padding: 32px;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    /* This ensures everything inside uses the Grown font */
-    font-family: var(--font-grown); 
-}
-.flip-card-front h3 {
-    font-family: var(--font-grown);
-    font-size: 1.8rem;
-    margin-bottom: 12px;
-    color: #ffffff !important; /* Pure white for maximum contrast */
-    letter-spacing: 0.05em;
-}
-
-.flip-card-back {
-    background: rgba(210, 154, 88, 0.15);
-    border-color: rgba(210, 154, 88, 1);
-    transform: rotateY(180deg);
-    text-align: center;
-    align-items: center;
-}
-.flip-card-front p, 
-.flip-card-front span {
-    font-family: var(--font-grown);
-    /* Using a solid color rather than a muted one makes it 'darker' or clearer */
-    color: #d29a58 !important; 
-    font-weight: 700;
-}
-
-
-.flip-card-back p {
-    font-family: var(--font-grown);
-    color: #f5ecdf; /* Ensuring description is readable */
-    line-height: 1.6;
-}
-
-.flip-card-front .overline {
-    color: var(--home-accent-soft) !important; /* Gold/Beige color */
-    font-weight: 700;
-    letter-spacing: 0.2em;
-}
-
+/* Forced colors (Windows High Contrast) */
 @media (forced-colors: active) {
     body.site-home {
         background: Canvas;
@@ -1122,22 +1004,8 @@ main {
         color: ButtonText;
     }
 }
-.btn-primary {
-    background: linear-gradient(135deg, var(--home-accent-soft) 0%, var(--home-accent) 100%);
-    color: #2d190e;
-    border-radius: 999px;
-    font-family: var(--font-grown);
-    letter-spacing: 0.1em;
-    border: none;
-}
 
-.btn-primary:hover {
-    background: var(--home-accent);
-    color: #2d190e;
-}
-
-
-
+/* Tablet: max 1180px */
 @media (max-width: 1180px) {
     .hero-copy {
         padding-left: 100px;
@@ -1155,8 +1023,8 @@ main {
 
     .platform-shell,
     .contact-shell {
-        grid-template-columns: 1fr;
         display: grid;
+        grid-template-columns: 1fr;
     }
 
     .overview-grid {
@@ -1169,8 +1037,13 @@ main {
     .section--cta {
         padding: 60px 32px;
     }
+
+    .flip-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
+/* Small tablet: max 980px */
 @media (max-width: 980px) {
     .hero-nav {
         flex-direction: column;
@@ -1239,6 +1112,7 @@ main {
     }
 }
 
+/* Mobile: max 640px */
 @media (max-width: 640px) {
     .hero-home,
     main {
@@ -1353,15 +1227,7 @@ main {
         letter-spacing: 0.08em;
     }
 
-    @media (max-width: 980px) {
     .flip-card-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 columns on tablets */
+        grid-template-columns: 1fr;
     }
-}
-
-@media (max-width: 640px) {
-    .flip-card-grid {
-        grid-template-columns: 1fr; /* 1 column on phones */
-    }
-}
 }
