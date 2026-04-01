@@ -10,7 +10,7 @@ $this->assign('title', 'Family Bookings');
 <div class="card">
     <div class="card-header">
         <h3>Family Bookings</h3>
-        <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm btn-primary">Browse Courses</a>
+        <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm btn-primary">Browse Courses</a>
     </div>
     <?php if (empty($children)): ?>
         <div class="empty-state">

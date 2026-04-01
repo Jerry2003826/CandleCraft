@@ -150,14 +150,18 @@ class BookingsController extends AppController
                     ]);
 
                     if ($bookingsTable->save($booking)) {
-                        $this->loadComponent('Notification');
-                        $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
-                        $className = $class->course?->course_name ?? $class->class_code;
-                        $this->Notification->sendBookingConfirmation(
-                            $this->Authentication->getIdentity()->get('user_id'),
-                            $className,
-                            $schedule,
-                        );
+                        try {
+                            $this->loadComponent('Notification');
+                            $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
+                            $className = $class->course?->course_name ?? $class->class_code;
+                            $this->Notification->sendBookingConfirmation(
+                                $this->Authentication->getIdentity()->get('user_id'),
+                                $className,
+                                $schedule,
+                            );
+                        } catch (\Exception $e) {
+                            // Notification failure should not block booking
+                        }
 
                         $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
 

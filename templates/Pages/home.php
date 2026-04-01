@@ -52,7 +52,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                     <p class="hero-copy__eyebrow">A Sanctuary For The Creative Soul.</p>
                     <h1 id="landing-title">CandleCraft Academy</h1>
                     <div class="hero-copy__actions">
-                        <a href="<?= h($coursesUrl) ?>" class="button button--solid">Browse Classes</a>
+                        <a href="<?= h($coursesUrl) ?>" class="button button--solid">Browse Courses</a>
                         <a href="<?= h($contactUrl) ?>" class="button button--outline">Enquire Today</a>
                     </div>
                 </div>

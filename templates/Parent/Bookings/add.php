@@ -12,7 +12,7 @@ $this->assign('title', 'Book Class');
 <div class="card">
     <div class="card-header">
         <h3>Book Class: <?= h($class->class_code) ?></h3>
-        <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Courses', 'action' => 'view', $class->course_id]) ?>" class="btn btn-sm">&larr; Back</a>
+        <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm">&larr; Back to Courses</a>
     </div>
     <div class="card-body">
         <div class="portal-class-card">

@@ -43,6 +43,12 @@ class AppController extends BaseAppController
                     'action' => 'children',
                 ],
                 [
+                    'label' => 'Browse Courses',
+                    'icon' => '&#x1F4DA;',
+                    'url' => ['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index'],
+                    'controller' => 'Courses',
+                ],
+                [
                     'label' => 'Bookings',
                     'icon' => '&#x1F4C5;',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index'],

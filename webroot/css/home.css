@@ -722,6 +722,8 @@ textarea:focus-visible {
     padding: 40px 0;
     max-width: 1200px;
     margin: 0 auto;
+    justify-content: center; 
+    justify-items: center;
 }
 
 .flip-card {

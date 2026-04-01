@@ -15,7 +15,8 @@ Parent Portal
 Manage family bookings
 Book classes for your children and complete payments in one place.
 
-parent@candlecraft.com
+lisa.parent@example.com
+
 ---------------------
 Admin Portal
 Manage operations
