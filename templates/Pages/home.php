@@ -30,7 +30,15 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 </a>
                 <div class="hero-nav__links">
                     <a href="#overview">About</a>
-                    <a href="<?= h($coursesUrl) ?>">Courses</a>
+                    <div class="nav-dropdown">
+                        <a href="<?= h($coursesUrl) ?>">Courses</a>
+                        <div class="nav-dropdown__menu">
+                            <div class="nav-dropdown__menu-inner">
+                                <a href="<?= h($coursesUrl) ?>?type=pottery">Pottery</a>
+                                <a href="<?= h($coursesUrl) ?>?type=knitting">Knitting</a>
+                            </div>
+                        </div>
+                    </div>
                     <a href="<?= h($contactUrl) ?>">Enquire</a>
                     <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>

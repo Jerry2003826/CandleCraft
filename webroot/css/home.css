@@ -138,6 +138,8 @@ textarea:focus-visible {
     background: rgba(6, 5, 4, 0.82);
     border: 1px solid rgba(210, 154, 88, 0.2);
     backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 100;
 }
 
 .brand-mark {
@@ -183,6 +185,51 @@ textarea:focus-visible {
     padding: 10px 18px;
     border: 1px solid rgba(240, 207, 156, 0.45);
     border-radius: 999px;
+}
+
+.nav-dropdown {
+    position: relative;
+}
+
+.nav-dropdown__menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-top: 12px;
+    min-width: 160px;
+    z-index: 200;
+    white-space: nowrap;
+}
+
+.nav-dropdown__menu-inner {
+    background: rgba(6, 5, 4, 0.96);
+    border: 1px solid rgba(210, 154, 88, 0.3);
+    border-radius: 12px;
+    padding: 8px 0;
+    backdrop-filter: blur(12px);
+}
+
+.nav-dropdown:hover .nav-dropdown__menu {
+    display: block;
+}
+
+.nav-dropdown__menu-inner a {
+    display: block;
+    padding: 10px 24px;
+    color: rgba(245, 236, 223, 0.82);
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    transform: none !important;
+}
+
+.nav-dropdown__menu-inner a:hover {
+    color: var(--home-accent) !important;
+    background: rgba(210, 154, 88, 0.1);
+    transform: none !important;
 }
 
 

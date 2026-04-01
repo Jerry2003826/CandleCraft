@@ -17,14 +17,21 @@ class CoursesController extends AppController
     public function index(): void
     {
         $coursesTable = $this->fetchTable('Courses');
-        $courses = $coursesTable->find()
+        $type = $this->request->getQuery('type');
+
+        $query = $coursesTable->find()
             ->contain(['Classes' => function ($q) {
                 return $q->where(['Classes.class_status IN' => ['scheduled', 'ongoing']]);
-            }])
-            ->all();
+            }]);
 
-        $this->set(compact('courses'));
-        $this->set('title', 'Our Courses');
+        if ($type) {
+            $query->where(['Courses.course_type' => strtolower($type)]);
+        }
+
+        $courses = $query->all();
+
+        $this->set(compact('courses', 'type'));
+        $this->set('title', $type ? ucfirst($type) . ' Courses' : 'Our Courses');
     }
 
     public function view(?int $courseId = null): ?Response

@@ -29,7 +29,15 @@ $appTitle = 'CandleCraft Academy';
                 </a>
                 <div class="hero-nav__links">
                     <a href="<?= $this->Url->build('/') ?>">Home</a>
-                    <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>">Courses</a>
+                    <div class="nav-dropdown">
+                        <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>">Courses</a>
+                        <div class="nav-dropdown__menu">
+                            <div class="nav-dropdown__menu-inner">
+                                <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'pottery']]) ?>">Pottery</a>
+                                <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'knitting']]) ?>">Knitting</a>
+                            </div>
+                        </div>
+                    </div>
                     <a href="<?= $this->Url->build(['controller' => 'Pages', 'action' => 'contact']) ?>">Enquire</a>
                     <?php
                     $identity = $this->request->getAttribute('identity');

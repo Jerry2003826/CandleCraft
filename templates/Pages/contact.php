@@ -1,3 +1,4 @@
+
 <?php
 /**
  * @var \App\View\AppView $this
@@ -32,7 +33,15 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 </a>
                 <div class="hero-nav__links">
                     <a href="<?= h($homeUrl) ?>">Home</a>
-                    <a href="<?= h($coursesUrl) ?>">Courses</a>
+                    <div class="nav-dropdown">
+                        <a href="<?= h($coursesUrl) ?>">Courses</a>
+                        <div class="nav-dropdown__menu">
+                            <div class="nav-dropdown__menu-inner">
+                                <a href="<?= h($coursesUrl) ?>?type=pottery">Pottery</a>
+                                <a href="<?= h($coursesUrl) ?>?type=knitting">Knitting</a>
+                            </div>
+                        </div>
+                    </div>
                     <a href="#enquiry">Enquire</a>
                     <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>
@@ -147,7 +156,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
 
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 34px; flex-wrap: wrap; gap: 20px;">
                         <p style="margin: 0; font-size: 0.85rem; color: var(--home-text-muted); font-family: var(--font-grown);">Protected by CAPTCHA and anti-spam checks.</p>
-                        <?= $this->Form->button('Send Enquiry', ['class' => 'btn-primary', 'style' => 'min-width: 200px;']) ?>
+                        <?= $this->Form->button('Send Enquiry', ['class' => 'btn-primary', 'style' => 'min-width: 260px; padding: 18px 40px; font-size: 1.1rem;']) ?>
                     </div>
 
                     <?= $this->Form->end() ?>
