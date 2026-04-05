@@ -25,40 +25,52 @@ class AppController extends BaseAppController
         $this->viewBuilder()->setLayout('portal');
         $this->set('portalContext', [
             'title' => 'Parent Portal',
-            'icon' => '&#x1F46A;',
+            'icon' => 'bi bi-people',
             'welcome' => 'Family Hub',
             'nav' => [
                 [
                     'label' => 'Dashboard',
-                    'icon' => '&#x1F4CA;',
+                    'icon' => 'bi bi-house',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index'],
                     'controller' => 'Dashboard',
                     'action' => 'index',
                 ],
                 [
                     'label' => 'My Children',
-                    'icon' => '&#x1F476;',
+                    'icon' => 'bi bi-person-hearts',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'children'],
                     'controller' => 'Dashboard',
                     'action' => 'children',
                 ],
                 [
                     'label' => 'Browse Courses',
-                    'icon' => '&#x1F4DA;',
+                    'icon' => 'bi bi-palette',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index'],
                     'controller' => 'Courses',
                 ],
                 [
-                    'label' => 'Bookings',
-                    'icon' => '&#x1F4C5;',
+                    'label' => 'My Schedule',
+                    'icon' => 'bi bi-calendar-event',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index'],
                     'controller' => 'Bookings',
                 ],
                 [
                     'label' => 'Payments',
-                    'icon' => '&#x1F4B3;',
+                    'icon' => 'bi bi-credit-card',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Payments', 'action' => 'index'],
                     'controller' => 'Payments',
+                ],
+                [
+                    'label' => 'Learning Center',
+                    'icon' => 'bi bi-folder',
+                    'url' => ['prefix' => 'Parent', 'controller' => 'Resources', 'action' => 'index'],
+                    'controller' => 'Resources',
+                ],
+                [
+                    'label' => 'Notifications',
+                    'icon' => 'bi bi-bell',
+                    'url' => ['prefix' => 'Parent', 'controller' => 'Notifications', 'action' => 'index'],
+                    'controller' => 'Notifications',
                 ],
             ],
         ]);

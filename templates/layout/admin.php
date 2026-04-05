@@ -8,6 +8,29 @@ $adminName = 'Admin';
 if ($identity) {
     $adminName = h($identity->get('username'));
 }
+
+// Bootstrap FormHelper templates
+$this->Form->setTemplates([
+    'inputContainer' => '<div class="mb-3">{{content}}</div>',
+    'inputContainerError' => '<div class="mb-3">{{content}}{{error}}</div>',
+    'label' => '<label class="form-label"{{attrs}}>{{text}}</label>',
+    'input' => '<input type="{{type}}" class="form-control" {{attrs}}/>',
+    'select' => '<select class="form-select" {{attrs}}>{{content}}</select>',
+    'textarea' => '<textarea class="form-control" {{attrs}}>{{value}}</textarea>',
+    'error' => '<div class="invalid-feedback d-block">{{content}}</div>',
+]);
+
+// Bootstrap Paginator templates
+$this->Paginator->setTemplates([
+    'first' => '<li class="page-item"><a class="page-link" href="{{url}}">{{text}}</a></li>',
+    'prevActive' => '<li class="page-item"><a class="page-link" href="{{url}}">{{text}}</a></li>',
+    'prevDisabled' => '<li class="page-item disabled"><span class="page-link">{{text}}</span></li>',
+    'number' => '<li class="page-item"><a class="page-link" href="{{url}}">{{text}}</a></li>',
+    'current' => '<li class="page-item active"><span class="page-link">{{text}}</span></li>',
+    'nextActive' => '<li class="page-item"><a class="page-link" href="{{url}}">{{text}}</a></li>',
+    'nextDisabled' => '<li class="page-item disabled"><span class="page-link">{{text}}</span></li>',
+    'last' => '<li class="page-item"><a class="page-link" href="{{url}}">{{text}}</a></li>',
+]);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,85 +42,105 @@ if ($identity) {
         <?php if ($this->fetch('title')): ?> | <?= $this->fetch('title') ?><?php endif; ?>
     </title>
     <?= $this->Html->meta('icon') ?>
-    <?= $this->Html->css(['admin']) ?>
+    <?= $this->Html->css(['admin-bootstrap', 'bootstrap-icons', 'admin']) ?>
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
-    <?= $this->fetch('script') ?>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-    <div class="admin-wrapper">
-        <aside class="sidebar" role="navigation" aria-label="Admin navigation">
-            <div class="sidebar-brand">
-                <div class="brand-icon">&#x1F3A8;</div>
-                <h2>CandleCraft Academy</h2>
+    <a href="#main-content" class="visually-hidden-focusable">Skip to main content</a>
+
+    <!-- Sidebar -->
+    <aside class="offcanvas-lg offcanvas-start" id="adminSidebar" tabindex="-1" aria-label="Admin navigation">
+        <div class="offcanvas-header d-lg-none">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sidebar-brand-icon">&#x1F3A8;</div>
+                <h5 class="sidebar-brand-text mb-0">CandleCraft Academy</h5>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <!-- Brand (desktop only) -->
+            <div class="d-none d-lg-block text-center py-4 border-bottom border-white border-opacity-10">
+                <div class="sidebar-brand-icon mx-auto mb-2">&#x1F3A8;</div>
+                <h2 class="sidebar-brand-text">CandleCraft Academy</h2>
             </div>
 
-            <nav class="sidebar-nav">
+            <!-- Navigation -->
+            <nav class="nav flex-column py-3 flex-grow-1">
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Dashboard', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Dashboard' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F4CA;</span>
-                    <span>Dashboard</span>
+                   class="nav-link <?= $controller === 'Dashboard' ? 'active' : '' ?>">
+                    <i class="bi bi-bar-chart-line"></i><span>Dashboard</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Students' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F393;</span>
-                    <span>Students</span>
+                   class="nav-link <?= $controller === 'Students' ? 'active' : '' ?>">
+                    <i class="bi bi-mortarboard"></i><span>Students</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Teachers', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Teachers' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F468;&#x200D;&#x1F3EB;</span>
-                    <span>Teachers</span>
+                   class="nav-link <?= $controller === 'Teachers' ? 'active' : '' ?>">
+                    <i class="bi bi-person-workspace"></i><span>Teachers</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Classes', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Classes' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F4D6;</span>
-                    <span>Classes</span>
+                   class="nav-link <?= $controller === 'Classes' ? 'active' : '' ?>">
+                    <i class="bi bi-book"></i><span>Classes</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Attendance' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F4CB;</span>
-                    <span>Attendance</span>
+                   class="nav-link <?= $controller === 'Attendance' ? 'active' : '' ?>">
+                    <i class="bi bi-clipboard-check"></i><span>Attendance</span>
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Bookings', 'action' => 'index']) ?>"
+                   class="nav-link <?= $controller === 'Bookings' ? 'active' : '' ?>">
+                    <i class="bi bi-calendar-event"></i><span>Bookings</span>
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Courses', 'action' => 'index']) ?>"
+                   class="nav-link <?= $controller === 'Courses' ? 'active' : '' ?>">
+                    <i class="bi bi-palette"></i><span>Courses</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Resources', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Resources' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F4DA;</span>
-                    <span>Resources</span>
+                   class="nav-link <?= $controller === 'Resources' ? 'active' : '' ?>">
+                    <i class="bi bi-folder"></i><span>Resources</span>
                 </a>
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'Messages' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x2709;</span>
-                    <span>Messages</span>
-                </a>
-                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'AiAssistant', 'action' => 'index']) ?>"
-                   class="<?= $controller === 'AiAssistant' ? 'active' : '' ?>">
-                    <span class="nav-icon">&#x1F916;</span>
-                    <span>AI Assistant</span>
+                   class="nav-link <?= $controller === 'Messages' ? 'active' : '' ?>">
+                    <i class="bi bi-envelope"></i><span>Messages</span>
                 </a>
             </nav>
 
+            <!-- Footer -->
             <div class="sidebar-footer">
                 <?= $this->Form->postLink(
-                    '<span class="nav-icon">&#x1F6AA;</span><span>Logout</span>',
+                    '<i class="bi bi-box-arrow-left"></i><span>Logout</span>',
                     ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
-                    ['escape' => false]
+                    ['escape' => false, 'class' => 'nav-link']
                 ) ?>
             </div>
-        </aside>
-
-        <div class="main-content">
-            <div class="top-bar">
-                <h1><?= $this->fetch('title') ?></h1>
-                <div class="user-info">
-                    <span>Welcome, <?= $adminName ?></span>
-                </div>
-            </div>
-
-            <div class="content-area" id="main-content" role="main" tabindex="-1">
-                <div aria-live="polite"><?= $this->Flash->render() ?></div>
-                <?= $this->fetch('content') ?>
-            </div>
         </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="sidebar-main d-flex flex-column">
+        <!-- Navbar -->
+        <nav class="sidebar-navbar d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle-btn btn btn-sm btn-outline-secondary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="page-title"><?= $this->fetch('title') ?></h1>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-circle text-muted"></i>
+                <span class="text-muted"><?= $adminName ?></span>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="container-fluid p-4" id="main-content" role="main" tabindex="-1">
+            <div aria-live="polite"><?= $this->Flash->render() ?></div>
+            <?= $this->fetch('content') ?>
+        </main>
     </div>
+
+    <script src="/js/admin-bootstrap.js"></script>
+    <script src="/js/admin-app.js"></script>
+    <?= $this->fetch('script') ?>
 </body>
 </html>

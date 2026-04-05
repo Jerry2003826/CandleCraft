@@ -12,52 +12,62 @@
 $this->assign('title', 'Parent Dashboard');
 ?>
 
-<div class="stats-row">
-    <div class="stat-card enquiries">
-        <div class="stat-label">Children</div>
-        <div class="stat-value"><?= count($children) ?></div>
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card stat-primary text-center p-3">
+            <div class="stat-label">Children</div>
+            <div class="stat-value"><?= count($children) ?></div>
+        </div>
     </div>
-    <div class="stat-card new-messages">
-        <div class="stat-label">Bookings</div>
-        <div class="stat-value"><?= h((string)$bookingCount) ?></div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card stat-success text-center p-3">
+            <div class="stat-label">Bookings</div>
+            <div class="stat-value"><?= h((string)$bookingCount) ?></div>
+        </div>
     </div>
-    <div class="stat-card replied">
-        <div class="stat-label">Upcoming</div>
-        <div class="stat-value"><?= h((string)$upcomingCount) ?></div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card stat-info text-center p-3">
+            <div class="stat-label">Upcoming</div>
+            <div class="stat-value"><?= h((string)$upcomingCount) ?></div>
+        </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-label">Present</div>
-        <div class="stat-value"><?= h((string)$presentCount) ?> / <?= h((string)$attendanceCount) ?></div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card stat-warning text-center p-3">
+            <div class="stat-label">Present</div>
+            <div class="stat-value"><?= h((string)$presentCount) ?> / <?= h((string)$attendanceCount) ?></div>
+        </div>
     </div>
 </div>
 
-<div class="card" id="children">
-    <div class="card-header">
-        <h3>My Children</h3>
+<div class="card mb-4" id="children">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">My Children</h5>
     </div>
     <div class="card-body">
         <?php if (empty($children)): ?>
-            <div class="empty-state">
-                <div class="icon">&#x1F476;</div>
-                <p>No children linked yet. Please contact admin.</p>
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-person-hearts" style="font-size: 48px;"></i>
+                <p class="mt-3">No children linked yet. Please contact admin.</p>
             </div>
         <?php else: ?>
-            <div class="portal-class-list">
+            <div class="row g-3">
                 <?php foreach ($children as $child): ?>
-                    <section class="portal-class-card">
-                        <div class="portal-class-card__header">
-                            <div>
-                                <p class="portal-class-card__eyebrow">Student</p>
-                                <h3><?= h($child->student_name) ?></h3>
+                    <div class="col-md-6">
+                        <div class="portal-class-card">
+                            <div class="portal-class-card__header">
+                                <div>
+                                    <p class="portal-class-card__eyebrow">Student</p>
+                                    <h3><?= h($child->student_name) ?></h3>
+                                </div>
+                                <span class="badge badge-<?= h($child->student_status ?? 'active') ?>">
+                                    <?= ucfirst(h($child->student_status ?? 'active')) ?>
+                                </span>
                             </div>
-                            <span class="badge badge-<?= h($child->student_status ?? 'active') ?>">
-                                <?= ucfirst(h($child->student_status ?? 'active')) ?>
-                            </span>
+                            <div class="portal-class-card__meta">
+                                <span><i class="bi bi-calendar3 me-1"></i>DOB: <?= $child->date_of_birth ? $child->date_of_birth->format('j M Y') : '-' ?></span>
+                            </div>
                         </div>
-                        <div class="portal-class-card__meta">
-                            <span>DOB: <?= $child->date_of_birth ? $child->date_of_birth->format('j M Y') : '-' ?></span>
-                        </div>
-                    </section>
+                    </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
@@ -65,35 +75,32 @@ $this->assign('title', 'Parent Dashboard');
 </div>
 
 <div class="card">
-    <div class="card-header">
-        <h3>Recent Bookings</h3>
-        <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="btn btn-sm">View All</a>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Recent Bookings</h5>
+        <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="btn btn-sm btn-outline-primary">View All</a>
     </div>
     <?php if (empty($recentBookings)): ?>
-        <div class="empty-state">
-            <div class="icon">&#x1F4C5;</div>
-            <p>No bookings yet.</p>
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-event" style="font-size: 48px;"></i>
+            <p class="mt-3">No bookings yet.</p>
         </div>
     <?php else: ?>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Course</th>
-                    <th>Schedule</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($recentBookings as $booking): ?>
-                    <tr>
-                        <td><?= h($booking->student?->student_name ?? '-') ?></td>
-                        <td><?= h($booking->class_entity?->course?->course_name ?? $booking->class_entity?->class_code ?? '-') ?></td>
-                        <td><?= $booking->class_entity?->start_datetime ? $booking->class_entity->start_datetime->format('j M Y, g:ia') : '-' ?></td>
-                        <td><span class="badge badge-<?= h($booking->booking_status) ?>"><?= ucfirst(h($booking->booking_status)) ?></span></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr><th>Student</th><th>Course</th><th>Schedule</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($recentBookings as $booking): ?>
+                        <tr>
+                            <td><?= h($booking->student?->student_name ?? '-') ?></td>
+                            <td><?= h($booking->class_entity?->course?->course_name ?? $booking->class_entity?->class_code ?? '-') ?></td>
+                            <td><?= $booking->class_entity?->start_datetime ? $booking->class_entity->start_datetime->format('j M Y, g:ia') : '-' ?></td>
+                            <td><span class="badge badge-<?= h($booking->booking_status) ?>"><?= ucfirst(h($booking->booking_status)) ?></span></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </div>

@@ -25,42 +25,42 @@ class AppController extends BaseAppController
         $this->viewBuilder()->setLayout('portal');
         $this->set('portalContext', [
             'title' => 'Student Portal',
-            'icon' => '&#x1F393;',
+            'icon' => 'bi bi-mortarboard',
             'welcome' => 'Learning Hub',
             'nav' => [
                 [
                     'label' => 'Dashboard',
-                    'icon' => '&#x1F4DA;',
+                    'icon' => 'bi bi-house',
                     'url' => ['prefix' => 'Student', 'controller' => 'Dashboard', 'action' => 'index'],
                     'controller' => 'Dashboard',
                 ],
                 [
                     'label' => 'Browse Courses',
-                    'icon' => '&#x1F3A8;',
-                    'url' => ['prefix' => false, 'controller' => 'Courses', 'action' => 'index'],
+                    'icon' => 'bi bi-palette',
+                    'url' => ['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index'],
                     'controller' => 'Courses',
                 ],
                 [
-                    'label' => 'My Bookings',
-                    'icon' => '&#x1F4C5;',
+                    'label' => 'My Schedule',
+                    'icon' => 'bi bi-calendar-event',
                     'url' => ['prefix' => 'Student', 'controller' => 'Bookings', 'action' => 'index'],
                     'controller' => 'Bookings',
                 ],
                 [
                     'label' => 'Payments',
-                    'icon' => '&#x1F4B3;',
+                    'icon' => 'bi bi-credit-card',
                     'url' => ['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'index'],
                     'controller' => 'Payments',
                 ],
                 [
                     'label' => 'Learning Center',
-                    'icon' => '&#x1F4C1;',
+                    'icon' => 'bi bi-folder',
                     'url' => ['prefix' => 'Student', 'controller' => 'Resources', 'action' => 'index'],
                     'controller' => 'Resources',
                 ],
                 [
                     'label' => 'Notifications',
-                    'icon' => '&#x1F514;',
+                    'icon' => 'bi bi-bell',
                     'url' => ['prefix' => 'Student', 'controller' => 'Notifications', 'action' => 'index'],
                     'controller' => 'Notifications',
                 ],

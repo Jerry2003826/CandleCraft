@@ -22,7 +22,7 @@ class DashboardController extends AppController
         $recentMessages = $messagesTable->find()
             ->contain(['SenderUsers'])
             ->where($enquiryConditions)
-            ->order(['Messages.sent_at' => 'DESC'])
+            ->orderBy(['Messages.sent_at' => 'DESC'])
             ->limit(10)
             ->all();
 
@@ -31,5 +31,16 @@ class DashboardController extends AppController
             'totalStudents', 'totalTeachers', 'totalClasses', 'totalBookings',
             'recentMessages'
         ));
+
+        // Recent bookings for admin management
+        $pendingBookings = $this->fetchTable('Bookings')->find()->where(['Bookings.booking_status' => 'pending'])->count();
+
+        $recentBookings = $this->fetchTable('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->orderBy(['Bookings.booking_date' => 'DESC'])
+            ->limit(10)
+            ->all();
+
+        $this->set(compact('pendingBookings', 'recentBookings'));
     }
 }

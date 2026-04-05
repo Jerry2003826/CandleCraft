@@ -27,8 +27,59 @@ class BookingsController extends AppController
             ->order(['Bookings.booking_date' => 'DESC'])
             ->all();
 
-        $this->set(compact('bookings', 'student'));
-        $this->set('title', 'My Bookings');
+        $weekStartParam = $this->request->getQuery('week_start');
+        if ($weekStartParam) {
+            $ref = new \Cake\I18n\DateTime($weekStartParam);
+        } else {
+            $ref = new \Cake\I18n\DateTime('now');
+        }
+        $dow = (int)$ref->format('w');
+        $weekStart = $ref->modify("-{$dow} days")->startOfDay();
+        $weekEnd = $weekStart->modify('+6 days');
+
+        $eventColors = ['#1a73e8', '#0b8043', '#8e24aa', '#d81b60', '#e37400', '#039be5', '#616161', '#c0ca33'];
+        $courseColorMap = [];
+        $colorIndex = 0;
+
+        $calendarEvents = [];
+        foreach ($bookings as $b) {
+            if (!$b->class_entity?->start_datetime || !$b->class_entity?->end_datetime) {
+                continue;
+            }
+            if (!in_array($b->booking_status, ['pending', 'confirmed', 'completed'], true)) {
+                continue;
+            }
+            $start = $b->class_entity->start_datetime;
+            $end = $b->class_entity->end_datetime;
+            $dateStr = $start->format('Y-m-d');
+            $wsStr = $weekStart->format('Y-m-d');
+            $weStr = $weekEnd->format('Y-m-d');
+            if ($dateStr < $wsStr || $dateStr > $weStr) {
+                continue;
+            }
+
+            $courseId = $b->class_entity->course_id ?? 0;
+            if (!isset($courseColorMap[$courseId])) {
+                $courseColorMap[$courseId] = $eventColors[$colorIndex % count($eventColors)];
+                $colorIndex++;
+            }
+
+            $calendarEvents[] = [
+                'day_index' => (int)$start->format('w'),
+                'start_hour' => (int)$start->format('G'),
+                'start_minute' => (int)$start->format('i'),
+                'end_hour' => (int)$end->format('G'),
+                'end_minute' => (int)$end->format('i'),
+                'title' => $b->class_entity?->course?->course_name ?? 'Class',
+                'class_code' => $b->class_entity?->class_code ?? '',
+                'location' => $b->class_entity?->location ?? '',
+                'color' => $courseColorMap[$courseId],
+                'booking_id' => $b->booking_id,
+            ];
+        }
+
+        $this->set(compact('bookings', 'student', 'calendarEvents', 'weekStart', 'weekEnd'));
+        $this->set('title', 'My Schedule');
     }
 
     public function add(?int $classId = null): ?Response
@@ -60,7 +111,7 @@ class BookingsController extends AppController
         if ($availableSlots <= 0) {
             $this->Flash->error(__('This class is fully booked.'));
 
-            return $this->redirect(['prefix' => false, 'controller' => 'Courses', 'action' => 'view', $classId]);
+            return $this->redirect(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']);
         }
 
         $existingBooking = $bookingsTable->find()

@@ -9,13 +9,16 @@
 $this->assign('title', 'Book Class');
 ?>
 
+<div class="mb-3">
+    <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Courses</a>
+</div>
+
 <div class="card">
-    <div class="card-header">
-        <h3>Book Class: <?= h($class->class_code) ?></h3>
-        <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm">&larr; Back to Courses</a>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Book Class: <?= h($class->class_code) ?></h5>
     </div>
     <div class="card-body">
-        <div class="portal-class-card">
+        <div class="portal-class-card mb-4">
             <div class="portal-class-card__header">
                 <div>
                     <p class="portal-class-card__eyebrow"><?= h($class->course?->course_name ?? 'Course') ?></p>
@@ -23,9 +26,9 @@ $this->assign('title', 'Book Class');
                 </div>
             </div>
             <div class="portal-class-card__meta">
-                <span><?= $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : '-' ?> - <?= $class->end_datetime ? $class->end_datetime->format('g:ia') : '-' ?></span>
-                <span><?= h($class->location) ?></span>
-                <span>Teacher: <?= h($class->teacher?->teacher_name ?? 'TBA') ?></span>
+                <span><i class="bi bi-clock me-1"></i><?= $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : '-' ?> - <?= $class->end_datetime ? $class->end_datetime->format('g:ia') : '-' ?></span>
+                <span><i class="bi bi-geo-alt me-1"></i><?= h($class->location) ?></span>
+                <span><i class="bi bi-person me-1"></i><?= h($class->teacher?->teacher_name ?? 'TBA') ?></span>
             </div>
             <div class="portal-status-row">
                 <div>
@@ -39,11 +42,11 @@ $this->assign('title', 'Book Class');
             </div>
         </div>
 
-        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+        <hr>
 
         <?= $this->Form->create(null, ['url' => ['action' => 'add', $class->class_id]]) ?>
         <fieldset>
-            <legend><strong>Choose Child</strong></legend>
+            <legend class="h6">Choose Child</legend>
             <?= $this->Form->control('student_id', [
                 'type' => 'select',
                 'label' => 'Book this class for',
@@ -57,7 +60,10 @@ $this->assign('title', 'Book Class');
                 'required' => true,
             ]) ?>
         </fieldset>
-        <?= $this->Form->button('Confirm Booking', ['class' => 'btn btn-primary']) ?>
+        <div class="d-flex gap-2 mt-3">
+            <?= $this->Form->button('<i class="bi bi-check-circle me-1"></i> Confirm Booking', ['class' => 'btn btn-primary', 'escape' => false]) ?>
+            <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-outline-secondary">Cancel</a>
+        </div>
         <?= $this->Form->end() ?>
     </div>
 </div>

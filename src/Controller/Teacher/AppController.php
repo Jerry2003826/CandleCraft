@@ -25,30 +25,30 @@ class AppController extends BaseAppController
         $this->viewBuilder()->setLayout('portal');
         $this->set('portalContext', [
             'title' => 'Teacher Portal',
-            'icon' => '&#x1F468;&#x200D;&#x1F3EB;',
+            'icon' => 'bi bi-person-workspace',
             'welcome' => 'Teaching Hub',
             'nav' => [
                 [
                     'label' => 'Dashboard',
-                    'icon' => '&#x1F4C5;',
+                    'icon' => 'bi bi-house',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
                     'controller' => 'Dashboard',
                 ],
                 [
                     'label' => 'Attendance',
-                    'icon' => '&#x1F4CB;',
+                    'icon' => 'bi bi-clipboard-check',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Attendance', 'action' => 'index'],
                     'controller' => 'Attendance',
                 ],
                 [
                     'label' => 'Resources',
-                    'icon' => '&#x1F4DA;',
+                    'icon' => 'bi bi-folder',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Resources', 'action' => 'index'],
                     'controller' => 'Resources',
                 ],
                 [
                     'label' => 'My Schedule',
-                    'icon' => '&#x1F4C1;',
+                    'icon' => 'bi bi-calendar-event',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],
                     'controller' => 'Availability',
                 ],

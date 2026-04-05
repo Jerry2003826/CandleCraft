@@ -6,49 +6,52 @@
 $this->assign('title', 'Payment Receipt');
 ?>
 
+<div class="mb-3">
+    <a href="<?= $this->Url->build(['controller' => 'Bookings', 'action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> My Schedule</a>
+</div>
+
 <div class="card">
-    <div class="card-header">
-        <h3>Payment Receipt</h3>
-        <a href="<?= $this->Url->build(['controller' => 'Bookings', 'action' => 'index']) ?>" class="btn btn-sm">&larr; My Bookings</a>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Payment Receipt</h5>
     </div>
     <div class="card-body">
         <div style="max-width: 600px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <h2 style="color: #2c3e50;">CandleCraft Academy</h2>
-                <p style="color: #666;">Payment Receipt</p>
+            <div class="text-center mb-4">
+                <i class="bi bi-check-circle text-success" style="font-size: 48px;"></i>
+                <h4 class="mt-2">CandleCraft Academy</h4>
+                <p class="text-muted">Payment Receipt</p>
             </div>
 
-            <div class="portal-status-row" style="padding: 12px 0; border-bottom: 1px solid #eee;">
-                <div>
-                    <span class="portal-status-row__label">Receipt #</span>
-                    <strong>PAY-<?= str_pad((string)$payment->payment_id, 6, '0', STR_PAD_LEFT) ?></strong>
-                </div>
-                <div>
-                    <span class="portal-status-row__label">Date</span>
-                    <strong><?= $payment->payment_date ? $payment->payment_date->format('j M Y, g:ia') : '-' ?></strong>
-                </div>
-            </div>
-
-            <div class="portal-status-row" style="padding: 12px 0; border-bottom: 1px solid #eee;">
-                <div>
-                    <span class="portal-status-row__label">Class</span>
-                    <strong>
-                        <?= h($payment->booking
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th class="text-muted" style="width: 40%;">Receipt #</th>
+                        <td><strong>PAY-<?= str_pad((string)$payment->payment_id, 6, '0', STR_PAD_LEFT) ?></strong></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">Date</th>
+                        <td><?= $payment->payment_date ? $payment->payment_date->format('j M Y, g:ia') : '-' ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">Course</th>
+                        <td><?= h($payment->booking
                             && $payment->booking->class_entity
                             && $payment->booking->class_entity->course
                             ? $payment->booking->class_entity->course->course_name
-                            : '-') ?>
-                    </strong>
-                </div>
-                <div>
-                    <span class="portal-status-row__label">Status</span>
-                    <span class="badge badge-confirmed"><?= ucfirst(h($payment->payment_status)) ?></span>
-                </div>
-            </div>
-
-            <div style="text-align: right; padding: 16px 0; font-size: 1.4em;">
-                <strong>Total Paid: $<?= number_format((float)$payment->amount, 2) ?> <?= h($payment->currency_code ?? 'AUD') ?></strong>
-            </div>
+                            : '-') ?></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">Status</th>
+                        <td><span class="badge badge-confirmed"><?= ucfirst(h($payment->payment_status)) ?></span></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="table-light">
+                        <th>Total Paid</th>
+                        <td><strong style="font-size: 1.3em;">$<?= number_format((float)$payment->amount, 2) ?> <?= h($payment->currency_code ?? 'AUD') ?></strong></td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     </div>
 </div>
