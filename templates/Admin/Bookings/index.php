@@ -70,11 +70,21 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
 
 <!-- Filters Toolbar -->
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="flex-grow-1" style="max-width:320px">
+        <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
+        <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" name="search" class="form-control" placeholder="Search bookings..." value="<?= h($search ?? '') ?>">
+        </div>
+    </form>
     <div class="btn-group btn-group-sm" role="group">
         <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn <?= !$status ? 'btn-primary' : 'btn-outline-primary' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'confirmed']]) ?>" class="btn <?= $status === 'confirmed' ? 'btn-primary' : 'btn-outline-primary' ?>">Confirmed</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'pending']]) ?>" class="btn <?= $status === 'pending' ? 'btn-primary' : 'btn-outline-primary' ?>">Pending</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'cancelled']]) ?>" class="btn <?= $status === 'cancelled' ? 'btn-primary' : 'btn-outline-primary' ?>">Cancelled</a>
+    </div>
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-sm btn-outline-secondary" disabled>Export</button>
     </div>
 </div>
 

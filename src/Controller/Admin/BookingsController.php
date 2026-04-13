@@ -20,6 +20,17 @@ class BookingsController extends AppController
             ->contain(['Students', 'Classes' => ['Courses', 'Teachers'], 'Payments'])
             ->orderBy(['Bookings.booking_date' => 'DESC']);
 
+        $search = $this->request->getQuery('search');
+        if ($search) {
+            $query->where([
+                'OR' => [
+                    'Students.student_name LIKE' => "%{$search}%",
+                    'Courses.course_name LIKE' => "%{$search}%",
+                    'Classes.class_code LIKE' => "%{$search}%",
+                ],
+            ]);
+        }
+
         $status = $this->request->getQuery('status');
         if ($status && in_array($status, ['pending', 'confirmed', 'completed', 'cancelled'])) {
             $query->where(['Bookings.booking_status' => $status]);
@@ -27,7 +38,7 @@ class BookingsController extends AppController
 
         $bookings = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('bookings', 'status', 'stats'));
+        $this->set(compact('bookings', 'status', 'stats', 'search'));
     }
 
     public function view(?string $id = null): void

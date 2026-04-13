@@ -9,8 +9,20 @@ class ClassesController extends AppController
     {
         $classesTable = $this->fetchTable('Classes');
         $query = $classesTable->find()
-            ->contain(['Courses', 'Teachers'])
+            ->contain(['Courses', 'Teachers', 'Bookings'])
             ->order(['Classes.start_datetime' => 'DESC']);
+
+        $search = $this->request->getQuery('search');
+        if ($search) {
+            $query->where([
+                'OR' => [
+                    'Classes.class_code LIKE' => "%{$search}%",
+                    'Courses.course_name LIKE' => "%{$search}%",
+                    'Teachers.teacher_name LIKE' => "%{$search}%",
+                    'Classes.location LIKE' => "%{$search}%",
+                ],
+            ]);
+        }
 
         $status = $this->request->getQuery('status');
         if ($status && in_array($status, ['scheduled', 'ongoing', 'completed', 'cancelled', 'full'])) {
@@ -19,7 +31,7 @@ class ClassesController extends AppController
 
         $classes = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('classes', 'status'));
+        $this->set(compact('classes', 'status', 'search'));
     }
 
     public function view(?string $id = null): void
@@ -38,6 +50,11 @@ class ClassesController extends AppController
             $class = $classesTable->patchEntity($class, $this->request->getData());
             if ($classesTable->save($class)) {
                 $this->Flash->success(__('The class has been saved.'));
+
+                $referer = $this->request->referer(true);
+                if ($referer && str_contains($referer, 'availability')) {
+                    return $this->redirect(['action' => 'availability']);
+                }
 
                 return $this->redirect(['action' => 'index']);
             }

@@ -21,6 +21,9 @@ $weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
     <li class="nav-item">
         <a class="nav-link active" href="<?= $this->Url->build(['action' => 'availability']) ?>">Availability</a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>">Attendance</a>
+    </li>
 </ul>
 
 <!-- Week Toolbar -->
@@ -95,23 +98,25 @@ $weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label for="slot-date" class="form-label">Date <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="slot-date" required
-                               value="<?= $days[0]->format('Y-m-d') ?>">
+                    <div class="col-md-6">
+                        <label for="slot-start-dt" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                        <?= $this->Form->text('start_datetime', [
+                            'type' => 'datetime-local',
+                            'id' => 'slot-start-dt',
+                            'required' => true,
+                            'value' => $days[0]->format('Y-m-d') . 'T10:00',
+                        ]) ?>
                     </div>
-                    <div class="col-md-4">
-                        <label for="slot-start" class="form-label">Start Time <span class="text-danger">*</span></label>
-                        <input type="time" class="form-control" id="slot-start" required value="10:00">
-                    </div>
-                    <div class="col-md-4">
-                        <label for="slot-end" class="form-label">End Time <span class="text-danger">*</span></label>
-                        <input type="time" class="form-control" id="slot-end" required value="12:00">
+                    <div class="col-md-6">
+                        <label for="slot-end-dt" class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                        <?= $this->Form->text('end_datetime', [
+                            'type' => 'datetime-local',
+                            'id' => 'slot-end-dt',
+                            'required' => true,
+                            'value' => $days[0]->format('Y-m-d') . 'T12:00',
+                        ]) ?>
                     </div>
                 </div>
-
-                <input type="hidden" name="start_datetime" id="slot-start-datetime">
-                <input type="hidden" name="end_datetime" id="slot-end-datetime">
 
                 <div class="row g-3 mt-1">
                     <div class="col-md-6">
@@ -125,42 +130,17 @@ $weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
                 </div>
 
                 <div class="mb-3 mt-3">
-                    <label for="slot-location" class="form-label">Location</label>
-                    <?= $this->Form->text('location', ['id' => 'slot-location', 'placeholder' => 'Studio A', 'value' => 'Studio A']) ?>
+                    <label for="slot-location" class="form-label">Location <span class="text-danger">*</span></label>
+                    <?= $this->Form->text('location', ['id' => 'slot-location', 'placeholder' => 'Studio A', 'value' => 'Studio A', 'required' => true]) ?>
                 </div>
 
                 <?= $this->Form->hidden('class_status', ['value' => 'scheduled']) ?>
-
-                <div class="form-check mt-3">
-                    <input class="form-check-input" type="checkbox" id="slot-repeat" checked>
-                    <label class="form-check-label" for="slot-repeat">
-                        Repeat weekly for <select id="slot-repeat-weeks" class="form-select form-select-sm d-inline-block" style="width:auto">
-                            <?php for ($w = 1; $w <= 12; $w++): ?>
-                                <option value="<?= $w ?>" <?= $w === 8 ? 'selected' : '' ?>><?= $w ?></option>
-                            <?php endfor; ?>
-                        </select> weeks
-                    </label>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="slot-submit">Create Slot</button>
+                <?= $this->Form->button(__('Create Slot'), ['class' => 'btn btn-primary']) ?>
             </div>
             <?= $this->Form->end() ?>
         </div>
     </div>
 </div>
-
-<?php $this->Html->scriptBlock("
-document.addEventListener('DOMContentLoaded', function() {
-    var form = document.querySelector('#addSlotModal form');
-    if (!form) return;
-    form.addEventListener('submit', function() {
-        var d = document.getElementById('slot-date').value;
-        var s = document.getElementById('slot-start').value;
-        var e = document.getElementById('slot-end').value;
-        document.getElementById('slot-start-datetime').value = d + 'T' + s;
-        document.getElementById('slot-end-datetime').value = d + 'T' + e;
-    });
-});
-", ['block' => true]); ?>
