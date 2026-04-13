@@ -36,13 +36,13 @@
     --bs-body-bg: #faf6f1;
     --bs-body-color: #2d190e;
     --bs-border-color: #e3d5c5;
-    --bs-font-sans-serif: 'Grown', serif;
+    --bs-font-sans-serif: 'Times New Roman', Times, serif;
     --bs-link-color: #c0873a;
     --bs-link-hover-color: #a06e2a;
 }
 
 body {
-    font-family: 'Grown', serif;
+    font-family: 'Times New Roman', Times, serif;
     background: var(--cc-light-bg);
     color: var(--cc-text-dark);
 }
@@ -1240,5 +1240,165 @@ body {
         width: 100%;
         text-align: left;
         margin-top: 8px;
+    }
+}
+
+/* ========================================
+   Availability Calendar Grid
+   ======================================== */
+.avail-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    min-height: 400px;
+}
+
+.avail-day {
+    border-right: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+}
+
+.avail-day:last-child {
+    border-right: none;
+}
+
+.avail-day--today {
+    background: rgba(192, 135, 58, 0.03);
+}
+
+.avail-day__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 4px;
+    border-bottom: 1px solid #f0f0f0;
+    background: var(--cc-light-bg);
+}
+
+.avail-day__header--today {
+    background: rgba(192, 135, 58, 0.08);
+}
+
+.avail-day__name {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cc-text-muted);
+}
+
+.avail-day__header--today .avail-day__name {
+    color: var(--cc-primary);
+}
+
+.avail-day__num {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--cc-text-dark);
+}
+
+.avail-day__header--today .avail-day__num {
+    background: var(--cc-primary);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 15px;
+}
+
+.avail-day__body {
+    flex: 1;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 280px;
+}
+
+.avail-empty {
+    color: var(--cc-text-muted);
+    font-size: 12px;
+    text-align: center;
+    padding-top: 24px;
+    opacity: 0.6;
+}
+
+.avail-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(192, 135, 58, 0.06);
+    border: 1px solid rgba(192, 135, 58, 0.2);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.avail-slot:hover {
+    box-shadow: 0 2px 8px rgba(192, 135, 58, 0.15);
+    border-color: var(--cc-primary);
+    text-decoration: none;
+    color: inherit;
+}
+
+.avail-slot__time {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--cc-primary);
+}
+
+.avail-slot__title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cc-text-dark);
+    line-height: 1.3;
+}
+
+.avail-slot__teacher {
+    font-size: 10px;
+    color: var(--cc-text-muted);
+}
+
+.avail-slot__spots {
+    font-size: 10px;
+    font-weight: 500;
+    color: #595959;
+}
+
+/* ---- Booking Avatar ---- */
+.booking-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(192, 135, 58, 0.15);
+    color: var(--cc-primary);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ---- Responsive: Availability ---- */
+@media (max-width: 992px) {
+    .avail-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .avail-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .avail-day__body {
+        min-height: 120px;
     }
 }

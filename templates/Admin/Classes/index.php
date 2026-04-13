@@ -7,6 +7,16 @@
 $this->assign('title', 'Classes');
 ?>
 
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" href="<?= $this->Url->build(['action' => 'index']) ?>">Class List</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?= $this->Url->build(['action' => 'availability']) ?>">Availability</a>
+    </li>
+</ul>
+
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
     <div class="btn-group btn-group-sm flex-wrap" role="group">
         <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-primary <?= !$status ? 'active' : '' ?>">All</a>

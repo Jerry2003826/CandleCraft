@@ -8,6 +8,14 @@ class BookingsController extends AppController
     public function index(): void
     {
         $bookingsTable = $this->fetchTable('Bookings');
+
+        $stats = [
+            'total' => $bookingsTable->find()->count(),
+            'confirmed' => $bookingsTable->find()->where(['booking_status' => 'confirmed'])->count(),
+            'pending' => $bookingsTable->find()->where(['booking_status' => 'pending'])->count(),
+            'cancelled' => $bookingsTable->find()->where(['booking_status' => 'cancelled'])->count(),
+        ];
+
         $query = $bookingsTable->find()
             ->contain(['Students', 'Classes' => ['Courses', 'Teachers'], 'Payments'])
             ->orderBy(['Bookings.booking_date' => 'DESC']);
@@ -19,7 +27,7 @@ class BookingsController extends AppController
 
         $bookings = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('bookings', 'status'));
+        $this->set(compact('bookings', 'status', 'stats'));
     }
 
     public function view(?string $id = null): void

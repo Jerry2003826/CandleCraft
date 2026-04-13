@@ -85,6 +85,55 @@ class ClassesController extends AppController
         $this->set(compact('class', 'courses', 'teachers'));
     }
 
+    public function availability()
+    {
+        $classesTable = $this->fetchTable('Classes');
+
+        $weekOffset = (int)($this->request->getQuery('week') ?? 0);
+        $monday = new \DateTimeImmutable('monday this week');
+        $monday = $monday->modify("{$weekOffset} weeks");
+
+        $days = [];
+        for ($i = 0; $i < 7; $i++) {
+            $days[] = $monday->modify("+{$i} days");
+        }
+
+        $startDate = $monday->format('Y-m-d 00:00:00');
+        $endDate = $days[6]->format('Y-m-d 23:59:59');
+
+        $classes = $classesTable->find()
+            ->contain(['Courses', 'Teachers', 'Bookings'])
+            ->where([
+                'Classes.start_datetime >=' => $startDate,
+                'Classes.start_datetime <=' => $endDate,
+            ])
+            ->order(['Classes.start_datetime' => 'ASC'])
+            ->all();
+
+        $classesByDay = [];
+        foreach ($days as $day) {
+            $classesByDay[$day->format('Y-m-d')] = [];
+        }
+        foreach ($classes as $class) {
+            $dayKey = $class->start_datetime->format('Y-m-d');
+            if (isset($classesByDay[$dayKey])) {
+                $classesByDay[$dayKey][] = $class;
+            }
+        }
+
+        $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
+            ->where(['is_active' => true])
+            ->order(['course_name' => 'ASC'])
+            ->all();
+
+        $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
+            ->where(['teacher_status' => 'active'])
+            ->order(['teacher_name' => 'ASC'])
+            ->all();
+
+        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset'));
+    }
+
     public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
