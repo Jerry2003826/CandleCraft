@@ -14,7 +14,7 @@ $this->Form->setTemplates([
     'inputContainer' => '<div class="mb-3">{{content}}</div>',
     'inputContainerError' => '<div class="mb-3">{{content}}{{error}}</div>',
     'label' => '<label class="form-label"{{attrs}}>{{text}}</label>',
-    'input' => '<input type="{{type}}" class="form-control" {{attrs}}/>',
+    'input' => '<input type="{{type}}" name="{{name}}" class="form-control" {{attrs}}/>',
     'select' => '<select class="form-select" {{attrs}}>{{content}}</select>',
     'textarea' => '<textarea class="form-control" {{attrs}}>{{value}}</textarea>',
     'error' => '<div class="invalid-feedback d-block">{{content}}</div>',

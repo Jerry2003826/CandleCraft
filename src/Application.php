@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 namespace App;
 
+use App\Middleware\CsrfRetryMiddleware;
 use App\Middleware\HostHeaderMiddleware;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
@@ -92,6 +93,8 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             // available as array through $request->getData()
             // https://book.cakephp.org/5/en/controllers/middleware.html#body-parser-middleware
             ->add(new BodyParserMiddleware())
+
+            ->add(new CsrfRetryMiddleware())
 
             ->add(new CsrfProtectionMiddleware([
                 'httponly' => true,
