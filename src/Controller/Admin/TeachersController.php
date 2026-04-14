@@ -19,9 +19,14 @@ class TeachersController extends AppController
             $query->where(['Teachers.teacher_status' => $status]);
         }
 
+        $search = $this->request->getQuery('search');
+        if ($search) {
+            $query->where(['Teachers.teacher_name LIKE' => '%' . $search . '%']);
+        }
+
         $teachers = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('teachers', 'status'));
+        $this->set(compact('teachers', 'status', 'search'));
     }
 
     public function view(?string $id = null): void

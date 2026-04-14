@@ -1,0 +1,3462 @@
+/* ========================================
+   CandleCraft Academy — Figma Redesign Styles
+   Based on Figma Design System tokens
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---- Design System Tokens ---- */
+:root {
+    /* Primary */
+    --rd-primary: #C0873A;
+    --rd-primary-hover: #A06E2A;
+    --rd-primary-light: #FFF7ED;
+    --rd-primary-15: rgba(192, 135, 58, 0.15);
+
+    /* Neutral */
+    --rd-bg: #FAFAFA;
+    --rd-card: #FFFFFF;
+    --rd-sidebar: #1A120C;
+    --rd-border: #E8E8E8;
+    --rd-divider: #F0F0F0;
+
+    /* Text */
+    --rd-text-title: #1D1D1D;
+    --rd-text-body: #595959;
+    --rd-text-caption: #8C8C8C;
+    --rd-text-white: #FFFFFF;
+    --rd-text-sidebar: #F5EDDE;
+
+    /* Status */
+    --rd-success: #52C41A;
+    --rd-success-bg: #F6FFED;
+    --rd-warning: #FAAD14;
+    --rd-warning-bg: #FFFBE6;
+    --rd-error: #FF4D4F;
+    --rd-error-bg: #FFF2F0;
+    --rd-info: #1890FF;
+    --rd-info-bg: #E6F7FF;
+
+    /* Category: Pottery */
+    --rd-pottery: #C0873A;
+    --rd-pottery-bg: #FFF7ED;
+
+    /* Category: Knitting */
+    --rd-knitting: #2F54EB;
+    --rd-knitting-bg: #F0F5FF;
+
+    /* Spacing */
+    --rd-space-xs: 4px;
+    --rd-space-sm: 8px;
+    --rd-space-md: 12px;
+    --rd-space-base: 16px;
+    --rd-space-lg: 20px;
+    --rd-space-xl: 24px;
+    --rd-space-2xl: 32px;
+    --rd-space-3xl: 40px;
+    --rd-space-4xl: 48px;
+    --rd-space-5xl: 64px;
+
+    /* Radius */
+    --rd-radius-sm: 4px;
+    --rd-radius-md: 6px;
+    --rd-radius-lg: 8px;
+    --rd-radius-xl: 12px;
+
+    /* Shadow */
+    --rd-shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.04);
+
+    /* Sidebar */
+    --rd-sidebar-width: 240px;
+}
+
+/* ---- Base Override ---- */
+body.redesign {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--rd-bg);
+    color: var(--rd-text-title);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Typography ---- */
+.rd-h1 { font-size: 30px; line-height: 40px; font-weight: 700; }
+.rd-h2 { font-size: 24px; line-height: 32px; font-weight: 700; }
+.rd-h3 { font-size: 20px; line-height: 28px; font-weight: 600; }
+.rd-h4 { font-size: 16px; line-height: 24px; font-weight: 600; }
+.rd-body-lg { font-size: 16px; line-height: 24px; font-weight: 400; }
+.rd-body { font-size: 14px; line-height: 22px; font-weight: 400; }
+.rd-body-medium { font-size: 14px; line-height: 22px; font-weight: 500; }
+.rd-caption { font-size: 12px; line-height: 20px; font-weight: 400; }
+.rd-small { font-size: 11px; line-height: 16px; font-weight: 500; }
+
+/* ========================================
+   Redesigned Sidebar
+   ======================================== */
+body.redesign #adminSidebar,
+body.redesign #portalSidebar {
+    background: var(--rd-sidebar) !important;
+}
+
+body.redesign #adminSidebar .offcanvas-body,
+body.redesign #portalSidebar .offcanvas-body {
+    padding: 24px 12px 16px !important;
+    gap: 4px;
+}
+
+/* Brand */
+body.redesign .rd-sidebar-brand {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--rd-primary);
+    padding: 0 0 0 0;
+    margin-bottom: 6px;
+}
+
+/* Nav links */
+body.redesign #adminSidebar .nav-link,
+body.redesign #portalSidebar .nav-link {
+    font-family: 'Inter', sans-serif;
+    color: var(--rd-text-sidebar);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: var(--rd-radius-lg);
+    border-left: none;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+
+body.redesign #adminSidebar .nav-link i,
+body.redesign #portalSidebar .nav-link i {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    margin-right: 10px;
+    font-size: 15px;
+    opacity: 0.7;
+}
+
+body.redesign #adminSidebar .nav-link.active i,
+body.redesign #portalSidebar .nav-link.active i {
+    opacity: 1;
+}
+
+body.redesign #adminSidebar .nav-link:hover,
+body.redesign #portalSidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+body.redesign #adminSidebar .nav-link.active,
+body.redesign #portalSidebar .nav-link.active {
+    background: var(--rd-primary-15);
+    color: var(--rd-primary);
+    font-weight: 500;
+    border-left: none;
+}
+
+/* Hide old brand section */
+body.redesign #adminSidebar .offcanvas-body > .d-none.d-lg-block,
+body.redesign #portalSidebar .offcanvas-body > .d-none.d-lg-block {
+    display: none !important;
+}
+
+/* ========================================
+   Redesigned Top Navbar
+   ======================================== */
+body.redesign .sidebar-navbar {
+    background: var(--rd-card);
+    border-bottom: none;
+    padding: 16px 32px;
+}
+
+body.redesign .sidebar-navbar .page-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--rd-text-title);
+}
+
+body.redesign .rd-welcome-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--rd-text-body);
+}
+
+body.redesign .rd-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--rd-primary);
+    display: inline-block;
+}
+
+/* ========================================
+   Redesigned Main Content
+   ======================================== */
+body.redesign .sidebar-main > main {
+    background: var(--rd-card);
+    padding: 24px 32px !important;
+}
+
+/* ========================================
+   Course Grid Layout
+   ======================================== */
+.rd-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.rd-search {
+    flex: 1;
+    border: 1px solid var(--rd-border);
+    border-radius: var(--rd-radius-md);
+    padding: 9px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--rd-text-caption);
+    background: var(--rd-card);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.rd-search:focus {
+    border-color: var(--rd-primary);
+    color: var(--rd-text-title);
+}
+
+.rd-view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--rd-border);
+    border-radius: var(--rd-radius-md);
+    overflow: hidden;
+}
+
+.rd-view-toggle a,
+.rd-view-toggle button {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    line-height: normal;
+}
+
+.rd-view-toggle .rd-active {
+    background: var(--rd-primary);
+    color: var(--rd-text-white);
+}
+
+.rd-view-toggle .rd-inactive {
+    background: var(--rd-card);
+    color: var(--rd-text-body);
+}
+
+.rd-view-toggle .rd-inactive:hover {
+    background: var(--rd-divider);
+}
+
+.rd-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--rd-primary);
+    color: var(--rd-text-white);
+    border: none;
+    border-radius: var(--rd-radius-md);
+    padding: 9px 16px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.rd-btn-primary:hover {
+    background: var(--rd-primary-hover);
+    color: var(--rd-text-white);
+    text-decoration: none;
+}
+
+/* ---- Course Grid ---- */
+.rd-course-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* ---- Course Card ---- */
+.rd-course-card {
+    width: 350px;
+    min-height: 240px;
+    background: var(--rd-card);
+    border-radius: var(--rd-radius-xl);
+    box-shadow: var(--rd-shadow-card);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.rd-course-card__bar {
+    height: 6px;
+    width: 100%;
+}
+
+.rd-course-card__bar--pottery { background: var(--rd-pottery); }
+.rd-course-card__bar--knitting { background: var(--rd-knitting); }
+.rd-course-card__bar--default { background: var(--rd-primary); }
+
+.rd-course-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+/* Tags row */
+.rd-course-card__tags {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rd-course-card__tags .spacer {
+    flex: 1;
+}
+
+.rd-tag {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: var(--rd-radius-sm);
+    white-space: nowrap;
+}
+
+.rd-tag--pottery {
+    background: var(--rd-pottery-bg);
+    color: var(--rd-pottery);
+}
+
+.rd-tag--knitting {
+    background: var(--rd-knitting-bg);
+    color: var(--rd-knitting);
+}
+
+.rd-tag--level {
+    background: var(--rd-divider);
+    color: var(--rd-text-body);
+}
+
+.rd-tag--active {
+    background: var(--rd-success-bg);
+    color: var(--rd-success);
+}
+
+.rd-tag--inactive {
+    background: var(--rd-error-bg);
+    color: var(--rd-error);
+}
+
+.rd-tag--pending {
+    background: var(--rd-warning-bg);
+    color: var(--rd-warning);
+}
+
+/* Course name */
+.rd-course-card__name {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--rd-text-title);
+    margin: 0;
+}
+
+/* Stats row */
+.rd-course-card__stats {
+    display: flex;
+    gap: 24px;
+}
+
+.rd-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rd-stat__label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--rd-text-caption);
+}
+
+.rd-stat__value {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--rd-text-title);
+}
+
+/* Actions row */
+.rd-course-card__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.rd-btn-edit {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border: 1px solid var(--rd-primary);
+    border-radius: var(--rd-radius-md);
+    color: var(--rd-primary);
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.rd-btn-edit:hover {
+    background: var(--rd-primary);
+    color: var(--rd-text-white);
+    text-decoration: none;
+}
+
+.rd-btn-delete {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border: 1px solid var(--rd-border);
+    border-radius: var(--rd-radius-md);
+    color: var(--rd-text-caption);
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.rd-btn-delete:hover {
+    border-color: var(--rd-error);
+    color: var(--rd-error);
+    text-decoration: none;
+}
+
+/* ---- Empty State ---- */
+.rd-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--rd-text-caption);
+    width: 100%;
+}
+
+.rd-empty-state p {
+    font-size: 16px;
+    margin-bottom: 16px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1200px) {
+    .rd-course-card {
+        width: calc(50% - 10px);
+        min-width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .rd-course-card {
+        width: 100%;
+    }
+
+    .rd-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .rd-search {
+        width: 100%;
+        flex: unset;
+    }
+
+    body.redesign .sidebar-main > main {
+        padding: 16px !important;
+    }
+}
+
+/* ========================================
+   Login Screen Redesign
+   ======================================== */
+
+.login-screen {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: #ffffff;
+    font-family: 'Inter', sans-serif;
+}
+
+.login-image-container {
+    flex: 1;
+    background-color: #f0f0f0;
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .login-image-container {
+        display: block;
+    }
+}
+
+.login-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.login-form-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.login-form-wrapper {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.login-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.login-overline {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--rd-primary);
+    margin: 0;
+}
+
+.login-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--rd-text-title);
+    margin: 0;
+}
+
+.login-subtitle {
+    font-size: 0.875rem;
+    color: var(--rd-text-body);
+    margin: 0;
+}
+
+.login-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.login-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rd-text-title);
+}
+
+.login-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--rd-border);
+    border-radius: var(--rd-radius-lg);
+    font-size: 0.875rem;
+    color: var(--rd-text-title);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.login-input::placeholder {
+    color: var(--rd-text-caption);
+}
+
+.login-input:focus {
+    border-color: var(--rd-primary);
+}
+
+.login-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.login-return-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--rd-primary);
+    text-decoration: none;
+}
+
+.login-return-link:hover {
+    text-decoration: underline;
+}
+
+.login-submit-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--rd-primary);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--rd-radius-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.login-submit-btn:hover {
+    background-color: var(--rd-primary-hover);
+}
+
+.login-footer {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rd-divider);
+    text-align: center;
+}
+
+.login-footer-text {
+    font-size: 0.875rem;
+    color: var(--rd-text-caption);
+    margin: 0;
+}
+
+/* ========================================
+   Admin Dashboard Redesign (Figma)
+   ======================================== */
+
+:root {
+    --admin-sidebar-bg: #1F2937;
+    --admin-sidebar-active: #374151;
+    --admin-sidebar-text: #D1D5DB;
+    --admin-sidebar-text-active: #FFFFFF;
+    --admin-brand-icon: #FBBF24;
+    
+    --admin-header-bg: #FFFFFF;
+    --admin-header-border: #E5E7EB;
+    --admin-search-bg: #F3F4F6;
+    --admin-search-text: #9CA3AF;
+    
+    --admin-main-bg: #F9FAFB;
+    
+    --admin-card-bg: #FFFFFF;
+    --admin-card-border: #E5E7EB;
+    --admin-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    
+    --admin-text-primary: #111827;
+    --admin-text-secondary: #6B7280;
+    
+    --admin-trend-up: #10B981;
+    --admin-trend-down: #EF4444;
+}
+
+body.redesign .sidebar-main {
+    background-color: var(--admin-main-bg);
+    min-height: 100vh;
+}
+
+/* Sidebar */
+body.redesign #adminSidebar,
+body.redesign #portalSidebar {
+    background-color: var(--admin-sidebar-bg) !important;
+    border-right: none;
+    width: 260px;
+}
+
+body.redesign #adminSidebar .offcanvas-body,
+body.redesign #portalSidebar .offcanvas-body {
+    padding: 32px 24px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.admin-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.admin-brand-icon {
+    width: 32px;
+    height: 32px;
+    background-color: var(--admin-brand-icon);
+    border-radius: 50%;
+}
+
+.admin-brand-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: #FFFFFF;
+    margin: 0;
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+body.redesign #adminSidebar .nav-link,
+body.redesign #portalSidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: var(--admin-sidebar-text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+body.redesign #adminSidebar .nav-link i,
+body.redesign #portalSidebar .nav-link i {
+    font-size: 20px;
+    margin: 0;
+    width: 20px;
+    text-align: center;
+    color: var(--admin-sidebar-text);
+}
+
+body.redesign #adminSidebar .nav-link:hover,
+body.redesign #portalSidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--admin-sidebar-text-active);
+}
+
+body.redesign #adminSidebar .nav-link.active,
+body.redesign #portalSidebar .nav-link.active {
+    background-color: var(--admin-sidebar-active);
+    color: var(--admin-sidebar-text-active);
+    font-weight: 600;
+}
+
+body.redesign #adminSidebar .nav-link.active i,
+body.redesign #portalSidebar .nav-link.active i {
+    color: var(--admin-brand-icon);
+}
+
+.admin-nav-bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.admin-nav-bottom .nav-link.logout {
+    color: #EF4444;
+}
+
+.admin-nav-bottom .nav-link.logout i {
+    color: #EF4444;
+}
+
+/* Header */
+body.redesign .sidebar-navbar {
+    background-color: var(--admin-header-bg);
+    border-bottom: 1px solid var(--admin-header-border);
+    padding: 24px 40px;
+}
+
+body.redesign .sidebar-navbar .page-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 24px;
+    color: var(--admin-text-primary);
+    margin: 0;
+}
+
+.admin-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.admin-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--admin-search-bg);
+    padding: 10px 16px;
+    border-radius: 20px;
+}
+
+.admin-search i {
+    color: var(--admin-search-text);
+    font-size: 16px;
+}
+
+.admin-search input {
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    outline: none;
+}
+
+.admin-search input::placeholder {
+    color: var(--admin-search-text);
+}
+
+.admin-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #D1D5DB;
+    border-radius: 50%;
+}
+
+/* Main Content */
+body.redesign .sidebar-main > main {
+    background-color: transparent;
+    padding: 40px !important;
+}
+
+/* Stat Cards */
+.admin-stat-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--admin-card-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+}
+
+.admin-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-stat-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-secondary);
+    margin: 0;
+}
+
+.admin-stat-icon {
+    width: 40px;
+    height: 40px;
+    background-color: var(--admin-search-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-secondary);
+    font-size: 20px;
+}
+
+.admin-stat-value {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    color: var(--admin-text-primary);
+    margin: 0;
+}
+
+.admin-stat-trend {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.admin-stat-trend.up { color: var(--admin-trend-up); }
+.admin-stat-trend.down { color: var(--admin-trend-down); }
+.admin-stat-trend.neutral { color: var(--admin-text-secondary); }
+
+/* Tables */
+.admin-table-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--admin-card-shadow);
+    height: 100%;
+}
+
+.admin-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--admin-card-border);
+    margin-bottom: 16px;
+}
+
+.admin-table-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--admin-text-primary);
+    margin: 0;
+}
+
+.admin-btn-view-all {
+    background-color: var(--admin-search-bg);
+    color: var(--admin-text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.admin-btn-view-all:hover {
+    background-color: #E5E7EB;
+    color: var(--admin-text-primary);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--admin-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--admin-card-border);
+    text-align: left;
+}
+
+.admin-table.no-headers th {
+    display: none;
+}
+
+.admin-table tr {
+    border-bottom: 1px solid var(--admin-search-bg);
+}
+
+.admin-table tr:last-child {
+    border-bottom: none;
+}
+
+.admin-table td {
+    padding: 16px 0;
+    vertical-align: middle;
+}
+
+.admin-table-primary-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    margin: 0 0 4px 0;
+}
+
+.admin-table-secondary-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--admin-text-secondary);
+    margin: 0;
+}
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.admin-badge-success { background-color: #D1FAE5; color: #065F46; }
+.admin-badge-warning { background-color: #FEF3C7; color: #92400E; }
+.admin-badge-danger { background-color: #FEE2E2; color: #991B1B; }
+.admin-badge-info { background-color: #DBEAFE; color: #1E40AF; }
+.admin-badge-neutral { background-color: #F3F4F6; color: #4B5563; }
+
+
+/* ========================================
+   Admin List Pages (Redesign)
+   ======================================== */
+
+.admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.admin-tabs {
+    display: flex;
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.admin-tab {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-secondary);
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.admin-tab:hover {
+    color: var(--admin-text-primary);
+}
+
+.admin-tab.active {
+    background-color: var(--admin-sidebar-bg);
+    color: #FFFFFF;
+}
+
+.admin-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--admin-brand-icon);
+    color: var(--admin-sidebar-bg);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.admin-btn-primary:hover {
+    background-color: #F59E0B; /* Darker amber */
+    color: var(--admin-sidebar-bg);
+}
+
+.admin-btn-primary i {
+    font-size: 16px;
+}
+
+.admin-action-links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: var(--admin-text-secondary);
+    background-color: transparent;
+    transition: all 0.2s;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.admin-action-link i {
+    font-size: 16px;
+}
+
+.admin-action-link:hover {
+    background-color: var(--admin-search-bg);
+    color: var(--admin-text-primary);
+}
+
+.admin-action-link.view:hover { color: #3B82F6; background-color: #EFF6FF; }
+.admin-action-link.edit:hover { color: #F59E0B; background-color: #FEF3C7; }
+.admin-action-link.delete:hover { color: #EF4444; background-color: #FEE2E2; }
+
+/* Pagination */
+.admin-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--admin-card-border);
+}
+
+.admin-pagination .page-item {
+    list-style: none;
+}
+
+.admin-pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-secondary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.admin-pagination .page-link:hover {
+    background-color: var(--admin-search-bg);
+    color: var(--admin-text-primary);
+}
+
+.admin-pagination .page-item.active .page-link {
+    background-color: var(--admin-sidebar-bg);
+    color: #FFFFFF;
+    border-color: var(--admin-sidebar-bg);
+}
+
+.admin-pagination .page-item.disabled .page-link {
+    color: #D1D5DB;
+    pointer-events: none;
+}
+
+
+/* Custom scrollbar for sidebar */
+body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar {
+    width: 4px;
+}
+body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar-track {
+    background: transparent;
+}
+body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar-thumb {
+    background-color: var(--admin-sidebar-active);
+    border-radius: 4px;
+}
+
+/* Fix for courses card */
+.rd-course-card {
+    border: 1px solid var(--admin-card-border);
+    box-shadow: var(--admin-card-shadow);
+}
+.rd-course-card__name {
+    color: var(--admin-text-primary);
+}
+.rd-stat__label {
+    color: var(--admin-text-secondary);
+}
+.rd-stat__value {
+    color: var(--admin-text-primary);
+}
+
+/* Fix for table headers */
+.admin-table th {
+    display: table-cell !important;
+}
+
+/* ========================================
+   Dark Mode Theme
+   ======================================== */
+
+[data-theme="dark"] {
+    --admin-sidebar-bg: #111827;
+    --admin-sidebar-active: #1F2937;
+    --admin-sidebar-text: #9CA3AF;
+    --admin-sidebar-text-active: #F3F4F6;
+    
+    --admin-header-bg: #1F2937;
+    --admin-header-border: #374151;
+    --admin-search-bg: #374151;
+    --admin-search-text: #9CA3AF;
+    
+    --admin-main-bg: #111827;
+    
+    --admin-card-bg: #1F2937;
+    --admin-card-border: #374151;
+    --admin-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    
+    --admin-text-primary: #F9FAFB;
+    --admin-text-secondary: #9CA3AF;
+}
+
+/* Dark mode specific overrides */
+[data-theme="dark"] body.redesign {
+    background-color: var(--admin-main-bg);
+}
+
+[data-theme="dark"] .admin-badge-success { background-color: rgba(16, 185, 129, 0.2); color: #34D399; }
+[data-theme="dark"] .admin-badge-warning { background-color: rgba(245, 158, 11, 0.2); color: #FBBF24; }
+[data-theme="dark"] .admin-badge-danger { background-color: rgba(239, 68, 68, 0.2); color: #F87171; }
+[data-theme="dark"] .admin-badge-info { background-color: rgba(59, 130, 246, 0.2); color: #60A5FA; }
+[data-theme="dark"] .admin-badge-neutral { background-color: rgba(107, 114, 128, 0.2); color: #9CA3AF; }
+
+[data-theme="dark"] .admin-action-link.view:hover { color: #60A5FA; background-color: rgba(59, 130, 246, 0.2); }
+[data-theme="dark"] .admin-action-link.edit:hover { color: #FBBF24; background-color: rgba(245, 158, 11, 0.2); }
+[data-theme="dark"] .admin-action-link.delete:hover { color: #F87171; background-color: rgba(239, 68, 68, 0.2); }
+
+[data-theme="dark"] .admin-search input {
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] .admin-table tr {
+    border-bottom-color: var(--admin-card-border);
+}
+
+[data-theme="dark"] .admin-btn-view-all:hover {
+    background-color: var(--admin-sidebar-active);
+}
+
+[data-theme="dark"] .admin-pagination .page-link:hover {
+    background-color: var(--admin-sidebar-active);
+}
+
+[data-theme="dark"] .admin-pagination .page-item.disabled .page-link {
+    color: #4B5563;
+}
+
+[data-theme="dark"] .admin-tab:hover {
+}
+
+/* ========================================
+   Admin Forms (Redesign)
+   ======================================== */
+
+.admin-form-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: var(--admin-card-shadow);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.admin-form-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--admin-card-border);
+}
+
+.admin-form-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--admin-text-primary);
+    margin: 0;
+}
+
+.admin-form-group {
+    margin-bottom: 24px;
+}
+
+.admin-form-label {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    margin-bottom: 8px;
+}
+
+.admin-form-input,
+.admin-form-select,
+.admin-form-textarea {
+    width: 100%;
+    padding: 10px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.admin-form-input::placeholder,
+.admin-form-textarea::placeholder {
+    color: var(--admin-text-secondary);
+}
+
+.admin-form-input:focus,
+.admin-form-select:focus,
+.admin-form-textarea:focus {
+    border-color: var(--admin-brand-icon);
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+
+.admin-form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.admin-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--admin-card-border);
+}
+
+.admin-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    background-color: var(--admin-search-bg);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admin-btn-secondary:hover {
+    background-color: var(--admin-card-border);
+    color: var(--admin-text-primary);
+}
+
+.admin-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--admin-text-secondary);
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+}
+
+.admin-back-link:hover {
+    color: var(--admin-text-primary);
+}
+
+/* Dark mode form overrides */
+[data-theme="dark"] .admin-form-input,
+[data-theme="dark"] .admin-form-select,
+[data-theme="dark"] .admin-form-textarea {
+    background-color: var(--admin-search-bg);
+    border-color: var(--admin-search-bg);
+}
+
+[data-theme="dark"] .admin-form-input:focus,
+[data-theme="dark"] .admin-form-select:focus,
+[data-theme="dark"] .admin-form-textarea:focus {
+    border-color: var(--admin-brand-icon);
+}
+
+[data-theme="dark"] .admin-btn-secondary {
+    background-color: var(--admin-search-bg);
+}
+
+[data-theme="dark"] .admin-btn-secondary:hover {
+    background-color: var(--admin-sidebar-active);
+}
+
+/* Fix for Flash messages on login screen */
+.login-screen .message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 0;
+}
+
+.login-screen .message.success {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.login-screen .message.error {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.login-screen .message.info {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+    border: 1px solid #BFDBFE;
+}
+
+/* Ensure flash container doesn't take space when empty */
+.login-flash-container:empty {
+    display: none;
+}
+.login-flash-container {
+    margin-bottom: -16px; /* Pull up fields slightly when flash is present */
+}
+
+/* Fix for Quick Action Cards hover effect */
+a.admin-form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] a.admin-form-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+    color: #111827;
+}
+
+.welcome-banner .welcome-title {
+    color: #111827;
+}
+
+.welcome-banner .welcome-subtitle {
+    color: #374151;
+}
+
+[data-theme="dark"] .welcome-banner {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 1px solid rgba(251, 191, 36, 0.2) !important;
+}
+
+[data-theme="dark"] .welcome-banner .welcome-title {
+    color: #FBBF24;
+}
+
+[data-theme="dark"] .welcome-banner .welcome-subtitle {
+    color: #D1D5DB;
+}
+
+/* Custom scrollbar for sidebar */
+body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar {
+    width: 4px;
+}
+body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar-track {
+    background: transparent;
+}
+body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar-thumb {
+    background-color: var(--admin-sidebar-active);
+    border-radius: 4px;
+}
+
+/* Fix for alerts in dark mode */
+[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    color: #93C5FD !important;
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.2) !important;
+    color: #FCD34D !important;
+}
+
+/* ========================================
+   Schedule / Calendar Redesign
+   ======================================== */
+
+.sp-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--admin-card-shadow);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.sp-toolbar__center {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.sp-toolbar__title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+}
+
+.sp-view-btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    color: var(--admin-text-secondary);
+    border-color: var(--admin-card-border);
+    background-color: transparent;
+}
+
+.sp-view-btn:hover {
+    color: var(--admin-text-primary);
+}
+
+.sp-view-btn.active {
+    background-color: var(--admin-brand-icon);
+    color: #111827;
+    border-color: var(--admin-brand-icon);
+}
+
+/* Calendar Grid */
+.wc-wrapper {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--admin-card-shadow);
+}
+
+.wc-header {
+    display: flex;
+    border-bottom: 1px solid var(--admin-card-border);
+    background-color: var(--admin-search-bg);
+}
+
+.wc-gutter-header {
+    width: 60px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--admin-card-border);
+}
+
+.wc-col-header {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    border-right: 1px solid var(--admin-card-border);
+}
+
+.wc-col-header:last-child {
+    border-right: none;
+}
+
+.wc-col-header__name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--admin-text-secondary);
+    margin-bottom: 4px;
+}
+
+.wc-col-header__num {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--admin-text-primary);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.wc-col-header--today .wc-col-header__name {
+    color: #3B82F6; /* Blue for today */
+}
+
+.wc-col-header__num--today {
+    background-color: #3B82F6;
+    color: #FFFFFF;
+}
+
+.wc-scroll {
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.wc-body-grid {
+    display: flex;
+    position: relative;
+    --wc-min-h: 1px;
+    --wc-hour-h: 60px;
+    height: calc(var(--wc-rows) * var(--wc-hour-h));
+}
+
+.wc-gutter {
+    width: 60px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--admin-card-border);
+    position: relative;
+    background-color: var(--admin-card-bg);
+}
+
+.wc-gutter__label {
+    position: absolute;
+    right: 8px;
+    transform: translateY(-50%);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--admin-text-secondary);
+}
+
+.wc-day {
+    flex: 1;
+    position: relative;
+    border-right: 1px solid var(--admin-card-border);
+    background-color: var(--admin-card-bg);
+}
+
+.wc-day:last-child {
+    border-right: none;
+}
+
+.wc-day--today {
+    background-color: rgba(59, 130, 246, 0.03);
+}
+
+[data-theme="dark"] .wc-day--today {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.wc-hour-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--admin-card-border);
+}
+
+.wc-evt {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    border-radius: 6px;
+    padding: 6px 8px;
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 3px solid var(--evt-color, var(--admin-brand-icon));
+    background-color: rgba(251, 191, 36, 0.1); /* Fallback bg */
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.wc-evt:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+}
+
+.wc-evt__title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--admin-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wc-evt__time, .wc-evt__loc {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--admin-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wc-now-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #EF4444; /* Red for current time */
+    z-index: 10;
+}
+
+.wc-now-dot {
+    position: absolute;
+    left: -4px;
+    top: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #EF4444;
+}
+
+/* List View */
+.sp-list-date {
+    margin-bottom: 24px;
+}
+
+.sp-list-date__label {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sp-list-date__badge {
+    background-color: var(--admin-brand-icon);
+    color: #111827;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.sp-list-card {
+    display: flex;
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--admin-card-shadow);
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sp-list-card__time {
+    display: flex;
+    flex-direction: column;
+    min-width: 100px;
+}
+
+.sp-list-card__time strong {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+}
+
+.sp-list-card__time span {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--admin-text-secondary);
+}
+
+.sp-list-card__body {
+    flex: 1;
+    min-width: 200px;
+}
+
+.sp-list-card__body h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+    margin-bottom: 8px;
+}
+
+.sp-list-card__meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.sp-list-card__meta span {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--admin-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sp-list-card__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+/* Dark mode overrides for calendar */
+[data-theme="dark"] .sp-view-btn.active {
+    color: #111827;
+}
+
+[data-theme="dark"] .wc-evt {
+    background-color: rgba(255, 255, 255, 0.05); /* Subtle bg in dark mode */
+}
+
+[data-theme="dark"] .wc-evt:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Fix for calendar view buttons */
+.sp-view-btn {
+    border: none !important;
+}
+
+[data-theme="dark"] .sp-view-btn.active {
+    background-color: var(--admin-brand-icon);
+    color: #111827;
+}
+
+[data-theme="dark"] .sp-view-btn:not(.active):hover {
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] #calendarNav .admin-action-link.view {
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] #calendarNav .admin-action-link.view:hover {
+    background-color: var(--admin-sidebar-active);
+}
+
+/* Fix for calendar grid lines in dark mode */
+[data-theme="dark"] .wc-hour-line,
+[data-theme="dark"] .wc-gutter,
+[data-theme="dark"] .wc-day,
+[data-theme="dark"] .wc-col-header,
+[data-theme="dark"] .wc-gutter-header,
+[data-theme="dark"] .wc-header {
+    border-color: var(--admin-card-border);
+}
+
+[data-theme="dark"] .wc-gutter,
+[data-theme="dark"] .wc-day {
+    background-color: var(--admin-card-bg);
+}
+
+[data-theme="dark"] .wc-header {
+    background-color: var(--admin-search-bg);
+}
+
+/* Fix for Browse Courses page */
+.admin-form-card .admin-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+/* Enhance Dark Mode Polish */
+[data-theme="dark"] .admin-form-card,
+[data-theme="dark"] .admin-table-card,
+[data-theme="dark"] .admin-stat-card {
+    background-color: #1F2937;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .admin-btn-primary {
+    background-color: #F59E0B; /* Slightly darker amber for better contrast in dark mode */
+    color: #111827;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+
+[data-theme="dark"] .admin-btn-primary:hover {
+    background-color: #D97706;
+    color: #111827;
+}
+
+[data-theme="dark"] .admin-search {
+    background-color: #111827;
+    border: 1px solid #374151;
+}
+
+[data-theme="dark"] .admin-search:focus-within {
+    border-color: #F59E0B;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+[data-theme="dark"] .admin-stat-icon {
+    background-color: #111827;
+    color: #9CA3AF;
+}
+
+[data-theme="dark"] .admin-badge-neutral {
+    background-color: #374151;
+    color: #D1D5DB;
+}
+
+[data-theme="dark"] .admin-action-link {
+    color: #9CA3AF;
+}
+
+[data-theme="dark"] .admin-action-link:hover {
+    background-color: #374151;
+    color: #F3F4F6;
+}
+
+[data-theme="dark"] body.redesign #adminSidebar,
+[data-theme="dark"] body.redesign #portalSidebar {
+    background-color: #111827 !important;
+    border-right: 1px solid #1F2937;
+}
+
+[data-theme="dark"] body.redesign .sidebar-navbar {
+    background-color: #1F2937;
+    border-bottom: 1px solid #374151;
+}
+
+[data-theme="dark"] .admin-avatar {
+    background-color: #374151;
+    border: 1px solid #4B5563;
+}
+
+/* Fix for calendar events in Browse Courses */
+.wc-evt {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.wc-evt:hover {
+    z-index: 2;
+}
+
+[data-theme="dark"] .wc-evt {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Fix header layout in calendar views */
+.admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+/* Fix for Admin Availability Calendar */
+.avail-grid {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--admin-card-shadow);
+    display: flex;
+}
+
+.avail-day {
+    flex: 1;
+    border-right: 1px solid var(--admin-card-border);
+    background-color: var(--admin-card-bg);
+}
+
+.avail-day:last-child {
+    border-right: none;
+}
+
+.avail-day--today {
+    background-color: rgba(59, 130, 246, 0.03);
+}
+
+[data-theme="dark"] .avail-day--today {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.avail-day__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    border-bottom: 1px solid var(--admin-card-border);
+    background-color: var(--admin-search-bg);
+}
+
+.avail-day__name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--admin-text-secondary);
+    margin-bottom: 4px;
+}
+
+.avail-day__num {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--admin-text-primary);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.avail-day__header--today .avail-day__name {
+    color: #3B82F6;
+}
+
+.avail-day__header--today .avail-day__num {
+    background-color: #3B82F6;
+    color: #FFFFFF;
+}
+
+.avail-day__body {
+    padding: 8px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.avail-empty {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--admin-text-secondary);
+    text-align: center;
+    padding: 16px 0;
+}
+
+.avail-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    border-left: 3px solid var(--admin-brand-icon);
+    background-color: rgba(251, 191, 36, 0.1);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.avail-slot:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+}
+
+[data-theme="dark"] .avail-slot {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .avail-slot:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.avail-slot--pottery {
+    border-left-color: #1D4ED8;
+    background-color: #DBEAFE;
+}
+
+[data-theme="dark"] .avail-slot--pottery {
+    background-color: rgba(29, 78, 216, 0.2);
+}
+
+.avail-slot--knitting {
+    border-left-color: #B45309;
+    background-color: #FEF3C7;
+}
+
+[data-theme="dark"] .avail-slot--knitting {
+    background-color: rgba(180, 83, 9, 0.2);
+}
+
+.avail-slot__time {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--admin-text-secondary);
+}
+
+.avail-slot__title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--admin-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.avail-slot__teacher,
+.avail-slot__spots {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--admin-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Course Summary Panel */
+.avail-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 16px;
+}
+
+.avail-course-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.avail-course-card__bar {
+    height: 4px;
+    background-color: var(--admin-brand-icon);
+}
+
+.avail-course-card--pottery .avail-course-card__bar { background-color: #1D4ED8; }
+.avail-course-card--knitting .avail-course-card__bar { background-color: #B45309; }
+
+.avail-course-card__body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.avail-course-card__name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+}
+
+.avail-course-card__meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.avail-course-card__type,
+.avail-course-card__level,
+.avail-course-card__price {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: var(--admin-search-bg);
+    color: var(--admin-text-secondary);
+}
+
+.avail-course-card--unscheduled {
+    opacity: 0.8;
+}
+
+/* Fix for calendar header background in dark mode */
+[data-theme="dark"] .wc-wrapper {
+    background-color: var(--admin-card-bg);
+}
+
+[data-theme="dark"] .admin-page-header {
+    background-color: transparent;
+}
+
+/* Fix calendar background in dark mode */
+[data-theme="dark"] body.redesign .wc-wrapper,
+[data-theme="dark"] body.redesign .wc-scroll {
+    background-color: var(--admin-card-bg);
+}
+
+[data-theme="dark"] body.redesign .wc-gutter,
+[data-theme="dark"] body.redesign .wc-day {
+    background-color: transparent;
+}
+
+[data-theme="dark"] body.redesign .wc-col-header__name {
+    color: var(--admin-text-secondary) !important;
+}
+
+[data-theme="dark"] body.redesign .wc-col-header__num {
+    color: var(--admin-text-primary) !important;
+}
+
+[data-theme="dark"] body.redesign .wc-col-header--today .wc-col-header__num {
+    color: #FFFFFF !important;
+}
+
+/* Fix for calendar scrollbar misalignment */
+.wc-wrapper {
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.wc-scroll {
+    overflow-y: visible;
+    max-height: none;
+}
+
+.wc-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Fix dark mode background for sticky header */
+[data-theme="dark"] .wc-header {
+    background-color: var(--admin-search-bg) !important;
+}
+
+[data-theme="dark"] .wc-gutter {
+    background-color: var(--admin-card-bg) !important;
+}
+
+/* Custom scrollbar for calendar */
+.wc-wrapper::-webkit-scrollbar,
+.wc-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.wc-wrapper::-webkit-scrollbar-track,
+.wc-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.wc-wrapper::-webkit-scrollbar-thumb,
+.wc-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--admin-card-border);
+    border-radius: 4px;
+}
+[data-theme="dark"] .wc-wrapper::-webkit-scrollbar-thumb,
+[data-theme="dark"] .wc-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+/* Fix dark mode background for sticky header */
+[data-theme="dark"] .wc-header {
+    background-color: var(--admin-search-bg) !important;
+}
+
+[data-theme="dark"] .wc-gutter {
+    background-color: var(--admin-card-bg) !important;
+}
+
+/* Fix for modal in dark mode */
+[data-theme="dark"] .modal-content {
+    background-color: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    border-color: var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .modal-title {
+    color: var(--admin-text-primary) !important;
+}
+
+[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Fix text-muted in dark mode */
+[data-theme="dark"] .text-muted {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Fix for checkbox in dark mode */
+[data-theme="dark"] input[type="checkbox"] {
+    accent-color: var(--admin-brand-icon) !important;
+    background-color: var(--admin-search-bg);
+    border-color: var(--admin-card-border);
+}
+
+/* Fix for empty state text in dark mode */
+[data-theme="dark"] .text-center p {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Fix for alerts in dark mode */
+[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    color: #93C5FD !important;
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.2) !important;
+    color: #FCD34D !important;
+}
+
+/* Removed Quick Action icon overrides to let inline styles work */
+
+/* Fix for Quick Action Cards hover effect */
+a.admin-form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] a.admin-form-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Fix for alerts */
+.alert-info {
+    background-color: #E0F2FE;
+    color: #1E3A8A;
+    border-color: #BFDBFE;
+}
+.alert-info i { color: #2563EB; }
+
+.alert-warning {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border-color: #FDE68A;
+}
+.alert-warning i { color: #D97706; }
+
+[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    color: #93C5FD !important;
+}
+[data-theme="dark"] .alert-info i { color: #60A5FA !important; }
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+    color: #FCD34D !important;
+}
+[data-theme="dark"] .alert-warning i { color: #FBBF24 !important; }
+
+/* Removed Quick Action icon overrides to let inline styles work */
+
+[data-theme="dark"] .admin-form-card .admin-badge-info {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #60A5FA;
+}
+
+/* Fix hover effect in dark mode for list view */
+.sp-list-card:hover {
+    background-color: var(--admin-search-bg);
+}
+
+[data-theme="dark"] .sp-list-card:hover {
+    background-color: var(--admin-search-bg);
+}
+
+/* Fix for list view hover and active states */
+.sp-list-card {
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.sp-list-card:hover {
+    background-color: var(--admin-search-bg) !important;
+}
+
+[data-theme="dark"] .sp-list-card:hover {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+/* Fix for list view text colors */
+.sp-list-card__time strong,
+.sp-list-card__body h6 {
+    color: var(--admin-text-primary) !important;
+}
+
+.sp-list-card__time span,
+.sp-list-card__meta span {
+    color: var(--admin-text-secondary) !important;
+}
+
+.sp-list-date__label {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Fix for list view text colors */
+.sp-list-card__time strong,
+.sp-list-card__body h6 {
+    color: var(--admin-text-primary) !important;
+}
+
+.sp-list-card__time span,
+.sp-list-card__meta span {
+    color: var(--admin-text-secondary) !important;
+}
+
+.sp-list-date__label {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Fix border colors in dark mode for list view */
+[data-theme="dark"] .sp-list-card {
+    background-color: var(--admin-card-bg);
+    border-color: var(--admin-card-border);
+}
+
+/* Fix for background of view buttons */
+.admin-tab {
+    border: none;
+    cursor: pointer;
+}
+
+/* Fix for spacing and borders in dark mode */
+[data-theme="dark"] .sp-list-date__label {
+    border-bottom: 1px solid var(--admin-card-border);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+
+/* View Toggle Active State Fixes */
+.sp-view-btn {
+    border-radius: 6px;
+}
+
+[data-theme="dark"] .sp-view-btn.active {
+    background-color: var(--admin-brand-icon) !important;
+    color: #111827 !important;
+}
+
+[data-theme="dark"] .sp-view-btn.active i {
+    color: #111827 !important;
+}
+
+/* Make sure active tab text is legible in dark mode */
+[data-theme="dark"] .admin-tab.active {
+    background-color: var(--admin-sidebar-active);
+    color: #FFFFFF;
+}
+
+/* Only change to yellow for the view toggle specifically */
+[data-theme="dark"] .admin-tabs .sp-view-btn.active {
+    background-color: var(--admin-brand-icon);
+    color: #111827;
+}
+
+/* Global fix for sp-list-card elements in dark mode */
+[data-theme="dark"] .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .sp-list-card:hover {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+/* Fix text and layout for list view items */
+[data-theme="dark"] .sp-list-card__time strong {
+    color: #F9FAFB !important;
+}
+
+[data-theme="dark"] .sp-list-card__time span {
+    color: #9CA3AF !important;
+}
+
+[data-theme="dark"] .sp-list-card__body h6 {
+    color: #F9FAFB !important;
+}
+
+[data-theme="dark"] .sp-list-card__meta span {
+    color: #9CA3AF !important;
+}
+
+[data-theme="dark"] .sp-list-date__label {
+    color: #F9FAFB !important;
+}
+
+[data-theme="dark"] .sp-list-card__actions .admin-btn-primary {
+    color: #111827 !important;
+}
+
+/* Fix for spacing issue on My Schedule List View */
+.sp-list-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--admin-card-shadow);
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+[data-theme="dark"] .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .sp-list-card:hover {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+/* Force override of old legacy CakePHP styles on the List View */
+body.redesign .sp-list-card:hover {
+    background-color: var(--admin-search-bg) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card:hover {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    box-shadow: var(--admin-card-shadow) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card__meta span i {
+    color: var(--admin-text-secondary) !important;
+}
+/* Add styling for the empty state box */
+[data-theme="dark"] body.redesign .sp-view--list .text-center {
+    color: var(--admin-text-secondary) !important;
+}
+/* Fix the ugly background color from old cakephp theme */
+body.redesign .sp-view--list {
+    background: transparent !important;
+}
+
+/* Force reset old CakePHP styles for the List View wrapper */
+body.redesign .sp-view--list {
+    border: none !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] body.redesign .sp-view--list {
+    background-color: transparent !important;
+}
+
+/* Force calendar height fixes */
+.wc-wrapper {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow-y: visible !important;
+    max-height: none !important;
+    box-shadow: var(--admin-card-shadow);
+}
+
+.wc-body-grid {
+    height: 900px !important; /* 15 hours * 60px */
+}
+
+/* Fix day header positioning */
+.wc-day {
+    min-height: 900px !important;
+}
+
+[data-theme="dark"] #calendarNav .admin-form-title {
+    color: #F9FAFB !important;
+}
+
+/* Global fix for list view border radius */
+.sp-list-card {
+    border-radius: 12px !important;
+}
+
+[data-theme="dark"] .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Fix for top right toggle buttons border radius */
+.admin-tabs {
+    border-radius: 8px !important;
+}
+.sp-view-btn {
+    border-radius: 6px !important;
+}
+
+/* Full override for the dark mode issue */
+[data-theme="dark"] body.redesign .sp-view--calendar {
+    background-color: transparent !important;
+}
+
+[data-theme="dark"] body.redesign .wc-wrapper {
+    background-color: var(--admin-card-bg) !important;
+}
+
+/* Force calendar height fixes */
+body.redesign .wc-scroll {
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+
+/* Fix for overlapping header when scrolling */
+body.redesign .wc-header {
+    background-color: var(--admin-search-bg) !important;
+    z-index: 10 !important;
+}
+
+/* Force reset list view background wrapper for My Schedule */
+body.redesign .schedule-page {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Ensure wc-wrapper has a full 100% width and display block */
+body.redesign .wc-wrapper {
+    display: block !important;
+    width: 100% !important;
+}
+
+body.redesign .wc-body-grid {
+    display: flex !important;
+    width: 100% !important;
+}
+
+/* Fix for the list view inside schedule-page */
+body.redesign .schedule-page > div:not(.admin-page-header) {
+    background-color: transparent !important;
+}
+
+/* Fix for the list view inside schedule-page */
+body.redesign .sp-view {
+    background-color: transparent !important;
+}
+
+body.redesign .schedule-page {
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+}
+
+/* Ensure table container spans full width in List View */
+body.redesign .sp-view--list:not(.d-none) {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Remove d-none when shown so flex works correctly */
+body.redesign .sp-view--list:not(.d-none) {
+    display: block !important;
+}
+
+/* Global fix for list view card border and background */
+body.redesign .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--admin-card-shadow) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+}
+
+/* Ensure text on List view cards is visible */
+[data-theme="dark"] body.redesign .sp-list-card__time strong,
+[data-theme="dark"] body.redesign .sp-list-card__body h6 {
+    color: var(--admin-text-primary) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card__time span,
+[data-theme="dark"] body.redesign .sp-list-card__meta span,
+[data-theme="dark"] body.redesign .sp-list-card__meta span i {
+    color: var(--admin-text-secondary) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-date__label {
+    color: var(--admin-text-primary) !important;
+    border-bottom: 1px solid var(--admin-card-border);
+}
+
+/* Force calendar wrapper to fit container instead of overlapping */
+body.redesign .wc-wrapper {
+    box-sizing: border-box;
+}
+
+body.redesign .wc-body-grid {
+    box-sizing: border-box;
+}
+/* Fix overlapping in list view */
+body.redesign .sp-list-card {
+    display: flex !important;
+}
+
+/* Fix for spacing issue on My Schedule List View */
+body.redesign .sp-list-card {
+    gap: 24px !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    padding: 20px !important;
+    margin-bottom: 12px !important;
+}
+
+body.redesign .sp-list-date {
+    margin-bottom: 24px !important;
+}
+
+/* Ensure text on List view cards is visible */
+[data-theme="dark"] body.redesign .sp-list-card__time strong,
+[data-theme="dark"] body.redesign .sp-list-card__body h6 {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Force calendar height fixes */
+body.redesign .wc-body-grid {
+    height: 900px !important; /* 15 hours * 60px */
+}
+
+/* Fix day header positioning */
+body.redesign .wc-day {
+    min-height: 900px !important;
+}
+
+/* Global fix for sp-list-card elements */
+body.redesign .sp-list-card {
+    background-color: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+body.redesign .sp-list-card:hover {
+    background-color: var(--admin-search-bg) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-card:hover {
+    background-color: var(--admin-sidebar-active) !important;
+}
+
+/* Force calendar wrapper to fix overlaps */
+body.redesign .wc-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+}
+
+body.redesign .wc-body-grid {
+    display: grid !important;
+    grid-template-columns: 60px repeat(7, 1fr) !important;
+    min-width: 800px !important;
+    width: 100% !important;
+}
+
+body.redesign .wc-header {
+    display: grid !important;
+    grid-template-columns: 60px repeat(7, 1fr) !important;
+    min-width: 800px !important;
+    width: 100% !important;
+}
+
+/* Restore grid behaviors */
+body.redesign .wc-col-header, body.redesign .wc-day {
+    min-width: 0 !important;
+}
+
+/* Fix the calendar scroll container */
+body.redesign .wc-scroll {
+    overflow-y: auto !important;
+    max-height: 600px !important;
+    min-width: 800px !important;
+    width: 100% !important;
+}
+
+/* Fix list view text overlap */
+body.redesign .sp-list-card__time {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 100px !important;
+}
+
+body.redesign .sp-list-card__body {
+    flex: 1 !important;
+    min-width: 200px !important;
+}
+
+body.redesign .sp-list-card__meta {
+    display: flex !important;
+    gap: 16px !important;
+    flex-wrap: wrap !important;
+}
+
+body.redesign .sp-list-card__actions {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+}
+
+/* Fix the list view date header and wrapper */
+body.redesign .sp-list-date {
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 24px !important;
+    padding: 0 !important;
+}
+
+body.redesign .sp-list-date__label {
+    background: transparent !important;
+    border-bottom: 1px solid var(--admin-card-border) !important;
+    padding: 0 0 12px 0 !important;
+    margin-bottom: 16px !important;
+    font-size: 16px !important;
+    color: var(--admin-text-primary) !important;
+}
+
+[data-theme="dark"] body.redesign .sp-list-date__label {
+    color: var(--admin-text-primary) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+body.redesign .sp-list-card {
+    margin-bottom: 16px !important;
+}
+
+/* ========================================
+   Login Screen Dark Mode & Polish
+   ======================================== */
+
+[data-theme="dark"] .login-screen {
+    background-color: var(--admin-main-bg);
+}
+
+[data-theme="dark"] .login-title,
+[data-theme="dark"] .login-label {
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] .login-subtitle,
+[data-theme="dark"] .login-footer-text {
+    color: var(--admin-text-secondary);
+}
+
+[data-theme="dark"] .login-input {
+    background-color: var(--admin-card-bg);
+    border-color: var(--admin-card-border);
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] .login-input:focus {
+    border-color: var(--admin-brand-icon);
+}
+
+[data-theme="dark"] .login-input::placeholder {
+    color: var(--admin-text-secondary);
+}
+
+[data-theme="dark"] .login-image-container {
+    background-color: #111827;
+}
+
+[data-theme="dark"] body.site-home {
+    background-color: var(--admin-main-bg);
+}
+
+/* Make Login match dashboard style */
+.login-screen {
+    background-color: #F9FAFB;
+}
+
+.login-form-wrapper {
+    background-color: #FFFFFF;
+    padding: 48px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    border: 1px solid #F3F4F6;
+    max-width: 480px;
+    width: 100%;
+}
+
+[data-theme="dark"] .login-form-wrapper {
+    background-color: var(--admin-card-bg);
+    border-color: var(--admin-card-border);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+}
+
+.login-image-container {
+    padding: 24px;
+    background-color: #F9FAFB;
+}
+
+[data-theme="dark"] .login-image-container {
+    background-color: var(--admin-main-bg);
+}
+
+.login-image {
+    border-radius: 24px;
+    height: calc(100vh - 48px);
+    width: 100%;
+    object-fit: cover;
+}
+
+/* ========================================
+   Admin Tables (Redesign)
+   ======================================== */
+
+.admin-table-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    box-shadow: var(--admin-card-shadow);
+    overflow: hidden; /* Important for border radius on table corners */
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--admin-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--admin-card-border);
+    background-color: var(--admin-search-bg);
+    text-align: left;
+}
+
+.admin-table td {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--admin-card-border);
+    vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tr {
+    transition: background-color 0.15s;
+}
+
+.admin-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+[data-theme="dark"] .admin-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme="dark"] .admin-table th {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Fix list view button sizing */
+.admin-tab {
+    font-size: 13px !important;
+    padding: 6px 14px !important;
+    border-radius: 6px !important;
+    background-color: transparent;
+}
+
+.admin-tabs {
+    padding: 4px;
+    border-radius: 8px;
+    background-color: var(--admin-search-bg);
+    border: none;
+    display: inline-flex;
+    gap: 4px;
+}
+
+[data-theme="dark"] .admin-tabs {
+    background-color: #111827;
+    border: 1px solid #374151;
+}
+
+.admin-tab.active {
+    background-color: #FFFFFF !important;
+    color: var(--admin-text-primary) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] .admin-tab.active {
+    background-color: #374151 !important;
+    color: #F9FAFB !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Fix course summary panel styles in availability page */
+.avail-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 16px;
+    background-color: var(--admin-main-bg);
+}
+
+[data-theme="dark"] .avail-course-grid {
+    background-color: var(--admin-main-bg);
+}
+
+.avail-course-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--admin-card-shadow);
+}
+
+[data-theme="dark"] .avail-course-card {
+    background-color: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .avail-course-card__name {
+    color: var(--admin-text-primary);
+}
+
+[data-theme="dark"] .avail-course-card__type,
+[data-theme="dark"] .avail-course-card__level,
+[data-theme="dark"] .avail-course-card__price {
+    background-color: var(--admin-search-bg);
+    color: var(--admin-text-secondary);
+}
+
+[data-theme="dark"] .card-header h6 {
+    color: var(--admin-text-primary);
+}
+
+/* Fix for overlapping header when scrolling */
+.wc-header {
+    background-color: var(--admin-search-bg) !important;
+    z-index: 10 !important;
+}
+
+/* Force calendar body width */
+.avail-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    width: 100% !important;
+    min-width: 800px !important;
+}
+
+.avail-day {
+    flex: unset !important;
+    min-width: 0 !important;
+    border-right: 1px solid var(--admin-card-border) !important;
+}
+
+.avail-day:last-child {
+    border-right: none !important;
+}
+
+/* Weekly Calendar Grid */
+.avail-grid-wrapper {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    overflow-x: auto;
+    box-shadow: var(--admin-card-shadow);
+    width: 100%;
+    display: block;
+}
+
+[data-theme="dark"] .avail-grid-wrapper {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+.avail-grid {
+    display: flex;
+    min-width: 800px;
+    width: 100%;
+}
+
+/* Force calendar body width */
+[data-theme="dark"] .avail-grid-wrapper {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .avail-day {
+    background-color: var(--admin-card-bg) !important;
+}
+
+/* Force reset old CakePHP styles */
+body.redesign .card:has(> .avail-grid-wrapper) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+[data-theme="dark"] body.redesign .card:has(> .avail-grid-wrapper) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+body.redesign .avail-grid-wrapper {
+    display: block !important;
+    width: 100% !important;
+    border: 1px solid var(--admin-card-border) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+body.redesign .avail-grid {
+    display: flex !important;
+    min-width: 800px !important;
+    width: 100% !important;
+    background-color: var(--admin-card-bg) !important;
+    border-radius: 12px !important;
+    border: none !important;
+    overflow: hidden !important;
+}
+
+body.redesign .avail-day {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    border-right: 1px solid var(--admin-card-border) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: transparent !important;
+}
+
+body.redesign .avail-day:last-child {
+    border-right: none !important;
+}
+
+body.redesign .avail-day__body {
+    flex-grow: 1 !important;
+    background-color: transparent !important;
+}
+
+/* Fix for dark mode text in avail-slot */
+[data-theme="dark"] .avail-slot__title {
+    color: #F9FAFB !important;
+}
+
+[data-theme="dark"] .avail-slot__time,
+[data-theme="dark"] .avail-slot__teacher,
+[data-theme="dark"] .avail-slot__spots {
+    color: #D1D5DB !important;
+}
+
+/* Fix missing border on the wrapper */
+.avail-grid-wrapper {
+    border: 1px solid var(--admin-card-border) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+
+/* Fix for avail-empty text color */
+[data-theme="dark"] .avail-empty {
+    color: var(--admin-text-secondary) !important;
+}
+
+/* Fix overlapping wrapper for Availability grid */
+.avail-grid {
+    border-radius: 0 !important;
+}
+
+[data-theme="dark"] .avail-day__header {
+    background-color: var(--admin-search-bg) !important;
+    border-bottom: 1px solid var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] .avail-day__name {
+    color: var(--admin-text-secondary) !important;
+}
+
+[data-theme="dark"] .avail-day__num {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Fix for the inner container border */
+.avail-grid {
+    border: none !important;
+}
+
+/* Global fix to hide original cakephp card styles causing duplicate borders */
+body.redesign .avail-grid-wrapper {
+    box-shadow: var(--admin-card-shadow) !important;
+}
+
+/* Fix overlapping borders */
+body.redesign .avail-day {
+    border-right: 1px solid var(--admin-card-border) !important;
+}
+
+/* Fix for dark mode font visibility inside slots */
+[data-theme="dark"] .avail-slot__title {
+    color: #F9FAFB !important;
+}
+
+/* Force reset old CakePHP styles */
+body.redesign .card:has(> .avail-grid-wrapper) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+/* Force calendar wrapper borders */
+[data-theme="dark"] body.redesign .card:has(> .avail-grid-wrapper) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Fix for the avail-grid-wrapper layout */
+body.redesign .avail-grid-wrapper {
+    display: block;
+    width: 100%;
+}
+
+/* Fix for the avail day container */
+.avail-day {
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid var(--admin-card-border);
+    display: flex;
+    flex-direction: column;
+}
+
+[data-theme="dark"] .avail-day {
+    border-right: 1px solid var(--admin-card-border) !important;
+}
+
+/* Force calendar body width */
+body.redesign .avail-grid {
+    display: flex !important;
+    min-width: 800px !important;
+    width: 100% !important;
+}
+
+/* Fix background overflow */
+.avail-grid {
+    background-color: var(--admin-card-bg);
+}
+
+.avail-day__body {
+    flex-grow: 1;
+    background-color: var(--admin-card-bg);
+}
+
+[data-theme="dark"] .avail-day__body {
+    background-color: var(--admin-card-bg);
+}
+
+/* Force reset old CakePHP styles for grid */
+body.redesign .avail-grid {
+    display: flex !important;
+    min-width: 800px !important;
+    width: 100% !important;
+}
+
+body.redesign .avail-day {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    border-right: 1px solid var(--admin-card-border) !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.redesign .avail-day:last-child {
+    border-right: none !important;
+}
+
+/* Force calendar height fixes */
+body.redesign .avail-grid {
+    border-radius: 12px;
+}
+
+/* Force calendar height fixes */
+body.redesign .avail-grid-wrapper {
+    border-radius: 12px !important;
+}
+
+/* Force calendar height fixes */
+body.redesign .avail-grid {
+    overflow: hidden;
+}
+
+/* Fix inner container overlapping border-radius */
+body.redesign .avail-grid {
+    overflow: hidden !important;
+}
+
+/* Fix for the left rounded corners overlap */
+body.redesign .avail-day:first-child .avail-day__header {
+    border-top-left-radius: 12px !important;
+}
+body.redesign .avail-day:last-child .avail-day__header {
+    border-top-right-radius: 12px !important;
+}
+
+/* Fix border radius header */
+body.redesign .avail-grid {
+    border-radius: 12px !important;
+}
+
+/* Remove the padding from the modal button to center icon and text properly */
+.avail-quick-add {
+    justify-content: center;
+}
+
+/* Fix for the avail day container */
+[data-theme="dark"] body.redesign .avail-day__header {
+    background-color: var(--admin-search-bg) !important;
+    border-bottom: 1px solid var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] body.redesign .avail-day__name {
+    color: var(--admin-text-secondary) !important;
+}
+
+[data-theme="dark"] body.redesign .avail-day__num {
+    color: var(--admin-text-primary) !important;
+}
+
+/* Full CSS rewrite for calendar corners and borders */
+body.redesign .avail-grid-wrapper {
+    background-color: var(--admin-card-bg) !important;
+    border: 1px solid var(--admin-card-border) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important; /* This is what makes the corners round */
+}
+
+body.redesign .avail-grid {
+    background-color: transparent !important;
+}
+
+body.redesign .avail-day__header {
+    background-color: var(--admin-search-bg) !important;
+}
+
+body.redesign .avail-day__body {
+    background-color: var(--admin-card-bg) !important;
+}
+
+/* Ensure inner cards in list view are displayed correctly */
+.sp-list-card {
+    display: flex !important;
+    gap: 24px !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    padding: 20px !important;
+    margin-bottom: 12px !important;
+}
+
+[data-theme="dark"] .sp-list-card__time strong,
+[data-theme="dark"] .sp-list-card__body h6 {
+    color: #F9FAFB !important;
+}
+
+[data-theme="dark"] .sp-list-card__time span,
+[data-theme="dark"] .sp-list-card__meta span,
+[data-theme="dark"] .sp-list-card__meta span i {
+    color: #9CA3AF !important;
+}
+
+/* Fix for the view buttons container width */
+.admin-page-header .d-flex.align-items-center.gap-3 {
+    flex-wrap: wrap;
+}
+
+[data-theme="dark"] .sp-list-date__label {
+    border-bottom: 1px solid var(--admin-card-border) !important;
+}
+
+/* Center calendar wrapper */
+body.redesign .wc-wrapper {
+    margin: 0 auto;
+    max-width: 1200px;
+}
+
+/* Fix container max-width to center the content */
+body.redesign .sp-view {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Global fix to ensure content container uses full width */
+body.redesign .sidebar-main > main {
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Revert max-width for sp-view so lists don't shrink weirdly */
+body.redesign .sp-view {
+    max-width: none !important;
+}
+
+body.redesign .admin-page-header {
+    max-width: none !important;
+}
+
+/* Fix the calendar wrapper so it takes full width but looks aligned */
+body.redesign .wc-wrapper {
+    max-width: none !important;
+}
+
+/* Fix for the list card meta container */
+.sp-list-card__meta {
+    margin-top: 4px !important;
+}
+
+.sp-list-card__body h6 {
+    margin-bottom: 2px !important;
+}
+
+/* Force calendar wrapper border */
+body.redesign .wc-wrapper {
+    border: 1px solid var(--admin-card-border) !important;
+}
+
+[data-theme="dark"] body.redesign .wc-wrapper {
+    border: 1px solid var(--admin-card-border) !important;
+}

@@ -58,13 +58,18 @@ class PagesController extends AppController
         $enquiry = $messagesTable->newEmptyEntity();
 
         if ($this->request->is('post')) {
+            $selfDeclaredAdult = !empty($this->request->getData('self_declared_adult'));
+            $messageText = trim((string)$this->request->getData('message_text'));
+            $ageTag = $selfDeclaredAdult ? '[AGE DECLARATION: 18+]' : '[AGE DECLARATION: Under 18]';
+            $messageText = $ageTag . "\n\n" . $messageText;
+
             $enquiryData = [
                 'sender_name' => trim((string)$this->request->getData('sender_name')),
                 'sender_email' => trim((string)$this->request->getData('sender_email')),
                 'sender_phone' => trim((string)$this->request->getData('sender_phone')),
                 'source_page' => $sourcePage,
                 'subject' => trim((string)$this->request->getData('subject')),
-                'message_text' => trim((string)$this->request->getData('message_text')),
+                'message_text' => $messageText,
                 'message_type' => 'contact_form',
                 'message_status' => 'unread',
                 'sent_at' => DateTime::now(),

@@ -8,63 +8,95 @@
 $this->assign('title', 'Add Resource');
 ?>
 
-<div class="card">
-    <div class="card-header">
-        <h3>Add Learning Resource</h3>
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-sm">&larr; Back</a>
+<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back to Resources
+</a>
+
+<div class="admin-form-card">
+    <div class="admin-form-header">
+        <h2 class="admin-form-title">Add Learning Resource</h2>
     </div>
-    <div class="card-body">
-        <?php if (empty($classOptions)): ?>
-            <div class="empty-state">
-                <div class="icon">&#x1F4CB;</div>
-                <p>You have no classes assigned. Resources can only be added to your classes.</p>
+    
+    <?php if (empty($classOptions)): ?>
+        <div class="admin-form-card text-center py-5" style="max-width: 100%; border: 1px dashed var(--admin-card-border); box-shadow: none;">
+            <i class="bi bi-journal-x text-muted" style="font-size: 48px;"></i>
+            <p class="mt-3 text-muted" style="font-family: 'Inter', sans-serif; font-size: 15px;">You have no classes assigned. Resources can only be added to your classes.</p>
+        </div>
+    <?php else: ?>
+        <?= $this->Form->create($resource, ['type' => 'file']) ?>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="admin-form-group mb-0">
+                        <label for="resource-name" class="admin-form-label">Resource Name</label>
+                        <?= $this->Form->text('resource_name', [
+                            'id' => 'resource-name', 
+                            'required' => true,
+                            'class' => 'admin-form-input'
+                        ]) ?>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="admin-form-group mb-0">
+                        <label for="class-id" class="admin-form-label">Class</label>
+                        <?= $this->Form->select('class_id', $classOptions, [
+                            'id' => 'class-id', 
+                            'required' => true,
+                            'class' => 'admin-form-select'
+                        ]) ?>
+                    </div>
+                </div>
             </div>
-        <?php else: ?>
-            <?= $this->Form->create($resource, ['type' => 'file']) ?>
-            <fieldset>
-                <div class="form-group">
-                    <?= $this->Form->control('class_id', [
-                        'type' => 'select',
-                        'options' => $classOptions,
-                        'label' => 'Class',
-                        'required' => true,
-                    ]) ?>
+            
+            <div class="admin-form-group mt-4">
+                <label for="resource-type" class="admin-form-label">Resource Type</label>
+                <?= $this->Form->select('resource_type', $resourceTypes, [
+                    'id' => 'resource-type', 
+                    'required' => true,
+                    'class' => 'admin-form-select',
+                    'style' => 'max-width: 300px;'
+                ]) ?>
+            </div>
+
+            <div class="admin-form-group mt-4">
+                <label for="resource-description" class="admin-form-label">Description</label>
+                <?= $this->Form->textarea('resource_description', [
+                    'id' => 'resource-description', 
+                    'rows' => 3,
+                    'class' => 'admin-form-textarea'
+                ]) ?>
+            </div>
+
+            <hr style="border-color: var(--admin-card-border); margin: 32px 0;">
+            <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 24px; color: var(--admin-brand-icon);">Resource Content</h3>
+            <p style="font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 24px;">Provide either an external URL or upload a file.</p>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="admin-form-group mb-0">
+                        <label for="resource-url" class="admin-form-label">URL / Link (for external links)</label>
+                        <?= $this->Form->url('resource_url', [
+                            'id' => 'resource-url', 
+                            'placeholder' => 'https://...',
+                            'class' => 'admin-form-input'
+                        ]) ?>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <?= $this->Form->control('resource_name', [
-                        'label' => 'Resource Name',
-                        'required' => true,
-                    ]) ?>
+                <div class="col-md-6">
+                    <div class="admin-form-group mb-0">
+                        <label for="file-upload" class="admin-form-label">Upload File (PDF, document, video, etc.)</label>
+                        <?= $this->Form->file('file_upload', [
+                            'id' => 'file-upload',
+                            'class' => 'admin-form-input',
+                            'style' => 'padding: 7px 16px;'
+                        ]) ?>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <?= $this->Form->control('resource_description', [
-                        'type' => 'textarea',
-                        'label' => 'Description',
-                    ]) ?>
-                </div>
-                <div class="form-group">
-                    <?= $this->Form->control('resource_type', [
-                        'type' => 'select',
-                        'options' => $resourceTypes,
-                        'label' => 'Resource Type',
-                        'required' => true,
-                    ]) ?>
-                </div>
-                <div class="form-group">
-                    <?= $this->Form->control('resource_url', [
-                        'label' => 'URL / Link (for external links)',
-                        'placeholder' => 'https://...',
-                    ]) ?>
-                </div>
-                <div class="form-group">
-                    <?= $this->Form->control('file_upload', [
-                        'type' => 'file',
-                        'label' => 'Upload File (PDF, document, video, etc.)',
-                    ]) ?>
-                </div>
-            </fieldset>
-            <?= $this->Form->button('Add Resource', ['class' => 'btn btn-primary']) ?>
-            <?= $this->Form->end() ?>
-        <?php endif; ?>
-    </div>
+            </div>
+            
+            <div class="admin-form-actions">
+                <?= $this->Form->button('Add Resource', ['class' => 'admin-btn-primary']) ?>
+                <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-secondary">Cancel</a>
+            </div>
+        <?= $this->Form->end() ?>
+    <?php endif; ?>
 </div>

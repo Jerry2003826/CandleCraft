@@ -3,62 +3,83 @@
  * @var \App\View\AppView $this
  */
 $homeUrl = $this->Url->build('/');
+$this->Html->css('redesign.css?v=' . time(), ['block' => true]);
 ?>
 
-<div class="section-heading" style="text-align: center; padding: 60px 20px 20px;">
-    <p class="overline" style="color: var(--home-accent); letter-spacing: 0.3em; margin-bottom: 12px; font-size: 0.8rem;">
-        Secure Access
-    </p>
-    <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0; line-height: 1;">
-        Portal Login
-    </h1>
-    <div style="width: 60px; height: 2px; background: var(--home-accent); margin: 24px auto 0; opacity: 0.6;"></div>
-</div>
+<style>
+    /* Hide default layout header and footer for full-screen login */
+    .hero-home, .home-footer { display: none !important; }
+    body.site-home { background: #fff; }
+    main { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    .home-shell { display: block; }
+</style>
 
-<div class="enquiry-card" style="max-width: 500px; margin: 30px auto 80px; background: rgba(47, 34, 25, 0.85); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid rgba(210, 154, 88, 0.3); padding: 40px; box-shadow: var(--home-shadow);">
+<script>
+    // Apply theme immediately to prevent FOUC on login page
+    const savedTheme = localStorage.getItem('admin-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+</script>
 
-    <p style="color: var(--home-text-muted); text-align: center; margin-bottom: 30px; font-size: 0.95rem; letter-spacing: 0.05em;">
-        Enter your academy credentials to access your dashboard.
-    </p>
-
-    <?= $this->Flash->render() ?>
-
-    <div class="enquiry-form">
-        <?= $this->Form->create(null, [
-            'url' => ['controller' => 'Users', 'action' => 'login'],
-        ]) ?>
-
-        <div class="form-group" style="margin-bottom: 24px;">
-            <label style="color: var(--home-accent-soft); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Academy Email</label>
-            <?= $this->Form->email('email', [
-                'id' => 'email',
-                'placeholder' => 'email@candlecraft.com',
-                'required' => true,
-            ]) ?>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 24px;">
-            <label style="color: var(--home-accent-soft); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Password</label>
-            <?= $this->Form->password('password', [
-                'id' => 'password',
-                'placeholder' => '········',
-                'required' => true,
-            ]) ?>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 34px; flex-wrap: wrap; gap: 20px;">
-            <a href="<?= h($homeUrl) ?>" style="font-size: 0.8rem; color: var(--home-accent); letter-spacing: 0.1em; border-bottom: 1px solid rgba(210, 154, 88, 0.3);">
-                Return to homepage
-            </a>
-            <?= $this->Form->button(__('Sign In'), ['class' => 'btn-primary', 'style' => 'min-width: 160px; padding: 18px; font-size: 0.9rem; letter-spacing: 0.2em;']) ?>
-        </div>
-
-        <?= $this->Form->end() ?>
+<div class="login-screen">
+    <div class="login-image-container">
+        <img src="<?= $this->Url->build('/image/Pottery.jpeg') ?>" alt="Pottery" class="login-image" />
     </div>
+    
+    <div class="login-form-container">
+        <div class="login-form-wrapper">
+            <div class="login-header">
+                <p class="login-overline">SECURE ACCESS</p>
+                <h1 class="login-title">Portal Login</h1>
+                <p class="login-subtitle">Enter your academy credentials to access your dashboard.</p>
+            </div>
 
-    <div style="margin-top: 30px; text-align: center; font-size: 0.8rem; color: var(--home-text-muted); border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 25px; line-height: 1.6;">
-        Need access? <br>
-        <span style="color: var(--home-accent-soft);">Contact CandleCraft Academy</span> to set up your account.
+            <div class="login-flash-container">
+                <?= $this->Flash->render() ?>
+            </div>
+
+            <div class="login-fields">
+                <?= $this->Form->create(null, [
+                    'url' => ['controller' => 'Users', 'action' => 'login'],
+                ]) ?>
+
+                <div class="login-field">
+                    <label class="login-label">Academy Email</label>
+                    <?= $this->Form->email('email', [
+                        'id' => 'email',
+                        'placeholder' => 'email@candlecraft.com',
+                        'required' => true,
+                        'class' => 'login-input'
+                    ]) ?>
+                </div>
+
+                <div class="login-field">
+                    <label class="login-label">Password</label>
+                    <?= $this->Form->password('password', [
+                        'id' => 'password',
+                        'placeholder' => '••••••••',
+                        'required' => true,
+                        'class' => 'login-input'
+                    ]) ?>
+                </div>
+
+                <div class="login-actions">
+                    <a href="<?= h($homeUrl) ?>" class="login-return-link">
+                        Return to homepage
+                    </a>
+                    <?= $this->Form->button(__('Sign In'), ['class' => 'login-submit-btn']) ?>
+                </div>
+
+                <?= $this->Form->end() ?>
+            </div>
+
+            <div class="login-footer">
+                <p class="login-footer-text">
+                    Need access? Contact CandleCraft Academy to set up your account.
+                </p>
+            </div>
+        </div>
     </div>
-
 </div>

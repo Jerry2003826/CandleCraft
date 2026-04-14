@@ -17,9 +17,14 @@ class StudentsController extends AppController
             $query->where(['Students.student_status' => $status]);
         }
 
+        $search = $this->request->getQuery('search');
+        if ($search) {
+            $query->where(['Students.student_name LIKE' => '%' . $search . '%']);
+        }
+
         $students = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('students', 'status'));
+        $this->set(compact('students', 'status', 'search'));
     }
 
     public function view(?string $id = null): void
@@ -63,6 +68,33 @@ class StudentsController extends AppController
         }
 
         $this->set(compact('student'));
+    }
+
+    public function verifyAge(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $studentsTable = $this->fetchTable('Students');
+        $usersTable = $this->fetchTable('Users');
+
+        $student = $studentsTable->get($id, contain: ['Users']);
+
+        if (!$student->user) {
+            $this->Flash->error(__('This student has no linked user account.'));
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+
+        $user = $usersTable->get($student->user->user_id);
+        $user->age_verified_by_admin = true;
+
+        if ($usersTable->save($user)) {
+            $this->Flash->success(__('Age verified for {0}. Payment features are now enabled.', $student->student_name));
+        } else {
+            $this->Flash->error(__('Could not verify age. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'view', $id]);
     }
 
     public function delete(?string $id = null)

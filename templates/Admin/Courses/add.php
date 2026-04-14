@@ -6,44 +6,101 @@
 $this->assign('title', 'Add Course');
 ?>
 
-<div class="mb-3">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm">&larr; Back to Courses</a>
-</div>
+<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back to Courses
+</a>
 
-<div class="card">
-    <div class="card-header"><h5 class="mb-0">Add Course</h5></div>
-    <div class="card-body">
-        <?= $this->Form->create($course) ?>
-            <div class="mb-3">
-                <label for="course-name" class="form-label">Course Name</label>
-                <?= $this->Form->text('course_name', ['id' => 'course-name', 'required' => true, 'placeholder' => 'e.g. Pottery for Beginners', 'maxlength' => 100, ]) ?>
-            </div>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label for="course-type" class="form-label">Course Type</label>
-                    <?= $this->Form->text('course_type', ['id' => 'course-type', 'required' => true, 'placeholder' => 'e.g. pottery, knitting, candle', 'maxlength' => 50, ]) ?>
-                </div>
-                <div class="col-md-6">
-                    <label for="course-level" class="form-label">Level</label>
-                    <?= $this->Form->select('course_level', ['beginner' => 'Beginner', 'intermediate' => 'Intermediate', 'advanced' => 'Advanced', 'all_levels' => 'All Levels'], ['id' => 'course-level', 'default' => 'beginner', ]) ?>
-                </div>
-            </div>
-            <div class="row g-3 mt-0">
-                <div class="col-md-6">
-                    <label for="course-price" class="form-label">Price ($)</label>
-                    <?= $this->Form->text('course_price', ['id' => 'course-price', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'required' => true, 'placeholder' => '0.00', ]) ?>
-                </div>
-                <div class="col-md-6">
-                    <label for="is-active" class="form-label">Active</label>
-                    <?= $this->Form->select('is_active', ['1' => 'Yes', '0' => 'No'], ['id' => 'is-active', 'default' => '1', ]) ?>
-                </div>
-            </div>
-            <div class="mb-3 mt-3">
-                <label for="course-description" class="form-label">Description</label>
-                <?= $this->Form->textarea('course_description', ['id' => 'course-description', 'rows' => 4, 'maxlength' => 2000, 'placeholder' => 'A brief description of this course...', ]) ?>
-            </div>
-            <?= $this->Form->button(__('Save Course'), ['class' => 'btn btn-success']) ?>
-            <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary ms-2">Cancel</a>
-        <?= $this->Form->end() ?>
+<div class="admin-form-card">
+    <div class="admin-form-header">
+        <h2 class="admin-form-title">Add Course</h2>
     </div>
+    
+    <?= $this->Form->create($course) ?>
+        <div class="admin-form-group">
+            <label for="course-name" class="admin-form-label">Course Name</label>
+            <?= $this->Form->text('course_name', [
+                'id' => 'course-name', 
+                'required' => true, 
+                'placeholder' => 'e.g. Pottery for Beginners', 
+                'maxlength' => 100,
+                'class' => 'admin-form-input'
+            ]) ?>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="course-type" class="admin-form-label">Course Type</label>
+                    <?= $this->Form->text('course_type', [
+                        'id' => 'course-type', 
+                        'required' => true, 
+                        'placeholder' => 'e.g. pottery, knitting, candle', 
+                        'maxlength' => 50,
+                        'class' => 'admin-form-input'
+                    ]) ?>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="course-level" class="admin-form-label">Level</label>
+                    <?= $this->Form->select('course_level', [
+                        'beginner' => 'Beginner', 
+                        'intermediate' => 'Intermediate', 
+                        'advanced' => 'Advanced', 
+                        'all_levels' => 'All Levels'
+                    ], [
+                        'id' => 'course-level', 
+                        'default' => 'beginner',
+                        'class' => 'admin-form-select'
+                    ]) ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mt-1">
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="course-price" class="admin-form-label">Price ($)</label>
+                    <?= $this->Form->text('course_price', [
+                        'id' => 'course-price', 
+                        'type' => 'number', 
+                        'step' => '0.01', 
+                        'min' => '0', 
+                        'required' => true, 
+                        'placeholder' => '0.00',
+                        'class' => 'admin-form-input'
+                    ]) ?>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="is-active" class="admin-form-label">Status</label>
+                    <?= $this->Form->select('is_active', [
+                        '1' => 'Active', 
+                        '0' => 'Inactive'
+                    ], [
+                        'id' => 'is-active', 
+                        'default' => '1',
+                        'class' => 'admin-form-select'
+                    ]) ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-form-group mt-4">
+            <label for="course-description" class="admin-form-label">Description</label>
+            <?= $this->Form->textarea('course_description', [
+                'id' => 'course-description', 
+                'rows' => 4, 
+                'maxlength' => 2000, 
+                'placeholder' => 'A brief description of this course...',
+                'class' => 'admin-form-textarea'
+            ]) ?>
+        </div>
+        
+        <div class="admin-form-actions">
+            <?= $this->Form->button('Save Course', ['class' => 'admin-btn-primary']) ?>
+            <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-secondary">Cancel</a>
+        </div>
+    <?= $this->Form->end() ?>
 </div>

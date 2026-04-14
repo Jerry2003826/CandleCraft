@@ -6,30 +6,65 @@
 $this->assign('title', 'Edit Booking #' . $booking->booking_id);
 ?>
 
-<div class="mb-3">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm">&larr; Back to Bookings</a>
-</div>
+<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back to Bookings
+</a>
 
-<div class="card">
-    <div class="card-header"><h5 class="mb-0">Edit Booking</h5></div>
-    <div class="card-body">
-        <div class="alert alert-light mb-4">
-            <strong>Student:</strong> <?= h($booking->student?->student_name ?? '-') ?> &middot;
-            <strong>Course:</strong> <?= h($booking->class_entity?->course?->course_name ?? '-') ?> &middot;
-            <strong>Class:</strong> <?= h($booking->class_entity?->class_code ?? '-') ?>
-        </div>
-
-        <?= $this->Form->create($booking) ?>
-            <div class="mb-3">
-                <label for="booking-status" class="form-label">Booking Status</label>
-                <?= $this->Form->select('booking_status', ['pending' => 'Pending', 'confirmed' => 'Confirmed', 'completed' => 'Completed', 'cancelled' => 'Cancelled'], ['id' => 'booking-status', ]) ?>
-            </div>
-            <div class="mb-3">
-                <label for="price-at-booking" class="form-label">Price at Booking ($)</label>
-                <?= $this->Form->text('price_at_booking', ['id' => 'price-at-booking', 'type' => 'number', 'step' => '0.01', 'min' => '0', ]) ?>
-            </div>
-            <?= $this->Form->button(__('Save Changes'), ['class' => 'btn btn-success']) ?>
-            <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary ms-2">Cancel</a>
-        <?= $this->Form->end() ?>
+<div class="admin-form-card">
+    <div class="admin-form-header">
+        <h2 class="admin-form-title">Edit Booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?></h2>
     </div>
+    
+    <div class="admin-form-group p-4 mb-4" style="background-color: var(--admin-search-bg); border-radius: 12px;">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <span style="color: var(--admin-text-secondary); font-size: 14px; display: block; margin-bottom: 4px;">Student</span>
+                <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= h($booking->student?->student_name ?? '-') ?></strong>
+            </div>
+            <div class="col-md-4">
+                <span style="color: var(--admin-text-secondary); font-size: 14px; display: block; margin-bottom: 4px;">Course</span>
+                <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= h($booking->class_entity?->course?->course_name ?? '-') ?></strong>
+            </div>
+            <div class="col-md-4">
+                <span style="color: var(--admin-text-secondary); font-size: 14px; display: block; margin-bottom: 4px;">Class</span>
+                <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= h($booking->class_entity?->class_code ?? '-') ?></strong>
+            </div>
+        </div>
+    </div>
+
+    <?= $this->Form->create($booking) ?>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="booking-status" class="admin-form-label">Booking Status</label>
+                    <?= $this->Form->select('booking_status', [
+                        'pending' => 'Pending', 
+                        'confirmed' => 'Confirmed', 
+                        'completed' => 'Completed', 
+                        'cancelled' => 'Cancelled'
+                    ], [
+                        'id' => 'booking-status',
+                        'class' => 'admin-form-select'
+                    ]) ?>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="price-at-booking" class="admin-form-label">Price at Booking ($)</label>
+                    <?= $this->Form->text('price_at_booking', [
+                        'id' => 'price-at-booking', 
+                        'type' => 'number', 
+                        'step' => '0.01', 
+                        'min' => '0',
+                        'class' => 'admin-form-input'
+                    ]) ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-form-actions">
+            <?= $this->Form->button('Save Changes', ['class' => 'admin-btn-primary']) ?>
+            <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-secondary">Cancel</a>
+        </div>
+    <?= $this->Form->end() ?>
 </div>

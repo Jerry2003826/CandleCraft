@@ -148,7 +148,17 @@ class ClassesController extends AppController
             ->order(['teacher_name' => 'ASC'])
             ->all();
 
-        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset'));
+        $allCourses = $classesTable->Courses->find()
+            ->where(['is_active' => true])
+            ->order(['course_name' => 'ASC'])
+            ->all();
+
+        $scheduledCourseIds = [];
+        foreach ($classes as $class) {
+            $scheduledCourseIds[$class->course_id] = true;
+        }
+
+        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset', 'allCourses', 'scheduledCourseIds'));
     }
 
     public function delete(?string $id = null)

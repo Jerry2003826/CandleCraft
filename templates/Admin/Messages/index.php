@@ -7,59 +7,98 @@
 $this->assign('title', 'Enquiries');
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
-    <div class="btn-group btn-group-sm flex-wrap" role="group">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-primary <?= !$status ? 'active' : '' ?>">All</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'unread']]) ?>" class="btn btn-outline-primary <?= $status === 'unread' ? 'active' : '' ?>">Unread</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'read']]) ?>" class="btn btn-outline-primary <?= $status === 'read' ? 'active' : '' ?>">Read</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'replied']]) ?>" class="btn btn-outline-primary <?= $status === 'replied' ? 'active' : '' ?>">Replied</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'archived']]) ?>" class="btn btn-outline-primary <?= $status === 'archived' ? 'active' : '' ?>">Archived</a>
+<div class="admin-page-header">
+    <div class="admin-tabs flex-wrap">
+        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab <?= !$status ? 'active' : '' ?>">All</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'unread']]) ?>" class="admin-tab <?= $status === 'unread' ? 'active' : '' ?>">Unread</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'read']]) ?>" class="admin-tab <?= $status === 'read' ? 'active' : '' ?>">Read</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'replied']]) ?>" class="admin-tab <?= $status === 'replied' ? 'active' : '' ?>">Replied</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'archived']]) ?>" class="admin-tab <?= $status === 'archived' ? 'active' : '' ?>">Archived</a>
     </div>
 </div>
 
-<div class="card">
+<div class="admin-table-card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead><tr><th>From</th><th>Phone</th><th>Subject</th><th>Source</th><th>Type</th><th>Received</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody>
-                <?php foreach ($messages as $message): ?>
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <td>
-                        <?php if ($message->sender_user): ?>
-                            <?= h($message->sender_user->username) ?>
-                        <?php else: ?>
-                            <?= h($message->sender_name ?: 'Unknown') ?>
-                            <?php if ($message->sender_email): ?>
-                                <br><small class="text-muted"><?= h($message->sender_email) ?></small>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </td>
-                    <td><?= h($message->sender_phone ?: '-') ?></td>
-                    <td><?= h(\Cake\Utility\Text::truncate($message->subject, 50)) ?></td>
-                    <td><?= h($message->source_page ?: '-') ?></td>
-                    <td><span class="badge bg-secondary"><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></span></td>
-                    <td><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></td>
-                    <td><?= $this->Badge->status($message->message_status) ?></td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="btn btn-outline-primary">View</a>
-                            <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="btn btn-outline-success">Reply</a>
-                            <?= $this->Form->postLink('Delete', ['action' => 'delete', $message->message_id], [
-                                'confirm' => __('Are you sure you want to delete this message?'),
-                                'class' => 'btn btn-outline-danger',
-                            ]) ?>
-                        </div>
-                    </td>
+                    <th>From</th>
+                    <th>Phone</th>
+                    <th>Subject</th>
+                    <th>Source</th>
+                    <th>Type</th>
+                    <th>Received</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
                 </tr>
-                <?php endforeach; ?>
+            </thead>
+            <tbody>
+                <?php if ($messages->isEmpty()): ?>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No messages found.</td></tr>
+                <?php else: ?>
+                    <?php foreach ($messages as $message): ?>
+                    <tr>
+                        <td>
+                            <p class="admin-table-primary-text">
+                                <?php if ($message->sender_user): ?>
+                                    <?= h($message->sender_user->username) ?>
+                                <?php else: ?>
+                                    <?= h($message->sender_name ?: 'Unknown') ?>
+                                <?php endif; ?>
+                            </p>
+                            <?php if (!$message->sender_user && $message->sender_email): ?>
+                                <p class="admin-table-secondary-text"><?= h($message->sender_email) ?></p>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <p class="admin-table-secondary-text"><?= h($message->sender_phone ?: '-') ?></p>
+                        </td>
+                        <td>
+                            <p class="admin-table-primary-text"><?= h(\Cake\Utility\Text::truncate($message->subject, 40)) ?></p>
+                        </td>
+                        <td>
+                            <p class="admin-table-secondary-text"><?= h($message->source_page ?: '-') ?></p>
+                        </td>
+                        <td>
+                            <span class="admin-badge admin-badge-neutral"><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></span>
+                        </td>
+                        <td>
+                            <p class="admin-table-secondary-text"><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></p>
+                        </td>
+                        <td>
+                            <?php 
+                                $statusClass = 'admin-badge-neutral';
+                                if ($message->message_status === 'unread') $statusClass = 'admin-badge-info';
+                                if ($message->message_status === 'replied') $statusClass = 'admin-badge-success';
+                            ?>
+                            <span class="admin-badge <?= $statusClass ?>"><?= ucfirst(h($message->message_status)) ?></span>
+                        </td>
+                        <td>
+                            <div class="admin-action-links justify-content-end">
+                                <a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="admin-action-link view" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply">
+                                    <i class="bi bi-reply"></i>
+                                </a>
+                                <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $message->message_id], [
+                                    'class' => 'admin-action-link delete',
+                                    'confirm' => __('Are you sure you want to delete this message?'),
+                                    'title' => 'Delete',
+                                    'escape' => false
+                                ]) ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
-    <div class="card-body d-flex justify-content-center">
-        <ul class="pagination mb-0">
-            <?= $this->Paginator->prev('< Previous') ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next('Next >') ?>
-        </ul>
+    
+    <div class="admin-pagination">
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->numbers(['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
     </div>
 </div>

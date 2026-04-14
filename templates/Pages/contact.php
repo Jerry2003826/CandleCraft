@@ -141,6 +141,24 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                             <?= $this->Form->error('message_text') ?>
                         </div>
 
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <div style="padding: 20px; background: rgba(210, 154, 88, 0.1); border: 1px solid rgba(210, 154, 88, 0.3); border-radius: 12px;">
+                                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.9rem; line-height: 1.5;">
+                                    <?= $this->Form->checkbox('self_declared_adult', [
+                                        'style' => 'width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--home-accent);',
+                                    ]) ?>
+                                    <span>
+                                        I confirm that I am <strong style="color: var(--home-accent);">18 years of age or older</strong>.
+                                        <br>
+                                        <small style="color: var(--home-text-muted);">
+                                            If you are 18+, our team will create an account for you with full booking and payment access.
+                                            If under 18, you can still be enrolled by a parent or guardian.
+                                        </small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="form-group" style="grid-column: 1 / -1; text-align: center;">
                             <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">CAPTCHA Verification *</label>
                             <div class="g-recaptcha" style="display: inline-block;" data-sitekey="6Ld-GZosAAAAAO_CNYc_Ax-DYUAW6AHQg1glDTeM"></div>

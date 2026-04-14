@@ -9,34 +9,24 @@ $this->assign('title', 'Classes');
 ?>
 
 <!-- Tab Navigation -->
-<ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-        <a class="nav-link active" href="<?= $this->Url->build(['action' => 'index']) ?>">Class List</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="<?= $this->Url->build(['action' => 'availability']) ?>">Availability</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>">Attendance</a>
-    </li>
-</ul>
-
-<!-- Toolbar: Search + Add -->
-<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="flex-grow-1" style="max-width:600px">
-        <div class="input-group">
-            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-            <input type="text" name="search" class="form-control" placeholder="Search classes..." value="<?= h($search ?? '') ?>">
-        </div>
-    </form>
-    <div class="ms-auto">
-        <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="btn btn-success"><i class="bi bi-plus-lg"></i> Add Class</a>
+<div class="admin-page-header mb-4">
+    <div class="admin-tabs">
+        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab active">Class List</a>
+        <a href="<?= $this->Url->build(['action' => 'availability']) ?>" class="admin-tab">Availability</a>
+        <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>" class="admin-tab">Attendance</a>
     </div>
 </div>
 
-<div class="card">
+<!-- Toolbar: Search + Add -->
+<div class="admin-page-header justify-content-end">
+    <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Class
+    </a>
+</div>
+
+<div class="admin-table-card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="admin-table">
             <thead>
                 <tr>
                     <th>Class Code</th>
@@ -45,7 +35,7 @@ $this->assign('title', 'Classes');
                     <th>Schedule</th>
                     <th>Students</th>
                     <th>Location</th>
-                    <th>Actions</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,32 +47,44 @@ $this->assign('title', 'Classes');
                 ?>
                 <tr>
                     <td>
-                        <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="fw-semibold text-decoration-none" style="color:var(--cc-primary)">
+                        <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="admin-table-primary-text text-decoration-none" style="color: var(--admin-brand-icon);">
                             <?= h($class->class_code) ?>
                         </a>
                     </td>
-                    <td><strong><?= $class->course ? h($class->course->course_name) : '-' ?></strong></td>
-                    <td><?= $class->teacher ? h($class->teacher->teacher_name) : '-' ?></td>
                     <td>
-                        <?php if ($class->start_datetime): ?>
-                            <?= $class->start_datetime->format('D, g:ia') ?>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
+                        <p class="admin-table-primary-text"><?= $class->course ? h($class->course->course_name) : '-' ?></p>
                     </td>
-                    <td style="min-width:100px">
+                    <td>
+                        <p class="admin-table-secondary-text"><?= $class->teacher ? h($class->teacher->teacher_name) : '-' ?></p>
+                    </td>
+                    <td>
+                        <p class="admin-table-secondary-text">
+                            <?php if ($class->start_datetime): ?>
+                                <?= $class->start_datetime->format('D, g:ia') ?>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </p>
+                    </td>
+                    <td style="min-width:120px">
                         <div class="d-flex align-items-center gap-2">
-                            <strong><?= $booked ?>/<?= $cap ?></strong>
-                            <div class="progress flex-grow-1" style="height:6px;max-width:60px">
+                            <span class="admin-table-primary-text mb-0"><?= $booked ?>/<?= $cap ?></span>
+                            <div class="progress flex-grow-1" style="height:6px;max-width:60px;background-color:var(--admin-search-bg);">
                                 <div class="progress-bar <?= $barColor ?>" style="width:<?= $pct ?>%"></div>
                             </div>
                         </div>
                     </td>
-                    <td><?= h($class->location) ?></td>
                     <td>
-                        <div class="btn-group btn-group-sm">
-                            <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="btn btn-outline-primary">View</a>
-                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="btn btn-outline-warning">Edit</a>
+                        <p class="admin-table-secondary-text"><?= h($class->location) ?></p>
+                    </td>
+                    <td>
+                        <div class="admin-action-links justify-content-end">
+                            <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="admin-action-link view" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-action-link edit" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>
@@ -90,11 +92,10 @@ $this->assign('title', 'Classes');
             </tbody>
         </table>
     </div>
-    <div class="card-body d-flex justify-content-center">
-        <ul class="pagination mb-0">
-            <?= $this->Paginator->prev('‹ Previous') ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next('Next ›') ?>
-        </ul>
+    
+    <div class="admin-pagination">
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->numbers(['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
     </div>
 </div>

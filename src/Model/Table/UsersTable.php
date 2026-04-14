@@ -85,6 +85,44 @@ class UsersTable extends Table
         return $rules;
     }
 
+    public function validationRegister(Validator $validator): Validator
+    {
+        $validator
+            ->scalar('username')
+            ->maxLength('username', 50)
+            ->minLength('username', 3)
+            ->add('username', 'validFormat', [
+                'rule' => static function (mixed $value): bool {
+                    return is_string($value) && (bool)preg_match('/^[a-zA-Z0-9_.-]+$/', $value);
+                },
+                'message' => 'Username can only contain letters, numbers, dot, underscore and hyphen.',
+            ])
+            ->requirePresence('username', 'create')
+            ->notEmptyString('username');
+
+        $validator
+            ->email('email')
+            ->requirePresence('email', 'create')
+            ->notEmptyString('email');
+
+        $validator
+            ->scalar('password_hash')
+            ->minLength('password_hash', 8, 'Password must be at least 8 characters long.')
+            ->requirePresence('password_hash', 'create')
+            ->notEmptyString('password_hash');
+
+        $validator
+            ->inList('user_role', ['admin', 'parent', 'teacher', 'student'])
+            ->requirePresence('user_role', 'create')
+            ->notEmptyString('user_role');
+
+        $validator
+            ->inList('account_status', ['active', 'inactive', 'suspended'])
+            ->notEmptyString('account_status');
+
+        return $validator;
+    }
+
     public function findAuth(SelectQuery $query): SelectQuery
     {
         return $query

@@ -74,6 +74,12 @@ return function (RouteBuilder $routes): void {
         $routes->fallbacks(DashedRoute::class);
     });
 
+    $routes->prefix('Consumer', function (RouteBuilder $routes): void {
+        $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->fallbacks(DashedRoute::class);
+    });
+
+    // Legacy redirects: old Student/Parent prefixes redirect to Consumer
     $routes->prefix('Parent', function (RouteBuilder $routes): void {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
         $routes->fallbacks(DashedRoute::class);

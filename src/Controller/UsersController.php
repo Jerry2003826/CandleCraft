@@ -16,7 +16,6 @@ class UsersController extends AppController
     public function login(): ?Response
     {
         $this->viewBuilder()->setLayout('login');
-        // Prevent browsers/proxies from serving stale auth pages.
         $this->response = $this->response
             ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->withHeader('Pragma', 'no-cache')
@@ -36,12 +35,8 @@ class UsersController extends AppController
                 return $this->redirect(['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index']);
             }
 
-            if ($role === 'student') {
-                return $this->redirect(['prefix' => 'Student', 'controller' => 'Dashboard', 'action' => 'index']);
-            }
-
-            if ($role === 'parent') {
-                return $this->redirect(['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index']);
+            if ($role === 'student' || $role === 'parent') {
+                return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']);
             }
 
             $this->Flash->info(__('This portal currently supports admin, teacher, student, and parent logins.'));

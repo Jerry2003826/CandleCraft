@@ -1386,10 +1386,120 @@ body {
     flex-shrink: 0;
 }
 
+/* ---- Slot Color Variants ---- */
+.avail-slot--pottery {
+    background: rgba(192, 135, 58, 0.08);
+    border-color: rgba(192, 135, 58, 0.25);
+}
+.avail-slot--pottery .avail-slot__time {
+    color: #A06E2A;
+}
+
+.avail-slot--knitting {
+    background: rgba(82, 196, 26, 0.06);
+    border-color: rgba(82, 196, 26, 0.2);
+}
+.avail-slot--knitting .avail-slot__time {
+    color: #389e0d;
+}
+
+/* ========================================
+   All Available Courses Panel
+   ======================================== */
+.avail-course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 20px;
+}
+
+.avail-course-card {
+    display: flex;
+    border-radius: 10px;
+    border: 1px solid var(--cc-border-color);
+    background: var(--cc-card-bg);
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+}
+
+.avail-course-card:hover {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.avail-course-card__bar {
+    width: 5px;
+    flex-shrink: 0;
+    background: var(--cc-primary);
+}
+
+.avail-course-card--pottery .avail-course-card__bar {
+    background: #C0873A;
+}
+
+.avail-course-card--knitting .avail-course-card__bar {
+    background: #52C41A;
+}
+
+.avail-course-card--default .avail-course-card__bar {
+    background: #8C8C8C;
+}
+
+.avail-course-card--unscheduled {
+    opacity: 0.75;
+    border-style: dashed;
+}
+
+.avail-course-card__body {
+    flex: 1;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.avail-course-card__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cc-text-dark);
+}
+
+.avail-course-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--cc-text-muted);
+}
+
+.avail-course-card__type,
+.avail-course-card__level {
+    background: rgba(192, 135, 58, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.avail-course-card__price {
+    font-weight: 600;
+    color: var(--cc-primary);
+}
+
+.avail-course-card__status {
+    margin-top: 2px;
+}
+
+.avail-course-card__status .badge {
+    font-size: 11px;
+    font-weight: 500;
+}
+
 /* ---- Responsive: Availability ---- */
 @media (max-width: 992px) {
     .avail-grid {
         grid-template-columns: repeat(4, 1fr);
+    }
+    .avail-course-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
 }
 
@@ -1400,5 +1510,9 @@ body {
 
     .avail-day__body {
         min-height: 120px;
+    }
+
+    .avail-course-grid {
+        grid-template-columns: 1fr;
     }
 }

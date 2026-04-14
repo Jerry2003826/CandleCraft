@@ -100,7 +100,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
                 'httponly' => true,
                 'skipCheckCallback' => function ($request) {
                     $path = $request->getPath();
-                    if ($path === '/student/payments/webhook') {
+                    if ($path === '/student/payments/webhook' || $path === '/consumer/payments/webhook') {
                         return true;
                     }
 

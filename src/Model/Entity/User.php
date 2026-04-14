@@ -14,6 +14,8 @@ class User extends Entity
         'password_hash' => true,
         'user_role' => true,
         'account_status' => true,
+        'age_verified_by_admin' => true,
+        'self_declared_adult' => true,
         'last_login_at' => true,
         'created_at' => true,
         'updated_at' => true,

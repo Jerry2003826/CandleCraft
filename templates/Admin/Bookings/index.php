@@ -10,88 +10,65 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
 ?>
 
 <!-- Stats Overview Cards -->
-<div class="row g-3 mb-4">
+<div class="row g-4 mb-4">
     <div class="col-sm-6 col-xl-3">
-        <div class="card stat-card stat-primary">
-            <div class="card-body">
-                <div class="stat-label">Total Bookings</div>
-                <div class="d-flex align-items-end gap-2">
-                    <span class="stat-value"><?= $stats['total'] ?></span>
-                </div>
-                <small class="text-muted">All time</small>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <h3 class="admin-stat-title">Total Bookings</h3>
+                <div class="admin-stat-icon"><i class="bi bi-journal-text"></i></div>
+            </div>
+            <div class="admin-stat-value"><?= $stats['total'] ?></div>
+            <div class="admin-stat-trend neutral">All time</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <h3 class="admin-stat-title">Confirmed</h3>
+                <div class="admin-stat-icon"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="admin-stat-value"><?= $stats['confirmed'] ?></div>
+            <div class="admin-stat-trend up"><?= $stats['total'] > 0 ? round($stats['confirmed'] / $totalPct * 100, 1) : 0 ?>%</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <h3 class="admin-stat-title">Pending Payment</h3>
+                <div class="admin-stat-icon"><i class="bi bi-clock-history"></i></div>
+            </div>
+            <div class="admin-stat-value"><?= $stats['pending'] ?></div>
+            <div class="admin-stat-trend <?= $stats['pending'] > 0 ? 'down' : 'neutral' ?>">
+                <?= $stats['pending'] > 0 ? 'Needs attention' : 'All good' ?>
             </div>
         </div>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="card stat-card stat-success">
-            <div class="card-body">
-                <div class="stat-label">Confirmed</div>
-                <div class="d-flex align-items-end gap-2">
-                    <span class="stat-value"><?= $stats['confirmed'] ?></span>
-                    <span class="text-muted mb-1"><?= $stats['total'] > 0 ? round($stats['confirmed'] / $totalPct * 100, 1) : 0 ?>%</span>
-                </div>
-                <div class="progress mt-1" style="height:4px">
-                    <div class="progress-bar bg-success" style="width:<?= $stats['total'] > 0 ? round($stats['confirmed'] / $totalPct * 100) : 0 ?>%"></div>
-                </div>
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <h3 class="admin-stat-title">Cancelled</h3>
+                <div class="admin-stat-icon"><i class="bi bi-x-circle"></i></div>
             </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card stat-card stat-warning">
-            <div class="card-body">
-                <div class="stat-label">Pending Payment</div>
-                <div class="d-flex align-items-end gap-2">
-                    <span class="stat-value"><?= $stats['pending'] ?></span>
-                    <?php if ($stats['pending'] > 0): ?>
-                        <span class="text-warning mb-1">Needs attention</span>
-                    <?php endif; ?>
-                </div>
-                <div class="progress mt-1" style="height:4px">
-                    <div class="progress-bar bg-warning" style="width:<?= $stats['total'] > 0 ? round($stats['pending'] / $totalPct * 100) : 0 ?>%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card stat-card stat-danger">
-            <div class="card-body">
-                <div class="stat-label">Cancelled</div>
-                <div class="d-flex align-items-end gap-2">
-                    <span class="stat-value"><?= $stats['cancelled'] ?></span>
-                    <span class="text-muted mb-1"><?= $stats['total'] > 0 ? round($stats['cancelled'] / $totalPct * 100, 1) : 0 ?>%</span>
-                </div>
-                <div class="progress mt-1" style="height:4px">
-                    <div class="progress-bar bg-danger" style="width:<?= $stats['total'] > 0 ? round($stats['cancelled'] / $totalPct * 100) : 0 ?>%"></div>
-                </div>
-            </div>
+            <div class="admin-stat-value"><?= $stats['cancelled'] ?></div>
+            <div class="admin-stat-trend down"><?= $stats['total'] > 0 ? round($stats['cancelled'] / $totalPct * 100, 1) : 0 ?>%</div>
         </div>
     </div>
 </div>
 
 <!-- Filters Toolbar -->
-<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="flex-grow-1" style="max-width:320px">
-        <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
-        <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-            <input type="text" name="search" class="form-control" placeholder="Search bookings..." value="<?= h($search ?? '') ?>">
-        </div>
-    </form>
-    <div class="btn-group btn-group-sm" role="group">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn <?= !$status ? 'btn-primary' : 'btn-outline-primary' ?>">All</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'confirmed']]) ?>" class="btn <?= $status === 'confirmed' ? 'btn-primary' : 'btn-outline-primary' ?>">Confirmed</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'pending']]) ?>" class="btn <?= $status === 'pending' ? 'btn-primary' : 'btn-outline-primary' ?>">Pending</a>
-        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'cancelled']]) ?>" class="btn <?= $status === 'cancelled' ? 'btn-primary' : 'btn-outline-primary' ?>">Cancelled</a>
-    </div>
-    <div class="ms-auto d-flex gap-2">
-        <button class="btn btn-sm btn-outline-secondary" disabled>Export</button>
+<div class="admin-page-header">
+    <div class="admin-tabs flex-wrap">
+        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab <?= !$status ? 'active' : '' ?>">All</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'confirmed']]) ?>" class="admin-tab <?= $status === 'confirmed' ? 'active' : '' ?>">Confirmed</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'pending']]) ?>" class="admin-tab <?= $status === 'pending' ? 'active' : '' ?>">Pending</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'cancelled']]) ?>" class="admin-tab <?= $status === 'cancelled' ? 'active' : '' ?>">Cancelled</a>
     </div>
 </div>
 
 <!-- Bookings Table -->
-<div class="card">
+<div class="admin-table-card">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="admin-table">
             <thead>
                 <tr>
                     <th>Booking #</th>
@@ -100,7 +77,7 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                     <th>Date & Time</th>
                     <th>Status</th>
                     <th>Payment</th>
-                    <th>Actions</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -116,42 +93,49 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                         ?>
                     <tr>
                         <td>
-                            <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="fw-semibold text-decoration-none" style="color:var(--cc-primary)">
+                            <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-table-primary-text text-decoration-none" style="color: var(--admin-brand-icon);">
                                 BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>
                             </a>
                         </td>
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="booking-avatar">
-                                    <?= strtoupper(substr(h($booking->student?->student_name ?? '?'), 0, 1)) ?>
-                                </div>
-                                <span><?= h($booking->student?->student_name ?? '-') ?></span>
-                            </div>
+                            <p class="admin-table-primary-text"><?= h($booking->student?->student_name ?? '-') ?></p>
                         </td>
                         <td>
-                            <div><?= h($booking->class_entity?->course?->course_name ?? '-') ?></div>
-                            <small class="text-muted"><?= h($booking->class_entity?->class_code ?? '') ?></small>
+                            <p class="admin-table-primary-text"><?= h($booking->class_entity?->course?->course_name ?? '-') ?></p>
+                            <p class="admin-table-secondary-text"><?= h($booking->class_entity?->class_code ?? '') ?></p>
                         </td>
                         <td>
                             <?php if ($booking->class_entity?->start_datetime): ?>
-                                <div><?= $booking->class_entity->start_datetime->format('D j M') ?></div>
-                                <small class="text-muted"><?= $booking->class_entity->start_datetime->format('g:ia') ?></small>
+                                <p class="admin-table-primary-text"><?= $booking->class_entity->start_datetime->format('D j M') ?></p>
+                                <p class="admin-table-secondary-text"><?= $booking->class_entity->start_datetime->format('g:ia') ?></p>
                             <?php else: ?>
-                                <span class="text-muted"><?= $booking->booking_date ? $booking->booking_date->format('j M Y') : '-' ?></span>
+                                <p class="admin-table-secondary-text"><?= $booking->booking_date ? $booking->booking_date->format('j M Y') : '-' ?></p>
                             <?php endif; ?>
                         </td>
-                        <td><?= $this->Badge->status($booking->booking_status) ?></td>
+                        <td>
+                            <?php 
+                                $statusClass = 'admin-badge-neutral';
+                                if ($booking->booking_status === 'Confirmed') $statusClass = 'admin-badge-success';
+                                if ($booking->booking_status === 'Pending') $statusClass = 'admin-badge-warning';
+                                if ($booking->booking_status === 'Cancelled') $statusClass = 'admin-badge-danger';
+                            ?>
+                            <span class="admin-badge <?= $statusClass ?>"><?= h($booking->booking_status) ?></span>
+                        </td>
                         <td>
                             <?php if ($hasPaidRecord): ?>
-                                <span class="badge bg-success">Paid</span>
+                                <span class="admin-badge admin-badge-success">Paid</span>
                             <?php else: ?>
-                                <span class="badge bg-warning text-dark">Unpaid</span>
+                                <span class="admin-badge admin-badge-warning">Unpaid</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="btn btn-outline-primary">View</a>
-                                <a href="<?= $this->Url->build(['action' => 'edit', $booking->booking_id]) ?>" class="btn btn-outline-secondary">Edit</a>
+                            <div class="admin-action-links justify-content-end">
+                                <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-action-link view" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="<?= $this->Url->build(['action' => 'edit', $booking->booking_id]) ?>" class="admin-action-link edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                             </div>
                         </td>
                     </tr>
@@ -160,11 +144,10 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
             </tbody>
         </table>
     </div>
-    <div class="card-body d-flex justify-content-center">
-        <ul class="pagination mb-0">
-            <?= $this->Paginator->prev('‹ Previous') ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next('Next ›') ?>
-        </ul>
+    
+    <div class="admin-pagination">
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->numbers(['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
     </div>
 </div>
