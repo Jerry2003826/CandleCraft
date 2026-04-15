@@ -3547,3 +3547,545 @@ body.redesign .wc-wrapper {
     box-shadow: none;
     border-color: rgba(251, 191, 36, 0.14);
 }
+
+/* ========================================
+   Z-Billing Page (Payment Portal Redesign)
+   ======================================== */
+
+.z-billing-page {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 1000px;
+}
+
+.z-billing-header {
+    margin-bottom: 8px;
+}
+
+.z-billing-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--admin-text-primary);
+    margin: 0 0 24px 0;
+}
+
+.z-billing-tabs {
+    display: flex;
+    gap: 32px;
+    border-bottom: 1px solid var(--admin-card-border);
+}
+
+.z-billing-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--admin-text-secondary);
+    padding-bottom: 12px;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.z-billing-tab:hover {
+    color: var(--admin-text-primary);
+}
+
+.z-billing-tab.active {
+    color: var(--admin-text-primary);
+}
+
+.z-billing-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--admin-text-primary);
+}
+
+.z-billing-balance-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.z-billing-balance-main {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.z-billing-amount {
+    font-family: 'Inter', sans-serif;
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--admin-text-primary);
+    line-height: 1;
+}
+
+.z-billing-balance-divider {
+    width: 1px;
+    height: 48px;
+    background-color: var(--admin-card-border);
+}
+
+.z-billing-balance-details {
+    display: flex;
+    gap: 32px;
+}
+
+.z-billing-balance-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.z-billing-balance-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--admin-text-secondary);
+}
+
+.z-billing-balance-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--admin-text-primary);
+}
+
+.z-billing-balance-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.z-billing-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    background-color: var(--admin-text-primary);
+    color: var(--admin-card-bg);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 24px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.z-billing-btn-primary:hover {
+    opacity: 0.9;
+    color: var(--admin-card-bg);
+}
+
+.z-billing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.z-billing-grid-card {
+    background-color: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.z-billing-grid-card:hover {
+    border-color: var(--admin-text-secondary);
+    background-color: var(--admin-search-bg);
+}
+
+.z-billing-grid-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-color: var(--admin-search-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--admin-text-primary);
+    font-size: 20px;
+}
+
+.z-billing-grid-content {
+    flex: 1;
+}
+
+.z-billing-grid-content h3 {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--admin-text-primary);
+    margin: 0 0 4px 0;
+}
+
+.z-billing-grid-content p {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--admin-text-secondary);
+    margin: 0;
+}
+
+.z-billing-grid-arrow {
+    color: var(--admin-text-secondary);
+    font-size: 16px;
+}
+
+.z-billing-section {
+    display: none;
+}
+
+.z-billing-section.active-section {
+    display: block;
+}
+
+.z-billing-section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--admin-text-primary);
+    margin: 0 0 20px 0;
+}
+
+/* Dark mode specific overrides for Z-Billing */
+[data-theme="dark"] .z-billing-balance-card,
+[data-theme="dark"] .z-billing-grid-card {
+    background-color: #1A1A1A;
+    border-color: #333333;
+}
+
+[data-theme="dark"] .z-billing-grid-card:hover {
+    background-color: #222222;
+    border-color: #555555;
+}
+
+[data-theme="dark"] .z-billing-grid-icon {
+    background-color: #2A2A2A;
+}
+
+[data-theme="dark"] .z-billing-btn-primary {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"] .z-billing-btn-primary:hover {
+    background-color: #E5E5E5 !important;
+}
+
+/* Hide old payment portal styles */
+.payment-portal-page { display: none; }
+
+.payment-portal-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 28px 30px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(255, 199, 84, 0.13), rgba(255, 255, 255, 0.92));
+    border: 1px solid rgba(255, 199, 84, 0.28);
+}
+
+[data-theme="dark"] .payment-portal-hero {
+    background: linear-gradient(135deg, rgba(255, 199, 84, 0.12), rgba(21, 28, 40, 0.96));
+    border-color: rgba(255, 199, 84, 0.2);
+}
+
+.payment-portal-eyebrow {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #c88719;
+}
+
+.payment-portal-subtitle {
+    margin: 10px 0 0 0;
+    max-width: 760px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.payment-portal-stat-card {
+    padding: 22px 24px;
+    border-radius: 18px;
+    background: var(--admin-card-bg);
+    border: 1px solid var(--admin-card-border);
+}
+
+.payment-portal-stat-label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-stat-value {
+    display: block;
+    font-size: 34px;
+    line-height: 1;
+    color: var(--admin-text-primary);
+}
+
+.payment-portal-history-shell,
+.payment-portal-detail-card {
+    padding: 28px 30px;
+}
+
+.payment-portal-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.payment-portal-section-copy {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 220px;
+    text-align: center;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-empty i {
+    font-size: 46px;
+}
+
+.payment-portal-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.payment-portal-history-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 18px;
+    background: var(--admin-search-bg);
+    border: 1px solid var(--admin-card-border);
+}
+
+.payment-portal-history-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.payment-portal-history-title-row h4 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: var(--admin-text-primary);
+}
+
+.payment-portal-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-amount {
+    flex-shrink: 0;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--admin-text-primary);
+}
+
+.payment-portal-history-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.payment-portal-history-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.payment-portal-muted {
+    font-size: 13px;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-receipt-link,
+.payment-portal-inline-link {
+    padding: 6px 12px;
+    width: auto;
+    height: auto;
+    font-size: 12px;
+}
+
+.payment-portal-details-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.payment-portal-profile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.payment-portal-profile-card {
+    padding: 18px;
+    border-radius: 16px;
+    background: var(--admin-search-bg);
+    border: 1px solid var(--admin-card-border);
+}
+
+.payment-portal-profile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.payment-portal-profile-top strong {
+    display: block;
+    font-size: 16px;
+    color: var(--admin-text-primary);
+}
+
+.payment-portal-profile-email,
+.payment-portal-profile-body,
+.payment-portal-archived-list,
+.payment-portal-empty-note {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.payment-portal-empty-note {
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px dashed var(--admin-card-border);
+    background: var(--admin-search-bg);
+}
+
+.payment-portal-archived {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--admin-card-border);
+}
+
+.payment-portal-archived-title {
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--admin-text-secondary);
+}
+
+.payment-portal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 18px;
+}
+
+.payment-portal-form-field--full {
+    grid-column: 1 / -1;
+}
+
+.payment-portal-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+}
+
+.payment-portal-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+@media (max-width: 1199px) {
+    .payment-portal-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 991px) {
+    .payment-portal-hero,
+    .payment-portal-history-title-row {
+        flex-direction: column;
+    }
+
+    .payment-portal-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-portal-history-card {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-portal-history-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767px) {
+    .payment-portal-hero,
+    .payment-portal-history-shell,
+    .payment-portal-detail-card {
+        padding: 22px 20px;
+    }
+
+    .payment-portal-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
