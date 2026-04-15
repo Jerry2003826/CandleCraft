@@ -4,7 +4,7 @@
  * @var iterable<\App\Model\Entity\Student> $students
  * @var string|null $status
  */
-$this->assign('title', 'Students');
+$this->assign('title', 'Customers');
 ?>
 
 <div class="admin-page-header">
@@ -18,12 +18,12 @@ $this->assign('title', 'Students');
         <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
         <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border);">
             <i class="bi bi-search"></i>
-            <input type="text" name="search" placeholder="Search students..." value="<?= h($search ?? '') ?>" style="width: 100%;">
+            <input type="text" name="search" placeholder="Search customers..." value="<?= h($search ?? '') ?>" style="width: 100%;">
         </div>
     </form>
 
     <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
-        <i class="bi bi-plus-lg"></i> Add Student
+        <i class="bi bi-plus-lg"></i> Register Customer
     </a>
 </div>
 
@@ -33,9 +33,9 @@ $this->assign('title', 'Students');
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Date of Birth</th>
+                    <th>Declared Age</th>
                     <th>Status</th>
-                    <th>Age Verified</th>
+                    <th>Adult Verified</th>
                     <th>Created</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -47,7 +47,7 @@ $this->assign('title', 'Students');
                         <p class="admin-table-primary-text"><?= h($student->student_name) ?></p>
                     </td>
                     <td>
-                        <p class="admin-table-secondary-text"><?= $student->date_of_birth ? $student->date_of_birth->format('j M Y') : '-' ?></p>
+                        <p class="admin-table-secondary-text"><?= $student->declared_age !== null ? h((string)$student->declared_age) : '-' ?></p>
                     </td>
                     <td>
                         <?php 
@@ -58,25 +58,22 @@ $this->assign('title', 'Students');
                         <span class="admin-badge <?= $statusClass ?>"><?= h(ucfirst($student->student_status)) ?></span>
                     </td>
                     <td>
-                        <?php if ($student->user && $student->user->age_verified_by_admin): ?>
+                        <?php if (!$student->user): ?>
+                            <span class="admin-badge admin-badge-neutral"><i class="bi bi-person-dash me-1"></i> No account</span>
+                        <?php elseif ($student->user->age_verified_by_admin): ?>
                             <span class="admin-badge admin-badge-success"><i class="bi bi-shield-check me-1"></i> Yes</span>
-                        <?php elseif ($student->user && $student->user->self_declared_adult): ?>
-                            <span class="admin-badge admin-badge-warning"><i class="bi bi-exclamation-triangle me-1"></i> Pending</span>
                         <?php else: ?>
-                            <span class="admin-badge admin-badge-neutral">No</span>
+                            <span class="admin-badge admin-badge-warning"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
                         <?php endif; ?>
                     </td>
                     <td>
                         <p class="admin-table-secondary-text"><?= $student->created_at ? $student->created_at->format('j M Y') : '-' ?></p>
                     </td>
-                    <td>
-                        <div class="admin-action-links justify-content-end">
-                            <a href="<?= $this->Url->build(['action' => 'view', $student->student_id]) ?>" class="admin-action-link view" title="View">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-action-link edit" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+	                    <td>
+	                        <div class="admin-action-links justify-content-end">
+	                            <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-action-link edit" title="Edit">
+	                                <i class="bi bi-pencil"></i>
+	                            </a>
                             <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $student->student_id], [
                                 'confirm' => __('Are you sure you want to delete {0}?', $student->student_name),
                                 'class' => 'admin-action-link delete',

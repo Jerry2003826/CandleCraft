@@ -5,10 +5,9 @@
  * @var array $calendarEvents
  * @var \Cake\I18n\DateTime $weekStart
  * @var \Cake\I18n\DateTime $weekEnd
- * @var bool $isAdult
- * @var string $userRole
+ * @var bool $bookingAccessEnabled
  */
-$this->assign('title', 'My Schedule');
+$this->assign('title', 'View Schedule & Attendance');
 
 $prevWeek = $weekStart->modify('-7 days')->format('Y-m-d');
 $nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
@@ -16,6 +15,9 @@ $todayWeek = (new \Cake\I18n\DateTime('now'))->modify('-' . date('w') . ' days')
 $todayStr = date('Y-m-d');
 $nowHour = (int)date('G');
 $nowMinute = (int)date('i');
+$now = new \Cake\I18n\DateTime('now');
+$reminderWindowStartTs = $now->modify('+24 hours')->getTimestamp();
+$reminderWindowEndTs = $now->modify('+25 hours')->getTimestamp();
 
 $dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 $weekDays = [];
@@ -55,8 +57,8 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                 <a href="#" class="admin-tab active sp-view-btn" data-view="calendar"><i class="bi bi-calendar-week"></i> Calendar</a>
                 <a href="#" class="admin-tab sp-view-btn" data-view="list"><i class="bi bi-list-ul"></i> List</a>
             </div>
-            <?php if ($isAdult): ?>
-                <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary" style="padding: 8px 16px; font-size: 13px;"><i class="bi bi-plus-circle me-1"></i> Book Class</a>
+            <?php if ($bookingAccessEnabled): ?>
+                <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary" style="padding: 8px 16px; font-size: 13px;"><i class="bi bi-plus-circle me-1"></i> Open Booking System</a>
             <?php endif; ?>
         </div>
     </div>
@@ -102,7 +104,12 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                    title="<?= h($ev['title']) ?>">
                                     <strong class="wc-evt__title"><?= h($ev['title']) ?></strong>
                                     <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
-                                    <span class="wc-evt__loc"><?= h($ev['student_name'] ?? '') ?><?= !empty($ev['student_name']) && $ev['location'] ? ' · ' : '' ?><?= h($ev['location'] ?? '') ?></span>
+                                    <span class="wc-evt__loc"><?= h($ev['location'] ?? '') ?></span>
+                                    <?php if (!empty($ev['attendance_status'])): ?>
+                                        <span class="wc-evt__loc">Attendance: <?= h(ucfirst((string)$ev['attendance_status'])) ?></span>
+                                    <?php elseif (!empty($ev['reminder_sent_at'])): ?>
+                                        <span class="wc-evt__loc">Reminder sent</span>
+                                    <?php endif; ?>
                                 </a>
                             <?php endforeach; ?>
 
@@ -126,9 +133,9 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
         <?php if (empty($bookingList)): ?>
             <div class="admin-form-card text-center py-5 flex-grow-1 d-flex flex-column justify-content-center" style="max-width: 100%;">
                 <i class="bi bi-calendar-event text-muted" style="font-size: 48px;"></i>
-                <p class="mt-3 text-muted">You have no bookings yet.</p>
-                <?php if ($isAdult): ?>
-                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary btn-sm mt-2 mx-auto">Browse Courses</a>
+                <p class="mt-3 text-muted">You do not have any schedule or attendance records yet.</p>
+                <?php if ($bookingAccessEnabled): ?>
+                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary btn-sm mt-2 mx-auto">Open Booking System</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
@@ -147,17 +154,44 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                         <?= $dateKey !== '0000-00-00' ? date('l, M j, Y', strtotime($dateKey)) : 'Unscheduled' ?>
                     </div>
                     <?php foreach ($dateBookings as $booking): ?>
+                        <?php
+                            $classStart = $booking->class_entity?->start_datetime;
+                            $attendanceStatus = (string)($booking->attendance_record?->attendance_status ?? '');
+                            $attendanceLabel = 'Upcoming';
+                            $attendanceClass = 'admin-badge-neutral';
+                            if ($attendanceStatus !== '') {
+                                $attendanceLabel = ucfirst($attendanceStatus);
+                                $attendanceClass = match ($attendanceStatus) {
+                                    'present' => 'admin-badge-success',
+                                    'late', 'excused' => 'admin-badge-warning',
+                                    'absent' => 'admin-badge-danger',
+                                    default => 'admin-badge-neutral',
+                                };
+                            } elseif ($classStart && $classStart->isPast()) {
+                                $attendanceLabel = 'Awaiting mark';
+                                $attendanceClass = 'admin-badge-warning';
+                            }
+
+                            $reminderLabel = null;
+                            $reminderClass = 'admin-badge-info';
+                            if ($booking->reminder_sent_at) {
+                                $reminderLabel = 'Reminder sent ' . $booking->reminder_sent_at->format('j M, g:ia');
+                                $reminderClass = 'admin-badge-success';
+                            } elseif (
+                                $classStart
+                                && in_array($booking->booking_status, ['confirmed', 'completed'], true)
+                                && $classStart->getTimestamp() >= $reminderWindowStartTs
+                                && $classStart->getTimestamp() < $reminderWindowEndTs
+                            ) {
+                                $reminderLabel = 'Reminder due soon';
+                            }
+                        ?>
                         <div class="sp-list-card" id="booking-<?= $booking->booking_id ?>" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border); border-radius: 12px; padding: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; transition: border-color 0.2s;">
                             <div class="d-flex align-items-center gap-3">
                                 <div style="width: 40px; height: 40px; border-radius: 8px; background-color: var(--admin-search-bg); display: flex; justify-content: center; align-items: center;">
                                     <i class="bi bi-calendar-event" style="font-size: 18px; color: var(--admin-text-secondary);"></i>
                                 </div>
                                 <div>
-                                    <?php if ($userRole === 'parent'): ?>
-                                        <div class="mt-1" style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--admin-text-secondary); margin-bottom: 2px;">
-                                            <?= h($booking->student?->student_name ?? '-') ?>
-                                        </div>
-                                    <?php endif; ?>
                                     <h4 style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary); margin: 0 0 2px 0;">
                                         <?= h($booking->class_entity?->course?->course_name ?? '-') ?>
                                     </h4>
@@ -174,22 +208,28 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                             <span><?= h($booking->class_entity->teacher->teacher_name) ?></span>
                                         <?php endif; ?>
                                     </div>
+                                    <div class="d-flex flex-wrap gap-2 mt-2">
+                                        <?php 
+                                            $statusClass = 'admin-badge-neutral';
+                                            if ($booking->booking_status === 'confirmed') $statusClass = 'admin-badge-success';
+                                            if ($booking->booking_status === 'pending') $statusClass = 'admin-badge-warning';
+                                            if ($booking->booking_status === 'cancelled') $statusClass = 'admin-badge-danger';
+                                        ?>
+                                        <span class="admin-badge <?= $statusClass ?>">Booking: <?= ucfirst(h($booking->booking_status)) ?></span>
+                                        <span class="admin-badge <?= $attendanceClass ?>">Attendance: <?= h($attendanceLabel) ?></span>
+                                        <?php if ($reminderLabel): ?>
+                                            <span class="admin-badge <?= $reminderClass ?>"><?= h($reminderLabel) ?></span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-3">
-                                <?php 
-                                    $statusClass = 'admin-badge-neutral';
-                                    if ($booking->booking_status === 'Confirmed') $statusClass = 'admin-badge-success';
-                                    if ($booking->booking_status === 'Pending') $statusClass = 'admin-badge-warning';
-                                    if ($booking->booking_status === 'Cancelled') $statusClass = 'admin-badge-danger';
-                                ?>
-                                <span class="admin-badge <?= $statusClass ?>"><?= ucfirst(h($booking->booking_status)) ?></span>
                                 <?php
                                 $hasPaid = false;
                                 foreach ($booking->payments ?? [] as $p) { if ($p->payment_status === 'paid') { $hasPaid = true; break; } }
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaid;
                                 ?>
-                                <?php if ($isAdult): ?>
+                                <?php if ($bookingAccessEnabled): ?>
                                     <div class="d-flex gap-2 flex-wrap">
                                         <?php if ($booking->booking_status === 'pending' && !$isPaid): ?>
                                             <?php if ($ageVerifiedByAdmin): ?>
@@ -205,6 +245,8 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                             <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'receipt', collection($booking->payments)->last()->payment_id]) ?>" class="admin-action-link view" style="padding: 6px 12px; height: auto; width: auto; font-size: 12px;">Receipt</a>
                                         <?php endif; ?>
                                     </div>
+                                <?php elseif ($booking->booking_status === 'pending'): ?>
+                                    <span class="admin-badge admin-badge-warning"><i class="bi bi-hourglass-split me-1"></i>Awaiting adult verification</span>
                                 <?php endif; ?>
                             </div>
                         </div>

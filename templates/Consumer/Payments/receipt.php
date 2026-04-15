@@ -6,52 +6,54 @@
 $this->assign('title', 'Payment Receipt');
 ?>
 
-<div class="mb-3">
-    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> My Schedule</a>
-</div>
+<a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> My Schedule
+</a>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Payment Receipt</h5>
+<div class="admin-form-card" style="max-width: 600px;">
+    <div class="text-center mb-5 mt-4">
+        <div style="width: 80px; height: 80px; background-color: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 24px auto;">
+            <i class="bi bi-check-circle" style="font-size: 40px; color: #10B981;"></i>
+        </div>
+        <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 28px; color: var(--admin-text-primary); margin: 0 0 8px 0;">
+            CandleCraft Academy
+        </h2>
+        <p style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: var(--admin-text-secondary); margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">
+            Payment Receipt
+        </p>
     </div>
-    <div class="card-body">
-        <div style="max-width: 600px; margin: 0 auto;">
-            <div class="text-center mb-4">
-                <i class="bi bi-check-circle text-success" style="font-size: 48px;"></i>
-                <h4 class="mt-2">CandleCraft Academy</h4>
-                <p class="text-muted">Payment Receipt</p>
-            </div>
 
-            <table class="table">
-                <tbody>
-                    <tr>
-                        <th class="text-muted" style="width: 40%;">Receipt #</th>
-                        <td><strong>PAY-<?= str_pad((string)$payment->payment_id, 6, '0', STR_PAD_LEFT) ?></strong></td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">Date</th>
-                        <td><?= $payment->payment_date ? $payment->payment_date->format('j M Y, g:ia') : '-' ?></td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">Course</th>
-                        <td><?= h($payment->booking
-                            && $payment->booking->class_entity
-                            && $payment->booking->class_entity->course
-                            ? $payment->booking->class_entity->course->course_name
-                            : '-') ?></td>
-                    </tr>
-                    <tr>
-                        <th class="text-muted">Status</th>
-                        <td><span class="badge badge-confirmed"><?= ucfirst(h($payment->payment_status)) ?></span></td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr class="table-light">
-                        <th>Total Paid</th>
-                        <td><strong style="font-size: 1.3em;">$<?= number_format((float)$payment->amount, 2) ?> <?= h($payment->currency_code ?? 'AUD') ?></strong></td>
-                    </tr>
-                </tfoot>
-            </table>
+    <div style="background-color: var(--admin-search-bg); border-radius: 12px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px dashed var(--admin-card-border);">
+            <span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">Receipt #</span>
+            <strong style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary);">
+                PAY-<?= str_pad((string)$payment->payment_id, 6, '0', STR_PAD_LEFT) ?>
+            </strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px dashed var(--admin-card-border);">
+            <span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">Date</span>
+            <strong style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary);">
+                <?= $payment->payment_date ? $payment->payment_date->format('j M Y, g:ia') : '-' ?>
+            </strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px dashed var(--admin-card-border);">
+            <span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">Course</span>
+            <strong style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); text-align: right;">
+                <?= h($payment->booking && $payment->booking->class_entity && $payment->booking->class_entity->course ? $payment->booking->class_entity->course->course_name : '-') ?>
+            </strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">Status</span>
+            <span class="admin-badge admin-badge-success" style="font-size: 12px; padding: 4px 10px;">
+                <?= ucfirst(h($payment->payment_status)) ?>
+            </span>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center pt-4" style="border-top: 1px solid var(--admin-card-border);">
+            <span style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary);">Total Paid</span>
+            <strong style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 24px; color: var(--admin-text-primary);">
+                $<?= number_format((float)$payment->amount, 2) ?> <?= h($payment->currency_code ?? 'AUD') ?>
+            </strong>
         </div>
     </div>
 </div>

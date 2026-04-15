@@ -39,7 +39,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                             </div>
                         </div>
                     </div>
-                    <a href="<?= h($contactUrl) ?>">Enquire</a>
+                    <a href="<?= h($contactUrl) ?>">Enquiry Form</a>
                     <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>
             </nav>
@@ -53,12 +53,11 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                     <h1 id="landing-title">CandleCraft Academy</h1>
                     <div class="hero-copy__actions">
                         <a href="<?= h($coursesUrl) ?>" class="button button--solid">Browse Courses</a>
-                        <a href="<?= h($contactUrl) ?>" class="button button--outline">Enquire Today</a>
+                        <a href="<?= h($contactUrl) ?>" class="button button--outline">Open Enquiry Form</a>
                     </div>
                 </div>
             </section>
         </header>
-        </main>
 
         <footer class="home-footer" role="contentinfo">
             <p>&copy; <?= date('Y') ?> CandleCraft Academy. All rights reserved.</p>

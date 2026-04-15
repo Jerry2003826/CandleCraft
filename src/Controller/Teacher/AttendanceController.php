@@ -41,7 +41,7 @@ class AttendanceController extends AppController
         }
 
         $this->set(compact('classes', 'students', 'selectedClass', 'selectedClassId'));
-        $this->set('title', 'Attendance Management');
+        $this->set('title', 'Manage Attendance');
     }
 
     public function mark(): ?Response
@@ -94,7 +94,6 @@ class AttendanceController extends AppController
     {
         $identity = $this->Authentication->getIdentity();
         $teachersTable = $this->fetchTable('Teachers');
-        $attendanceRecordsTable = $this->fetchTable('AttendanceRecords');
 
         $teacher = $teachersTable->find()
             ->where(['Teachers.user_id' => $identity?->get('user_id')])
@@ -108,26 +107,30 @@ class AttendanceController extends AppController
             ->map(fn($c) => $c->class_id)
             ->toArray();
 
-        $bookingsTable = $this->fetchTable('Bookings');
-        $query = $bookingsTable->find()
-            ->where([
-                'Bookings.class_id IN' => $teacherClassIds,
-            ])
-            ->contain([
-                'Students',
-                'Classes' => ['Courses'],
-                'AttendanceRecords',
-            ])
-            ->order(['Bookings.booking_id' => 'DESC']);
-
         $statusFilter = $this->request->getQuery('status');
-        if ($statusFilter) {
-            $query->matching('AttendanceRecords', function ($q) use ($statusFilter) {
-                return $q->where(['AttendanceRecords.attendance_status' => $statusFilter]);
-            });
-        }
+        $records = new \Cake\Collection\Collection([]);
 
-        $records = $query->all();
+        if ($teacherClassIds !== []) {
+            $bookingsTable = $this->fetchTable('Bookings');
+            $query = $bookingsTable->find()
+                ->where([
+                    'Bookings.class_id IN' => $teacherClassIds,
+                ])
+                ->contain([
+                    'Students',
+                    'Classes' => ['Courses'],
+                    'AttendanceRecords',
+                ])
+                ->order(['Bookings.booking_id' => 'DESC']);
+
+            if ($statusFilter) {
+                $query->matching('AttendanceRecords', function ($q) use ($statusFilter) {
+                    return $q->where(['AttendanceRecords.attendance_status' => $statusFilter]);
+                });
+            }
+
+            $records = $query->all();
+        }
 
         $this->set(compact('records', 'statusFilter'));
         $this->set('title', 'Attendance History');

@@ -63,14 +63,11 @@ $this->assign('title', 'Teachers');
                     <td>
                         <p class="admin-table-secondary-text"><?= $teacher->hire_date ? $teacher->hire_date->format('j M Y') : '-' ?></p>
                     </td>
-                    <td>
-                        <div class="admin-action-links justify-content-end">
-                            <a href="<?= $this->Url->build(['action' => 'view', $teacher->teacher_id]) ?>" class="admin-action-link view" title="View">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="<?= $this->Url->build(['action' => 'edit', $teacher->teacher_id]) ?>" class="admin-action-link edit" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+	                    <td>
+	                        <div class="admin-action-links justify-content-end">
+	                            <a href="<?= $this->Url->build(['action' => 'edit', $teacher->teacher_id]) ?>" class="admin-action-link edit" title="Edit">
+	                                <i class="bi bi-pencil"></i>
+	                            </a>
                             <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $teacher->teacher_id], [
                                 'confirm' => __('Are you sure you want to delete {0}?', $teacher->teacher_name),
                                 'class' => 'admin-action-link delete',

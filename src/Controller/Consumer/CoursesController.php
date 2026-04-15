@@ -79,6 +79,6 @@ class CoursesController extends AppController
         $weekEnd = $weekEnd->modify('+6 days');
 
         $this->set(compact('courseData', 'calendarEvents', 'weekStart', 'weekEnd'));
-        $this->set('title', 'Browse Courses');
+        $this->set('title', 'Booking System');
     }
 }

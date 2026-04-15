@@ -42,7 +42,7 @@ class AvailabilityController extends AppController
         }
 
         $this->set(compact('schedule', 'daysMap', 'teacher'));
-        $this->set('title', 'My Schedule');
+        $this->set('title', 'View Schedule');
     }
 
     public function edit(): ?Response
@@ -103,7 +103,7 @@ class AvailabilityController extends AppController
             ->all();
 
         $this->set(compact('daysMap', 'existingSlots'));
-        $this->set('title', 'Edit Schedule');
+        $this->set('title', 'Manage Availability');
 
         return null;
     }

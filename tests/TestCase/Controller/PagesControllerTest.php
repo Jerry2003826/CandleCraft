@@ -38,8 +38,8 @@ class PagesControllerTest extends TestCase
         Configure::write('debug', true);
         $this->get('/pages/home');
         $this->assertResponseOk();
-        $this->assertResponseContains('CakePHP');
-        $this->assertResponseContains('<html>');
+        $this->assertResponseContains('CandleCraft Academy');
+        $this->assertResponseContains('Browse Courses');
     }
 
     /**
@@ -93,8 +93,8 @@ class PagesControllerTest extends TestCase
     {
         $this->post('/pages/home', ['hello' => 'world']);
 
-        $this->assertResponseCode(403);
-        $this->assertResponseContains('CSRF');
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
     }
 
     /**

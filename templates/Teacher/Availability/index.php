@@ -4,22 +4,22 @@
  * @var array $schedule
  * @var array $daysMap
  */
-$this->assign('title', 'My Schedule');
+$this->assign('title', 'View Schedule');
 ?>
 
 <div class="admin-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <h2 class="admin-form-title m-0">My Weekly Schedule</h2>
+    <h2 class="admin-form-title m-0">Weekly Teaching Schedule</h2>
     <a href="<?= $this->Url->build(['action' => 'edit']) ?>" class="admin-btn-primary">
-        <i class="bi bi-pencil"></i> Edit Schedule
+        <i class="bi bi-pencil"></i> Manage Availability
     </a>
 </div>
 
 <?php if (empty($schedule)): ?>
     <div class="admin-form-card text-center py-5" style="max-width: 100%;">
         <i class="bi bi-calendar-x text-muted" style="font-size: 48px;"></i>
-        <p class="mt-3 text-muted" style="font-family: 'Inter', sans-serif; font-size: 15px;">You haven't set your availability yet.</p>
+        <p class="mt-3 text-muted" style="font-family: 'Inter', sans-serif; font-size: 15px;">You have not set your availability yet.</p>
         <a href="<?= $this->Url->build(['action' => 'edit']) ?>" class="admin-btn-primary mt-3 mx-auto">
-            Set Availability
+            Manage Availability
         </a>
     </div>
 <?php else: ?>

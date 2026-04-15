@@ -53,7 +53,7 @@ class ResourcesController extends AppController
         }
 
         $this->set(compact('resources', 'teacher'));
-        $this->set('title', 'My Resources');
+        $this->set('title', 'Manage Learning Resources');
     }
 
     public function add(): ?Response
@@ -97,7 +97,7 @@ class ResourcesController extends AppController
         ];
 
         $this->set(compact('resource', 'classOptions', 'resourceTypes'));
-        $this->set('title', 'Add Resource');
+        $this->set('title', 'Add Learning Resource');
 
         return null;
     }

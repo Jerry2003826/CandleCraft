@@ -36,7 +36,7 @@ class PagesController extends AppController
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
-        $this->Authentication->addUnauthenticatedActions(['home', 'contact', 'display']);
+        $this->Authentication->addUnauthenticatedActions(['home', 'contact', 'requestAccess', 'display']);
     }
 
     public function home(): ?Response
@@ -56,19 +56,30 @@ class PagesController extends AppController
             'Feedback/Suggestions' => 'Feedback/Suggestions',
         ];
         $enquiry = $messagesTable->newEmptyEntity();
+        $requestAccount = false;
 
         if ($this->request->is('post')) {
-            $selfDeclaredAdult = !empty($this->request->getData('self_declared_adult'));
+            $requestAccount = !empty($this->request->getData('request_account'));
             $messageText = trim((string)$this->request->getData('message_text'));
-            $ageTag = $selfDeclaredAdult ? '[AGE DECLARATION: 18+]' : '[AGE DECLARATION: Under 18]';
-            $messageText = $ageTag . "\n\n" . $messageText;
+            $subject = trim((string)$this->request->getData('subject'));
+            $messageSourcePage = $sourcePage;
+            $declaredAge = $this->normaliseDeclaredAge($this->request->getData('declared_age'));
+
+            if ($requestAccount) {
+                $messageText = $this->buildAccountRequestMessageText(
+                    $declaredAge,
+                    $messageText,
+                );
+                $subject = 'Student account request';
+                $messageSourcePage = 'account-request';
+            }
 
             $enquiryData = [
                 'sender_name' => trim((string)$this->request->getData('sender_name')),
                 'sender_email' => trim((string)$this->request->getData('sender_email')),
                 'sender_phone' => trim((string)$this->request->getData('sender_phone')),
-                'source_page' => $sourcePage,
-                'subject' => trim((string)$this->request->getData('subject')),
+                'source_page' => $messageSourcePage,
+                'subject' => $subject,
                 'message_text' => $messageText,
                 'message_type' => 'contact_form',
                 'message_status' => 'unread',
@@ -76,9 +87,18 @@ class PagesController extends AppController
             ];
             $enquiry = $messagesTable->newEntity($enquiryData, ['validate' => 'contactForm']);
 
+            if ($requestAccount && $declaredAge === null) {
+                $enquiry->setError('declared_age', ['Please tell us your current age.']);
+            }
+
             $honeypot = trim((string)$this->request->getData('website'));
             if ($honeypot !== '') {
-                $this->Flash->success(__('Thank you. Your enquiry has been received.'));
+                $this->Flash->success(
+                    $requestAccount
+                        ? __('Thanks. Your account request has been sent to our admin team.')
+                        : __('Thank you. Your enquiry has been received.'),
+                    ['key' => 'enquiry']
+                );
 
                 return $this->redirect([
                     'action' => 'contact',
@@ -87,17 +107,18 @@ class PagesController extends AppController
                 ]);
             }
 
-           $recaptchaResponse = $this->request->getData('g-recaptcha-response');
-            $secretKey = '6Ld-GZosAAAAAKJt-HlWj0eXlDG8EROq_R3cbQ1b';
-            $verify = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $recaptchaResponse);
-            $captchaSuccess = json_decode($verify);
-            if (!$captchaSuccess->success) {
-            $enquiry->setError('g-recaptcha-response', ['Please complete the CAPTCHA.']);
+            if (!$this->verifyRecaptcha((string)$this->request->getData('g-recaptcha-response'))) {
+                $enquiry->setError('g-recaptcha-response', ['Please complete the CAPTCHA.']);
             }
 
             if (!$enquiry->getErrors() && $messagesTable->save($enquiry)) {
                 $session->delete('Enquiry');
-                $this->Flash->success(__('Thank you. Your enquiry has been received.'));
+                $this->Flash->success(
+                    $requestAccount
+                        ? __('Thanks. Your account request has been sent to our admin team.')
+                        : __('Thank you. Your enquiry has been received.'),
+                    ['key' => 'enquiry']
+                );
 
                 return $this->redirect([
                     'action' => 'contact',
@@ -106,12 +127,20 @@ class PagesController extends AppController
                 ]);
             }
 
-            $this->Flash->error(__('Please review the form and try again.'));
+            $this->Flash->error(__('Please review the form and try again.'), ['key' => 'enquiry']);
         }
 
-        $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage'));
+        $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage', 'requestAccount'));
 
         return null;
+    }
+
+    public function requestAccess(): ?Response
+    {
+        return $this->redirect([
+            'action' => 'contact',
+            '#' => 'enquiry',
+        ]);
     }
 
     private function resolveSourcePage(): string
@@ -162,6 +191,62 @@ class PagesController extends AppController
         }
 
         return substr(str_replace('/', '-', $normalised), 0, 255);
+    }
+
+    private function verifyRecaptcha(string $recaptchaResponse): bool
+    {
+        if ($recaptchaResponse === '') {
+            return false;
+        }
+
+        $secretKey = '6Ld-GZosAAAAAKJt-HlWj0eXlDG8EROq_R3cbQ1b';
+        $verify = @file_get_contents(
+            'https://www.google.com/recaptcha/api/siteverify?secret=' .
+            urlencode($secretKey) .
+            '&response=' .
+            urlencode($recaptchaResponse),
+        );
+
+        if ($verify === false) {
+            return false;
+        }
+
+        $captchaSuccess = json_decode($verify);
+
+        return (bool)($captchaSuccess->success ?? false);
+    }
+
+    private function normaliseDeclaredAge(mixed $declaredAge): ?int
+    {
+        if ($declaredAge === null || $declaredAge === '') {
+            return null;
+        }
+
+        if (is_numeric($declaredAge)) {
+            $age = (int)$declaredAge;
+
+            if ($age >= 1 && $age <= 120) {
+                return $age;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildAccountRequestMessageText(?int $declaredAge, string $messageText): string
+    {
+        $parts = [
+            '[REQUEST TYPE: account_access]',
+            '[REQUESTED ROLE: student]',
+            '[DECLARED AGE: ' . ($declaredAge ?? 'unknown') . ']',
+        ];
+
+        if ($messageText !== '') {
+            $parts[] = '';
+            $parts[] = $messageText;
+        }
+
+        return implode("\n", $parts);
     }
 
     private function buildCaptchaChallenge(): array

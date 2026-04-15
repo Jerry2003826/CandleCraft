@@ -2,127 +2,281 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable $bookings
- * @var string $userRole
+ * @var iterable $paymentProfiles
+ * @var \App\Model\Entity\PaymentProfile $paymentProfile
+ * @var array<string, string> $preferredPaymentMethods
  */
-$this->assign('title', 'Payments');
+$this->assign('title', 'Payment Portal');
+
+$bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $bookings->toList() : (array)$bookings;
+$profileList = is_object($paymentProfiles) && method_exists($paymentProfiles, 'toList') ? $paymentProfiles->toList() : (array)$paymentProfiles;
+$activeProfiles = array_values(array_filter($profileList, fn($profile) => $profile->profile_status === 'active'));
+$archivedProfiles = array_values(array_filter($profileList, fn($profile) => $profile->profile_status === 'archived'));
+$editingExistingProfile = !$paymentProfile->isNew() && !empty($paymentProfile->payment_profile_id);
+$profileSaveUrl = $editingExistingProfile
+    ? ['action' => 'saveProfile', $paymentProfile->payment_profile_id]
+    : ['action' => 'saveProfile'];
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <h2 class="admin-form-title m-0" style="font-size: 18px;">My Payments</h2>
-    <button type="button" class="admin-btn-primary" data-bs-toggle="modal" data-bs-target="#addPaymentMethodModal">
-        <i class="bi bi-plus-lg"></i> Add Payment Method
-    </button>
+    <div>
+        <h2 class="admin-form-title m-0" style="font-size: 18px;">Payment History &amp; Payment Details</h2>
+        <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); margin: 6px 0 0 0;">
+            Manage your billing profile and review receipts for paid class bookings.
+        </p>
+    </div>
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Payment Details
+    </a>
 </div>
 
-<?php if (empty($bookings) || (is_object($bookings) && $bookings->isEmpty())): ?>
-    <div class="admin-form-card text-center py-5" style="max-width: 100%;">
-        <i class="bi bi-credit-card" style="font-size: 48px; color: var(--admin-text-secondary);"></i>
-        <p class="mt-3" style="color: var(--admin-text-secondary);">No bookings available for payment.</p>
+<div class="row g-4">
+    <div class="col-xl-7 d-flex flex-column gap-4">
+        <div class="admin-table-card">
+            <div class="admin-table-header">
+                <h3 class="admin-table-title">Payment History</h3>
+                <span class="admin-table-subtitle" style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--admin-text-secondary);">
+                    Receipts appear once a booking has been paid.
+                </span>
+            </div>
+
+            <?php if ($bookingList === []): ?>
+                <div class="text-center py-5">
+                    <i class="bi bi-credit-card" style="font-size: 48px; color: var(--admin-text-secondary);"></i>
+                    <p class="mt-3 mb-2" style="color: var(--admin-text-secondary);">No class bookings are available for payment yet.</p>
+                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary mt-2">Open Booking System</a>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Course</th>
+                                <th>Class</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Booking</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($bookingList as $booking): ?>
+                                <?php
+                                    $latestPayment = null;
+                                    $hasPaidRecord = false;
+                                    foreach ($booking->payments ?? [] as $payment) {
+                                        $latestPayment = $payment;
+                                        if ($payment->payment_status === 'paid') {
+                                            $hasPaidRecord = true;
+                                        }
+                                    }
+                                    $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
+                                    $paymentBadgeClass = $isPaid ? 'admin-badge-success' : 'admin-badge-warning';
+                                    $paymentBadgeLabel = $isPaid ? 'Paid' : 'Awaiting payment';
+                                    $bookingBadgeClass = match ($booking->booking_status) {
+                                        'confirmed', 'completed' => 'admin-badge-success',
+                                        'pending' => 'admin-badge-warning',
+                                        'cancelled' => 'admin-badge-danger',
+                                        default => 'admin-badge-neutral',
+                                    };
+                                ?>
+                                <tr>
+                                    <td>
+                                        <p class="admin-table-primary-text"><?= h($booking->class_entity?->course?->course_name ?? '-') ?></p>
+                                    </td>
+                                    <td>
+                                        <p class="admin-table-primary-text"><?= h($booking->class_entity?->class_code ?? '-') ?></p>
+                                        <p class="admin-table-secondary-text">
+                                            <?= $booking->class_entity?->start_datetime ? $booking->class_entity->start_datetime->format('j M Y, g:ia') : '-' ?>
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="admin-table-primary-text">$<?= number_format((float)$booking->price_at_booking, 2) ?></p>
+                                    </td>
+                                    <td>
+                                        <span class="admin-badge <?= $paymentBadgeClass ?>"><?= h($paymentBadgeLabel) ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="admin-badge <?= $bookingBadgeClass ?>"><?= h(ucfirst((string)$booking->booking_status)) ?></span>
+                                    </td>
+                                    <td>
+                                        <div class="admin-action-links justify-content-end">
+                                            <?php if (!$isPaid && in_array($booking->booking_status, ['pending', 'confirmed'], true)): ?>
+                                                <a href="<?= $this->Url->build(['action' => 'process', $booking->booking_id]) ?>" class="admin-btn-primary" style="padding: 6px 12px; font-size: 12px;">Pay Now</a>
+                                            <?php elseif ($isPaid && $latestPayment): ?>
+                                                <a href="<?= $this->Url->build(['action' => 'receipt', $latestPayment->payment_id]) ?>" class="admin-action-link view" style="padding: 6px 12px; height: auto; width: auto; font-size: 12px;">Receipt</a>
+                                            <?php else: ?>
+                                                <span class="text-muted small">No action</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
-<?php else: ?>
-    <div class="admin-table-card">
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <?php if ($userRole === 'parent'): ?><th>Student</th><?php endif; ?>
-                        <th>Course</th>
-                        <th>Class</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th class="text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($bookings as $booking): ?>
-                        <?php
-                        $hasPaidRecord = false;
-                        foreach ($booking->payments ?? [] as $payment) {
-                            if ($payment->payment_status === 'paid') {
-                                $hasPaidRecord = true;
-                                break;
-                            }
-                        }
-                        $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
-                        ?>
-                        <tr>
-                            <?php if ($userRole === 'parent'): ?>
-                                <td><p class="admin-table-primary-text"><?= h($booking->student?->student_name ?? '-') ?></p></td>
-                            <?php endif; ?>
-                            <td><p class="admin-table-primary-text"><?= h($booking->class_entity?->course?->course_name ?? '-') ?></p></td>
-                            <td><p class="admin-table-secondary-text"><?= h($booking->class_entity?->class_code ?? '-') ?></p></td>
-                            <td><p class="admin-table-primary-text">$<?= number_format((float)$booking->price_at_booking, 2) ?></p></td>
-                            <td>
-                                <?php if ($isPaid): ?>
-                                    <span class="admin-badge admin-badge-success">Paid</span>
-                                <?php else: ?>
-                                    <span class="admin-badge admin-badge-warning">Unpaid</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <div class="admin-action-links justify-content-end">
-                                    <?php if (!$isPaid && in_array($booking->booking_status, ['pending', 'confirmed'], true)): ?>
-                                        <a href="<?= $this->Url->build(['action' => 'process', $booking->booking_id]) ?>" class="admin-btn-primary" style="padding: 6px 12px; font-size: 12px;">Pay Now</a>
-                                    <?php elseif ($isPaid): ?>
-                                        <a href="<?= $this->Url->build(['action' => 'receipt', collection($booking->payments)->last()->payment_id]) ?>" class="admin-action-link view" style="padding: 6px 12px; height: auto; width: auto; font-size: 12px;">Receipt</a>
-                                    <?php else: ?>
-                                        <span class="text-muted small">No action</span>
-                                    <?php endif; ?>
+
+    <div class="col-xl-5 d-flex flex-column gap-4">
+        <div class="admin-form-card" style="max-width: 100%; padding: 24px;">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <h3 class="admin-form-title" style="font-size: 18px; margin: 0;">Saved Payment Details</h3>
+                    <p style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); margin: 8px 0 0 0;">
+                        CandleCraft stores billing and contact details only. Card numbers and CVC values are never stored locally.
+                    </p>
+                </div>
+            </div>
+
+            <?php if ($activeProfiles === []): ?>
+                <div style="padding: 18px; border-radius: 12px; background: var(--admin-search-bg); border: 1px dashed var(--admin-card-border); color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px;">
+                    No payment details have been saved yet.
+                </div>
+            <?php else: ?>
+                <div class="d-flex flex-column gap-3">
+                    <?php foreach ($activeProfiles as $profile): ?>
+                        <div style="padding: 18px; border-radius: 14px; border: 1px solid var(--admin-card-border); background: var(--admin-search-bg);">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                                <div>
+                                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                                        <?= h($profile->billing_name) ?>
+                                    </div>
+                                    <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); margin-top: 4px;">
+                                        <?= h($profile->billing_email) ?>
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
+                                <?php if ($profile->is_default): ?>
+                                    <span class="admin-badge admin-badge-success">Default</span>
+                                <?php endif; ?>
+                            </div>
+                            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); line-height: 1.6;">
+                                <?= h(ucwords(str_replace('_', ' ', (string)$profile->preferred_payment_method))) ?>
+                                <?php if ($profile->billing_phone): ?>
+                                    <span style="opacity: 0.6;">•</span> <?= h($profile->billing_phone) ?>
+                                <?php endif; ?>
+                                <br>
+                                <?= h(trim(implode(', ', array_filter([
+                                    $profile->billing_address_line1,
+                                    $profile->billing_address_line2,
+                                    $profile->billing_city,
+                                    $profile->billing_state,
+                                    $profile->billing_postcode,
+                                    $profile->billing_country,
+                                ])))) ?: 'No billing address saved yet.' ?>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a href="<?= $this->Url->build(['action' => 'index', '?' => ['profile' => $profile->payment_profile_id]]) ?>" class="admin-action-link edit" style="padding: 6px 12px; height: auto; width: auto; font-size: 12px;">
+                                    Edit
+                                </a>
+                                <?php if (!$profile->is_default): ?>
+                                    <?= $this->Form->postLink(
+                                        'Set Default',
+                                        ['action' => 'setDefaultProfile', $profile->payment_profile_id],
+                                        ['class' => 'admin-action-link view', 'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;']
+                                    ) ?>
+                                <?php endif; ?>
+                                <?= $this->Form->postLink(
+                                    'Archive',
+                                    ['action' => 'archiveProfile', $profile->payment_profile_id],
+                                    [
+                                        'class' => 'admin-action-link delete',
+                                        'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;',
+                                        'confirm' => 'Archive these payment details?',
+                                    ]
+                                ) ?>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-<?php endif; ?>
+                </div>
+            <?php endif; ?>
 
-<!-- Add Payment Method Modal -->
-<div class="modal fade" id="addPaymentMethodModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border); border-radius: 16px;">
-            <div class="modal-header" style="border-bottom: 1px solid var(--admin-card-border);">
-                <h5 class="modal-title admin-form-title">Add Payment Method</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: var(--bs-btn-close-filter);"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Card Number</label>
-                    <div class="position-relative">
-                        <i class="bi bi-credit-card position-absolute" style="left: 16px; top: 50%; transform: translateY(-50%); color: var(--admin-text-secondary);"></i>
-                        <input type="text" class="admin-form-input" placeholder="0000 0000 0000 0000" style="padding-left: 44px;" maxlength="19">
+            <?php if ($archivedProfiles !== []): ?>
+                <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--admin-card-border);">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;">
+                        Archived
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <?php foreach ($archivedProfiles as $profile): ?>
+                            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
+                                <?= h($profile->billing_name) ?> · <?= h($profile->billing_email) ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="admin-form-card" style="max-width: 100%; padding: 24px;">
+            <h3 class="admin-form-title" style="font-size: 18px; margin-bottom: 16px;">
+                <?= $editingExistingProfile ? 'Update Payment Details' : 'Add Payment Details' ?>
+            </h3>
+
+            <?= $this->Form->create($paymentProfile, [
+                'url' => $profileSaveUrl,
+                'templates' => ['inputContainer' => '{{content}}'],
+            ]) ?>
                 <div class="row g-3">
-                    <div class="col-6">
-                        <div class="admin-form-group mb-0">
-                            <label class="admin-form-label">Expiry Date</label>
-                            <input type="text" class="admin-form-input" placeholder="MM/YY" maxlength="5">
-                        </div>
+                    <div class="col-md-6">
+                        <label class="admin-form-label">Billing Name</label>
+                        <?= $this->Form->control('billing_name', ['label' => false, 'class' => 'admin-form-input']) ?>
                     </div>
-                    <div class="col-6">
-                        <div class="admin-form-group mb-0">
-                            <label class="admin-form-label">CVC</label>
-                            <input type="text" class="admin-form-input" placeholder="123" maxlength="4">
-                        </div>
+                    <div class="col-md-6">
+                        <label class="admin-form-label">Billing Email</label>
+                        <?= $this->Form->control('billing_email', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="admin-form-label">Billing Phone</label>
+                        <?= $this->Form->control('billing_phone', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="admin-form-label">Preferred Payment Method</label>
+                        <?= $this->Form->control('preferred_payment_method', [
+                            'label' => false,
+                            'options' => $preferredPaymentMethods,
+                            'class' => 'admin-form-select',
+                        ]) ?>
+                    </div>
+                    <div class="col-12">
+                        <label class="admin-form-label">Billing Address Line 1</label>
+                        <?= $this->Form->control('billing_address_line1', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-12">
+                        <label class="admin-form-label">Billing Address Line 2</label>
+                        <?= $this->Form->control('billing_address_line2', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="admin-form-label">City</label>
+                        <?= $this->Form->control('billing_city', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="admin-form-label">State</label>
+                        <?= $this->Form->control('billing_state', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="admin-form-label">Postcode</label>
+                        <?= $this->Form->control('billing_postcode', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-12">
+                        <label class="admin-form-label">Country</label>
+                        <?= $this->Form->control('billing_country', ['label' => false, 'class' => 'admin-form-input']) ?>
+                    </div>
+                    <div class="col-12">
+                        <label style="display: inline-flex; align-items: center; gap: 10px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary);">
+                            <?= $this->Form->checkbox('is_default', ['hiddenField' => true]) ?>
+                            Set as default payment details
+                        </label>
                     </div>
                 </div>
-                <div class="admin-form-group mt-3 mb-0">
-                    <label class="admin-form-label">Name on Card</label>
-                    <input type="text" class="admin-form-input" placeholder="John Doe">
+
+                <div class="d-flex gap-2 flex-wrap mt-4">
+                    <?= $this->Form->button($editingExistingProfile ? 'Update Payment Details' : 'Save Payment Details', ['class' => 'admin-btn-primary']) ?>
+                    <?php if ($editingExistingProfile): ?>
+                        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-secondary" style="text-decoration: none;">Cancel</a>
+                    <?php endif; ?>
                 </div>
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid var(--admin-card-border);">
-                <button type="button" class="admin-btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="admin-btn-primary" data-bs-dismiss="modal" onclick="alert('Payment method saved successfully!')">Save Card</button>
-            </div>
+            <?= $this->Form->end() ?>
         </div>
     </div>
 </div>
-
-<style>
-[data-theme="dark"] .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-</style>

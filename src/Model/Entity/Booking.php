@@ -15,6 +15,7 @@ class Booking extends Entity
         'booking_status' => true,
         'price_at_booking' => true,
         'notes' => true,
+        'reminder_sent_at' => true,
         'created_at' => true,
         'updated_at' => true,
         'class' => true,

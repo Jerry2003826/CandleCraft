@@ -70,37 +70,8 @@ class NotificationsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    /**
-     * For parents, include both their own notifications and their children's.
-     */
     private function getRelevantUserIds($identity): array
     {
-        $userIds = [$identity->get('user_id')];
-
-        if ($this->userRole === 'parent') {
-            $parent = $this->fetchTable('Parents')->find()
-                ->where(['Parents.user_id' => $identity->get('user_id')])
-                ->first();
-
-            if ($parent) {
-                $studentsTable = $this->fetchTable('Students');
-                $childUserIds = $this->fetchTable('ParentStudents')->find()
-                    ->where(['ParentStudents.parent_id' => $parent->parent_id])
-                    ->all()
-                    ->map(function ($ps) use ($studentsTable) {
-                        $student = $studentsTable->find()
-                            ->where(['Students.student_id' => $ps->student_id])
-                            ->first();
-
-                        return $student ? $student->user_id : null;
-                    })
-                    ->filter()
-                    ->toArray();
-
-                $userIds = array_merge($userIds, array_values($childUserIds));
-            }
-        }
-
-        return $userIds;
+        return [$identity->get('user_id')];
     }
 }

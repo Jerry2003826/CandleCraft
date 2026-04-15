@@ -33,6 +33,10 @@ class UsersTable extends Table
             'foreignKey' => 'user_id',
             'bindingKey' => 'user_id',
         ]);
+        $this->hasMany('PaymentProfiles', [
+            'foreignKey' => 'user_id',
+            'bindingKey' => 'user_id',
+        ]);
     }
 
     public function validationDefault(Validator $validator): Validator
@@ -66,7 +70,7 @@ class UsersTable extends Table
             ->notEmptyString('password_hash');
 
         $validator
-            ->inList('user_role', ['admin', 'parent', 'teacher', 'student'])
+            ->inList('user_role', ['admin', 'teacher', 'student'])
             ->requirePresence('user_role', 'create')
             ->notEmptyString('user_role');
 
@@ -112,7 +116,7 @@ class UsersTable extends Table
             ->notEmptyString('password_hash');
 
         $validator
-            ->inList('user_role', ['admin', 'parent', 'teacher', 'student'])
+            ->inList('user_role', ['admin', 'teacher', 'student'])
             ->requirePresence('user_role', 'create')
             ->notEmptyString('user_role');
 

@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use ArrayObject;
+use Cake\Datasource\EntityInterface;
+use Cake\Event\EventInterface;
+use Cake\I18n\Date;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -48,11 +52,21 @@ class StudentsTable extends Table
             ->notEmptyString('student_name');
 
         $validator
+            ->integer('declared_age')
+            ->greaterThanOrEqual('declared_age', 1)
+            ->lessThanOrEqual('declared_age', 120)
+            ->requirePresence('declared_age', 'create')
+            ->notEmptyString('declared_age', 'Please enter the student age.');
+
+        $validator
             ->date('date_of_birth')
-            ->requirePresence('date_of_birth', 'create')
-            ->notEmptyDate('date_of_birth')
+            ->allowEmptyDate('date_of_birth')
             ->add('date_of_birth', 'notFuture', [
                 'rule' => static function (mixed $value): bool {
+                    if ($value === null || $value === '') {
+                        return true;
+                    }
+
                     return $value <= new \DateTimeImmutable('today');
                 },
                 'message' => 'Date of birth cannot be in the future.',
@@ -68,5 +82,24 @@ class StudentsTable extends Table
             ->allowEmptyString('medical_notes');
 
         return $validator;
+    }
+
+    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
+    {
+        if (
+            !$this->getSchema()->hasColumn('date_of_birth')
+            || $this->getSchema()->isNullable('date_of_birth')
+            || $entity->get('date_of_birth')
+        ) {
+            return;
+        }
+
+        $declaredAge = $entity->get('declared_age');
+        if (!is_numeric($declaredAge)) {
+            return;
+        }
+
+        $birthYear = max(1900, ((int)date('Y')) - (int)$declaredAge);
+        $entity->set('date_of_birth', new Date(sprintf('%04d-01-01', $birthYear)));
     }
 }

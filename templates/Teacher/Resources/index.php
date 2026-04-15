@@ -3,22 +3,22 @@
  * @var \App\View\AppView $this
  * @var iterable $resources
  */
-$this->assign('title', 'My Resources');
+$this->assign('title', 'Manage Learning Resources');
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <h2 class="admin-form-title m-0" style="font-size: 18px;">My Learning Resources</h2>
+    <h2 class="admin-form-title m-0" style="font-size: 18px;">Manage Learning Resources</h2>
     <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
-        <i class="bi bi-plus-lg"></i> Add Resource
+        <i class="bi bi-plus-lg"></i> Add Learning Resource
     </a>
 </div>
 
 <?php if (empty($resources) || (is_object($resources) && $resources->isEmpty())): ?>
     <div class="admin-form-card text-center py-5" style="max-width: 100%;">
         <i class="bi bi-folder-x" style="font-size: 48px; color: var(--admin-text-secondary);"></i>
-        <p class="mt-3" style="color: var(--admin-text-secondary);">No resources uploaded yet. Add materials for your classes.</p>
+        <p class="mt-3" style="color: var(--admin-text-secondary);">No learning resources uploaded yet. Add materials for your classes.</p>
         <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary mt-3 mx-auto">
-            Add Resource
+            Add Learning Resource
         </a>
     </div>
 <?php else: ?>

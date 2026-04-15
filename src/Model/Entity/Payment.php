@@ -18,5 +18,6 @@ class Payment extends Entity
         'refunded_amount' => true,
         'notes' => true,
         'booking' => true,
+        'payment_profile' => true,
     ];
 }

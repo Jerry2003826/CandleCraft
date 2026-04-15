@@ -34,9 +34,10 @@ $this->assign('title', 'Enquiries');
             </thead>
             <tbody>
                 <?php if ($messages->isEmpty()): ?>
-                    <tr><td colspan="8" class="text-center text-muted py-4">No messages found.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No enquiries found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($messages as $message): ?>
+                    <?php $isAccountRequest = $message->source_page === 'account-request'; ?>
                     <tr>
                         <td>
                             <p class="admin-table-primary-text">
@@ -60,7 +61,11 @@ $this->assign('title', 'Enquiries');
                             <p class="admin-table-secondary-text"><?= h($message->source_page ?: '-') ?></p>
                         </td>
                         <td>
-                            <span class="admin-badge admin-badge-neutral"><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></span>
+                            <?php if ($isAccountRequest): ?>
+                                <span class="admin-badge admin-badge-info">Account Request</span>
+                            <?php else: ?>
+                                <span class="admin-badge admin-badge-neutral">Enquiry</span>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <p class="admin-table-secondary-text"><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></p>
@@ -78,12 +83,17 @@ $this->assign('title', 'Enquiries');
                                 <a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="admin-action-link view" title="View">
                                     <i class="bi bi-eye"></i>
                                 </a>
+                                <?php if ($isAccountRequest): ?>
+                                    <a href="<?= $this->Url->build(['action' => 'createAccount', $message->message_id]) ?>" class="admin-action-link edit" title="Create Account">
+                                        <i class="bi bi-person-plus"></i>
+                                    </a>
+                                <?php endif; ?>
                                 <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply">
                                     <i class="bi bi-reply"></i>
                                 </a>
                                 <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $message->message_id], [
                                     'class' => 'admin-action-link delete',
-                                    'confirm' => __('Are you sure you want to delete this message?'),
+                                    'confirm' => __('Are you sure you want to delete this enquiry?'),
                                     'title' => 'Delete',
                                     'escape' => false
                                 ]) ?>

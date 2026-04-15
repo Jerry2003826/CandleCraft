@@ -29,28 +29,30 @@ class AppController extends BaseAppController
             'welcome' => 'Teaching Hub',
             'nav' => [
                 [
-                    'label' => 'Dashboard',
-                    'icon' => 'bi bi-house',
-                    'url' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
-                    'controller' => 'Dashboard',
+                    'label' => 'View Schedule',
+                    'icon' => 'bi bi-calendar-event',
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],
+                    'controller' => 'Availability',
+                    'action' => 'index',
                 ],
                 [
-                    'label' => 'Attendance',
+                    'label' => 'Manage Availability',
+                    'icon' => 'bi bi-sliders',
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'edit'],
+                    'controller' => 'Availability',
+                    'action' => 'edit',
+                ],
+                [
+                    'label' => 'Manage Attendance',
                     'icon' => 'bi bi-clipboard-check',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Attendance', 'action' => 'index'],
                     'controller' => 'Attendance',
                 ],
                 [
-                    'label' => 'Resources',
+                    'label' => 'Manage Learning Resources',
                     'icon' => 'bi bi-folder',
                     'url' => ['prefix' => 'Teacher', 'controller' => 'Resources', 'action' => 'index'],
                     'controller' => 'Resources',
-                ],
-                [
-                    'label' => 'My Schedule',
-                    'icon' => 'bi bi-calendar-event',
-                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],
-                    'controller' => 'Availability',
                 ],
             ],
         ]);

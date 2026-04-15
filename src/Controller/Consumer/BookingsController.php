@@ -15,34 +15,16 @@ class BookingsController extends AppController
     {
         $identity = $this->Authentication->getIdentity();
         $bookingsTable = $this->fetchTable('Bookings');
-
-        if ($this->userRole === 'parent') {
-            $studentIds = $this->getParentStudentIds($identity);
-            $bookings = [];
-            if (!empty($studentIds)) {
-                $bookings = $bookingsTable->find()
-                    ->where(['Bookings.student_id IN' => $studentIds])
-                    ->contain([
-                        'Students',
-                        'Classes' => ['Courses', 'Teachers'],
-                        'Payments',
-                        'AttendanceRecords',
-                    ])
-                    ->order(['Bookings.booking_date' => 'DESC'])
-                    ->all();
-            }
-        } else {
-            $student = $this->getStudentEntity($identity);
-            $bookings = $bookingsTable->find()
-                ->where(['Bookings.student_id' => $student->student_id])
-                ->contain([
-                    'Classes' => ['Courses', 'Teachers'],
-                    'Payments',
-                    'AttendanceRecords',
-                ])
-                ->order(['Bookings.booking_date' => 'DESC'])
-                ->all();
-        }
+        $student = $this->getStudentEntity($identity);
+        $bookings = $bookingsTable->find()
+            ->where(['Bookings.student_id' => $student->student_id])
+            ->contain([
+                'Classes' => ['Courses', 'Teachers'],
+                'Payments',
+                'AttendanceRecords',
+            ])
+            ->order(['Bookings.booking_date' => 'DESC'])
+            ->all();
 
         $weekStartParam = $this->request->getQuery('week_start');
         $ref = $weekStartParam ? new \Cake\I18n\DateTime($weekStartParam) : new \Cake\I18n\DateTime('now');
@@ -53,7 +35,7 @@ class BookingsController extends AppController
         $calendarEvents = $this->buildCalendarEvents($bookings, $weekStart, $weekEnd);
 
         $this->set(compact('bookings', 'calendarEvents', 'weekStart', 'weekEnd'));
-        $this->set('title', 'My Schedule');
+        $this->set('title', 'View Schedule & Attendance');
     }
 
     /**
@@ -84,73 +66,19 @@ class BookingsController extends AppController
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']);
         }
 
-        $studentOptions = [];
-        $selectedStudentId = null;
-
-        if ($this->userRole === 'parent') {
-            return $this->addAsParent($identity, $class, $classId, $availableSlots, $bookingsTable);
-        }
-
         return $this->addAsStudent($identity, $class, $classId, $availableSlots, $bookingsTable);
-    }
-
-    private function addAsParent($identity, $class, int $classId, int $availableSlots, $bookingsTable): ?Response
-    {
-        $parent = $this->getParentEntity($identity);
-        $children = $this->getChildrenForParent((int)$parent->parent_id);
-        $studentOptions = [];
-        foreach ($children as $id => $student) {
-            $studentOptions[$id] = $student->student_name;
-        }
-
-        if (empty($studentOptions)) {
-            $this->Flash->error(__('No linked children found. Please contact admin.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        $selectedStudentId = null;
-        if ($this->request->is('post')) {
-            $selectedStudentId = (int)$this->request->getData('student_id');
-
-            if (!array_key_exists($selectedStudentId, $children)) {
-                $this->Flash->error(__('Selected student is not linked to your account.'));
-            } else {
-                $result = $this->processBooking(
-                    $bookingsTable,
-                    $classId,
-                    $selectedStudentId,
-                    $parent->parent_id,
-                    $class,
-                    $identity,
-                );
-                if ($result) {
-                    return $result;
-                }
-            }
-        }
-
-        $this->set(compact('class', 'availableSlots', 'studentOptions', 'selectedStudentId'));
-        $this->set('title', 'Book Class');
-
-        return null;
     }
 
     private function addAsStudent($identity, $class, int $classId, int $availableSlots, $bookingsTable): ?Response
     {
         $student = $this->getStudentEntity($identity);
 
-        $parentStudents = $this->fetchTable('ParentStudents')->find()
-            ->where(['ParentStudents.student_id' => $student->student_id])
-            ->all();
-        $parentId = $parentStudents->count() > 0 ? $parentStudents->first()->parent_id : null;
-
         if ($this->request->is('post')) {
             $result = $this->processBooking(
                 $bookingsTable,
                 $classId,
                 $student->student_id,
-                $parentId,
+                null,
                 $class,
                 $identity,
             );
@@ -255,25 +183,14 @@ class BookingsController extends AppController
         $this->request->allowMethod(['post']);
         $identity = $this->Authentication->getIdentity();
         $bookingsTable = $this->fetchTable('Bookings');
-
-        if ($this->userRole === 'parent') {
-            $studentIds = $this->getParentStudentIds($identity);
-            $booking = $bookingsTable->find()
-                ->where([
-                    'Bookings.booking_id' => $bookingId,
-                    'Bookings.student_id IN' => $studentIds,
-                ])
-                ->firstOrFail();
-        } else {
-            $student = $this->getStudentEntity($identity);
-            $booking = $bookingsTable->find()
-                ->contain(['Classes' => ['Courses']])
-                ->where([
-                    'Bookings.booking_id' => $bookingId,
-                    'Bookings.student_id' => $student->student_id,
-                ])
-                ->firstOrFail();
-        }
+        $student = $this->getStudentEntity($identity);
+        $booking = $bookingsTable->find()
+            ->contain(['Classes' => ['Courses']])
+            ->where([
+                'Bookings.booking_id' => $bookingId,
+                'Bookings.student_id' => $student->student_id,
+            ])
+            ->firstOrFail();
 
         $booking->booking_status = 'cancelled';
         if ($bookingsTable->save($booking)) {
@@ -292,41 +209,6 @@ class BookingsController extends AppController
         return $this->fetchTable('Students')->find()
             ->where(['Students.user_id' => $identity->get('user_id')])
             ->firstOrFail();
-    }
-
-    private function getParentEntity($identity)
-    {
-        return $this->fetchTable('Parents')->find()
-            ->where(['Parents.user_id' => $identity->get('user_id')])
-            ->firstOrFail();
-    }
-
-    private function getParentStudentIds($identity): array
-    {
-        $parent = $this->getParentEntity($identity);
-
-        return $this->fetchTable('ParentStudents')->find()
-            ->where(['ParentStudents.parent_id' => $parent->parent_id])
-            ->all()
-            ->extract('student_id')
-            ->toArray();
-    }
-
-    private function getChildrenForParent(int $parentId): array
-    {
-        $links = $this->fetchTable('ParentStudents')->find()
-            ->where(['ParentStudents.parent_id' => $parentId])
-            ->contain(['Students'])
-            ->all();
-
-        $children = [];
-        foreach ($links as $link) {
-            if ($link->student) {
-                $children[$link->student_id] = $link->student;
-            }
-        }
-
-        return $children;
     }
 
     private function buildCalendarEvents($bookings, $weekStart, $weekEnd): array
@@ -368,6 +250,8 @@ class BookingsController extends AppController
                 'class_code' => $b->class_entity?->class_code ?? '',
                 'location' => $b->class_entity?->location ?? '',
                 'student_name' => $b->student?->student_name ?? '',
+                'attendance_status' => $b->attendance_record?->attendance_status ?? '',
+                'reminder_sent_at' => $b->reminder_sent_at,
                 'color' => $courseColorMap[$courseId],
                 'booking_id' => $b->booking_id,
             ];

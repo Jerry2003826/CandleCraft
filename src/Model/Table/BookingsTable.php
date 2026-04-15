@@ -68,6 +68,10 @@ class BookingsTable extends Table
             ->requirePresence('price_at_booking', 'create')
             ->notEmptyString('price_at_booking');
 
+        $validator
+            ->dateTime('reminder_sent_at')
+            ->allowEmptyDateTime('reminder_sent_at');
+
         return $validator;
     }
 

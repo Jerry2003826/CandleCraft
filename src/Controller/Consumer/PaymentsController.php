@@ -25,45 +25,62 @@ class PaymentsController extends AppController
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
+        $student = $this->getStudentForIdentity($identity);
+        $bookings = $this->fetchTable('Bookings')->find()
+            ->where(['Bookings.student_id' => $student->student_id])
+            ->contain([
+                'Classes' => ['Courses'],
+                'Payments',
+            ])
+            ->order(['Bookings.booking_date' => 'DESC'])
+            ->all();
 
-        if ($this->userRole === 'parent') {
-            $parent = $this->fetchTable('Parents')->find()
-                ->where(['Parents.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-            $allowedStudentIds = $this->fetchTable('ParentStudents')->find()
-                ->where(['ParentStudents.parent_id' => $parent->parent_id])
-                ->all()
-                ->extract('student_id')
-                ->toArray();
+        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
+        $paymentProfiles = $paymentProfilesTable->find()
+            ->where(['PaymentProfiles.user_id' => $identity->get('user_id')])
+            ->order([
+                'PaymentProfiles.is_default' => 'DESC',
+                'PaymentProfiles.updated_at' => 'DESC',
+            ])
+            ->all();
 
-            $bookings = [];
-            if (!empty($allowedStudentIds)) {
-                $bookings = $this->fetchTable('Bookings')->find()
-                    ->where(['Bookings.student_id IN' => $allowedStudentIds])
-                    ->contain([
-                        'Students',
-                        'Classes' => ['Courses'],
-                        'Payments',
-                    ])
-                    ->order(['Bookings.booking_date' => 'DESC'])
-                    ->all();
-            }
-        } else {
-            $student = $this->fetchTable('Students')->find()
-                ->where(['Students.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-            $bookings = $this->fetchTable('Bookings')->find()
-                ->where(['Bookings.student_id' => $student->student_id])
-                ->contain([
-                    'Classes' => ['Courses'],
-                    'Payments',
+        $requestedProfileId = $this->request->getQuery('profile');
+        $paymentProfile = null;
+        if ($requestedProfileId !== null && ctype_digit((string)$requestedProfileId)) {
+            $paymentProfile = $paymentProfilesTable->find()
+                ->where([
+                    'PaymentProfiles.payment_profile_id' => (int)$requestedProfileId,
+                    'PaymentProfiles.user_id' => $identity->get('user_id'),
                 ])
-                ->order(['Bookings.booking_date' => 'DESC'])
-                ->all();
+                ->first();
         }
 
-        $this->set(compact('bookings'));
-        $this->set('title', 'Payments');
+        if (!$paymentProfile) {
+            $paymentProfile = $paymentProfilesTable->newEntity([
+                'billing_name' => (string)$student->student_name,
+                'billing_email' => (string)$identity->get('email'),
+                'billing_phone' => '',
+                'billing_address_line1' => '',
+                'billing_address_line2' => '',
+                'billing_city' => '',
+                'billing_state' => '',
+                'billing_postcode' => '',
+                'billing_country' => 'Australia',
+                'preferred_payment_method' => 'card',
+                'profile_status' => 'active',
+                'is_default' => $paymentProfiles->count() === 0,
+            ]);
+        }
+
+        $preferredPaymentMethods = [
+            'card' => 'Card',
+            'bank_transfer' => 'Bank Transfer',
+            'cash' => 'Cash',
+            'other' => 'Other',
+        ];
+
+        $this->set(compact('bookings', 'paymentProfiles', 'paymentProfile', 'preferredPaymentMethods'));
+        $this->set('title', 'Payment Portal');
     }
 
     public function process(?int $bookingId = null): ?Response
@@ -71,43 +88,15 @@ class PaymentsController extends AppController
         $identity = $this->Authentication->getIdentity();
         $bookingsTable = $this->fetchTable('Bookings');
         $paymentsTable = $this->fetchTable('Payments');
+        $student = $this->getStudentForIdentity($identity);
 
-        if ($this->userRole === 'parent') {
-            $parent = $this->fetchTable('Parents')->find()
-                ->where(['Parents.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-            $allowedStudentIds = $this->fetchTable('ParentStudents')->find()
-                ->where(['ParentStudents.parent_id' => $parent->parent_id])
-                ->all()
-                ->extract('student_id')
-                ->toArray();
-
-            if (empty($allowedStudentIds)) {
-                $this->Flash->error(__('No linked children found.'));
-
-                return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
-            }
-
-            $booking = $bookingsTable->find()
-                ->contain(['Students', 'Classes' => ['Courses']])
-                ->where([
-                    'Bookings.booking_id' => $bookingId,
-                    'Bookings.student_id IN' => $allowedStudentIds,
-                ])
-                ->firstOrFail();
-        } else {
-            $student = $this->fetchTable('Students')->find()
-                ->where(['Students.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-
-            $booking = $bookingsTable->find()
-                ->contain(['Classes' => ['Courses']])
-                ->where([
-                    'Bookings.booking_id' => $bookingId,
-                    'Bookings.student_id' => $student->student_id,
-                ])
-                ->firstOrFail();
-        }
+        $booking = $bookingsTable->find()
+            ->contain(['Classes' => ['Courses']])
+            ->where([
+                'Bookings.booking_id' => $bookingId,
+                'Bookings.student_id' => $student->student_id,
+            ])
+            ->firstOrFail();
 
         $existingPayment = $paymentsTable->find()
             ->where([
@@ -136,7 +125,7 @@ class PaymentsController extends AppController
         }
 
         $this->set(compact('booking', 'stripeReady'));
-        $this->set('title', 'Payment');
+        $this->set('title', 'Payment Portal');
 
         return null;
     }
@@ -318,34 +307,14 @@ class PaymentsController extends AppController
             ->where(['Payments.payment_id' => $paymentId])
             ->firstOrFail();
 
-        if ($this->userRole === 'parent') {
-            $parent = $this->fetchTable('Parents')->find()
-                ->where(['Parents.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-            $allowedStudentIds = $this->fetchTable('ParentStudents')->find()
-                ->where(['ParentStudents.parent_id' => $parent->parent_id])
-                ->all()
-                ->extract('student_id')
-                ->toArray();
+        $student = $this->getStudentForIdentity($identity);
 
-            $booking = $bookingsTable->find()
-                ->where([
-                    'Bookings.booking_id' => $payment->booking_id,
-                    'Bookings.student_id IN' => $allowedStudentIds,
-                ])
-                ->first();
-        } else {
-            $student = $this->fetchTable('Students')->find()
-                ->where(['Students.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-
-            $booking = $bookingsTable->find()
-                ->where([
-                    'Bookings.booking_id' => $payment->booking_id,
-                    'Bookings.student_id' => $student->student_id,
-                ])
-                ->first();
-        }
+        $booking = $bookingsTable->find()
+            ->where([
+                'Bookings.booking_id' => $payment->booking_id,
+                'Bookings.student_id' => $student->student_id,
+            ])
+            ->first();
 
         if (!$booking) {
             $this->Flash->error(__('Access denied.'));
@@ -357,5 +326,161 @@ class PaymentsController extends AppController
         $this->set('title', 'Payment Receipt');
 
         return null;
+    }
+
+    public function saveProfile(?int $paymentProfileId = null): ?Response
+    {
+        $this->request->allowMethod(['post', 'put', 'patch']);
+
+        $identity = $this->Authentication->getIdentity();
+        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
+        $profile = $paymentProfileId
+            ? $paymentProfilesTable->find()
+                ->where([
+                    'PaymentProfiles.payment_profile_id' => $paymentProfileId,
+                    'PaymentProfiles.user_id' => $identity->get('user_id'),
+                ])
+                ->firstOrFail()
+            : $paymentProfilesTable->newEmptyEntity();
+
+        $data = $this->request->getData();
+        $profileData = [
+            'user_id' => $identity->get('user_id'),
+            'billing_name' => trim((string)($data['billing_name'] ?? '')),
+            'billing_email' => trim((string)($data['billing_email'] ?? '')),
+            'billing_phone' => trim((string)($data['billing_phone'] ?? '')),
+            'billing_address_line1' => trim((string)($data['billing_address_line1'] ?? '')),
+            'billing_address_line2' => trim((string)($data['billing_address_line2'] ?? '')),
+            'billing_city' => trim((string)($data['billing_city'] ?? '')),
+            'billing_state' => trim((string)($data['billing_state'] ?? '')),
+            'billing_postcode' => trim((string)($data['billing_postcode'] ?? '')),
+            'billing_country' => trim((string)($data['billing_country'] ?? '')),
+            'preferred_payment_method' => (string)($data['preferred_payment_method'] ?? 'card'),
+            'profile_status' => 'active',
+            'is_default' => !empty($data['is_default']),
+        ];
+
+        $profile = $paymentProfilesTable->patchEntity($profile, $profileData);
+        if ($paymentProfilesTable->save($profile)) {
+            $hasAnyDefault = $paymentProfilesTable->find()
+                ->where([
+                    'PaymentProfiles.user_id' => $identity->get('user_id'),
+                    'PaymentProfiles.profile_status' => 'active',
+                    'PaymentProfiles.is_default' => true,
+                ])
+                ->count() > 0;
+
+            if ($profile->is_default || !$hasAnyDefault) {
+                $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$profile->payment_profile_id);
+            }
+
+            $this->Flash->success(__('Payment details saved successfully.'));
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        $this->Flash->error($this->extractFirstValidationError($profile->getErrors(), 'Could not save the payment details.'));
+
+        return $this->redirect(['action' => 'index', '?' => ['profile' => $paymentProfileId ?: 'new']]);
+    }
+
+    public function setDefaultProfile(?int $paymentProfileId = null): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        $identity = $this->Authentication->getIdentity();
+        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
+        $profile = $paymentProfilesTable->find()
+            ->where([
+                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
+                'PaymentProfiles.user_id' => $identity->get('user_id'),
+                'PaymentProfiles.profile_status' => 'active',
+            ])
+            ->firstOrFail();
+
+        $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$profile->payment_profile_id);
+        $this->Flash->success(__('Default payment details updated.'));
+
+        return $this->redirect(['action' => 'index']);
+    }
+
+    public function archiveProfile(?int $paymentProfileId = null): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        $identity = $this->Authentication->getIdentity();
+        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
+        $profile = $paymentProfilesTable->find()
+            ->where([
+                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
+                'PaymentProfiles.user_id' => $identity->get('user_id'),
+            ])
+            ->firstOrFail();
+
+        $wasDefault = (bool)$profile->is_default;
+        $profile->profile_status = 'archived';
+        $profile->is_default = false;
+
+        if ($paymentProfilesTable->save($profile)) {
+            if ($wasDefault) {
+                $replacement = $paymentProfilesTable->find()
+                    ->where([
+                        'PaymentProfiles.user_id' => $identity->get('user_id'),
+                        'PaymentProfiles.profile_status' => 'active',
+                    ])
+                    ->order(['PaymentProfiles.updated_at' => 'DESC'])
+                    ->first();
+
+                if ($replacement) {
+                    $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$replacement->payment_profile_id);
+                }
+            }
+
+            $this->Flash->success(__('Payment details archived.'));
+        } else {
+            $this->Flash->error(__('Could not archive the payment details.'));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+
+    private function getStudentForIdentity($identity)
+    {
+        return $this->fetchTable('Students')->find()
+            ->where(['Students.user_id' => $identity->get('user_id')])
+            ->firstOrFail();
+    }
+
+    private function updateDefaultProfile(int $userId, int $paymentProfileId): void
+    {
+        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
+        $paymentProfilesTable->updateAll(
+            ['is_default' => false],
+            ['PaymentProfiles.user_id' => $userId]
+        );
+        $paymentProfilesTable->updateAll(
+            ['is_default' => true],
+            [
+                'PaymentProfiles.user_id' => $userId,
+                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
+            ]
+        );
+    }
+
+    private function extractFirstValidationError(array $errors, string $fallback): string
+    {
+        foreach ($errors as $fieldErrors) {
+            if (!is_array($fieldErrors)) {
+                continue;
+            }
+
+            foreach ($fieldErrors as $message) {
+                if (is_string($message) && $message !== '') {
+                    return $message;
+                }
+            }
+        }
+
+        return $fallback;
     }
 }

@@ -3,9 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\ClassEntity $class
  * @var int $availableSlots
- * @var array $studentOptions
- * @var int|null $selectedStudentId
- * @var string $userRole
+ * @var \App\Model\Entity\Student $student
  */
 $this->assign('title', 'Book Class');
 $courseType = strtolower($class->course?->course_type ?? 'default');
@@ -76,42 +74,20 @@ $typeBg = $courseType === 'pottery' ? '#DBEAFE' : ($courseType === 'knitting' ? 
 
     <!-- Booking Form -->
     <?= $this->Form->create(null, ['url' => ['action' => 'add', $class->class_id]]) ?>
-        <?php if ($userRole === 'parent' && !empty($studentOptions)): ?>
-            <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 24px; color: var(--admin-brand-icon);">Choose Child</h3>
-            <div class="admin-form-group">
-                <label class="admin-form-label">Book this class for</label>
-                <?= $this->Form->select('student_id', $studentOptions, [
-                    'value' => $selectedStudentId,
-                    'required' => true,
-                    'class' => 'admin-form-select'
-                ]) ?>
-            </div>
-            <div class="admin-form-group d-flex align-items-center gap-2 mt-4">
-                <?= $this->Form->checkbox('confirm', [
-                    'required' => true,
-                    'id' => 'confirm-booking',
-                    'style' => 'width: 18px; height: 18px; accent-color: var(--admin-brand-icon); cursor: pointer;'
-                ]) ?>
-                <label for="confirm-booking" style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer; margin: 0;">
-                    I confirm the booking for the selected child
-                </label>
-            </div>
-        <?php else: ?>
-            <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 16px; color: var(--admin-brand-icon);">Confirm Your Booking</h3>
-            <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 24px;">
-                You are booking as <strong style="color: var(--admin-text-primary);"><?= h($student->student_name ?? '') ?></strong>.
-            </p>
-            <div class="admin-form-group d-flex align-items-center gap-2">
-                <?= $this->Form->checkbox('confirm', [
-                    'required' => true,
-                    'id' => 'confirm-booking',
-                    'style' => 'width: 18px; height: 18px; accent-color: var(--admin-brand-icon); cursor: pointer;'
-                ]) ?>
-                <label for="confirm-booking" style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer; margin: 0;">
-                    I confirm I want to book this class
-                </label>
-            </div>
-        <?php endif; ?>
+        <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 16px; color: var(--admin-brand-icon);">Confirm Your Booking</h3>
+        <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 24px;">
+            You are booking as <strong style="color: var(--admin-text-primary);"><?= h($student->student_name ?? '') ?></strong>.
+        </p>
+        <div class="admin-form-group d-flex align-items-center gap-2">
+            <?= $this->Form->checkbox('confirm', [
+                'required' => true,
+                'id' => 'confirm-booking',
+                'style' => 'width: 18px; height: 18px; accent-color: var(--admin-brand-icon); cursor: pointer;'
+            ]) ?>
+            <label for="confirm-booking" style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer; margin: 0;">
+                I confirm I want to book this class
+            </label>
+        </div>
         
         <div class="admin-form-actions mt-4">
             <button type="submit" class="admin-btn-primary">

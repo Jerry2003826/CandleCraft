@@ -44,7 +44,7 @@ class ResourcesController extends AppController
         }
 
         $this->set(compact('bookings', 'resources'));
-        $this->set('title', 'Learning Center');
+        $this->set('title', 'Learning Resources');
     }
 
     public function view(?int $resourceId = null): ?Response
@@ -85,18 +85,6 @@ class ResourcesController extends AppController
 
     private function getStudentIds($identity): array
     {
-        if ($this->userRole === 'parent') {
-            $parent = $this->fetchTable('Parents')->find()
-                ->where(['Parents.user_id' => $identity->get('user_id')])
-                ->firstOrFail();
-
-            return $this->fetchTable('ParentStudents')->find()
-                ->where(['ParentStudents.parent_id' => $parent->parent_id])
-                ->all()
-                ->extract('student_id')
-                ->toArray();
-        }
-
         $student = $this->fetchTable('Students')->find()
             ->where(['Students.user_id' => $identity->get('user_id')])
             ->first();

@@ -1,26 +1,32 @@
-Student Portal
-View class times
-Check upcoming lessons and see attendance updates in one place.
+Default password for all seeded accounts:
 
-alice.wong@candlecraft.com
+admin123
+
+------------------------
+Admin Portal
+Manage operations
+Oversee classes, enquiries, account requests, student verification, and academy records.
+
+admin@candlecraft.com
 
 ------------------------
 Teacher Portal
 Mark attendance
-Review teaching schedules and record attendance after each class.
+Review teaching schedules, class rosters, and shared learning resources.
 
 emma.clay@candlecraft.com
----------------
-Parent Portal
-Manage family bookings
-Book classes for your children and complete payments in one place.
+james.knit@candlecraft.com
 
-lisa.parent@example.com
+------------------------
+Student Portal
+Verified adult account
+Browse courses, manage bookings, access resources, and complete payments.
 
----------------------
-Admin Portal
-Manage operations
-Oversee bookings, classes, enquiries, and academy records.
+alice.wong@candlecraft.com
 
-admin@candlecraft.com
----------------
+------------------------
+Student Portal
+Verification pending account
+Browse courses and portal notices while booking and payment stay locked until admin verification.
+
+milo.nguyen@candlecraft.com

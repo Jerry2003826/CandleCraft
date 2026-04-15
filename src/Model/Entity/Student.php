@@ -10,6 +10,7 @@ class Student extends Entity
     protected array $_accessible = [
         'user_id' => true,
         'student_name' => true,
+        'declared_age' => true,
         'date_of_birth' => true,
         'student_status' => true,
         'medical_notes' => true,

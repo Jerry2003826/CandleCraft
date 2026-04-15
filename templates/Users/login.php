@@ -32,8 +32,8 @@ $this->Html->css('redesign.css?v=' . time(), ['block' => true]);
         <div class="login-form-wrapper">
             <div class="login-header">
                 <p class="login-overline">SECURE ACCESS</p>
-                <h1 class="login-title">Portal Login</h1>
-                <p class="login-subtitle">Enter your academy credentials to access your dashboard.</p>
+                <h1 class="login-title">User Login Page</h1>
+                <p class="login-subtitle">Enter the email and password issued by CandleCraft Academy to open your portal.</p>
             </div>
 
             <div class="login-flash-container">
@@ -77,7 +77,7 @@ $this->Html->css('redesign.css?v=' . time(), ['block' => true]);
 
             <div class="login-footer">
                 <p class="login-footer-text">
-                    Need access? Contact CandleCraft Academy to set up your account.
+                    Need access? Submit the enquiry form and our admin team can create your portal account.
                 </p>
             </div>
         </div>

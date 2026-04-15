@@ -18,6 +18,7 @@ declare(strict_types=1);
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\TestSuite\ConnectionHelper;
+use Cake\TestSuite\Fixture\SchemaLoader;
 use Migrations\TestSuite\Migrator;
 
 /**
@@ -46,15 +47,10 @@ session_id('cli');
 // Otherwise, table objects inside migrations would use the default datasource
 ConnectionHelper::addTestAliases();
 
-// Use migrations to build test database schema.
-//
-// Will rebuild the database if the migration state differs
-// from the migration history in files.
-//
-// If you are not using CakePHP's migrations you can
-// hook into your migration tool of choice here or
-// load schema from a SQL dump file with
-// use Cake\TestSuite\Fixture\SchemaLoader;
-// (new SchemaLoader())->loadSqlFiles('./tests/schema.sql', 'test');
-
-(new Migrator())->run();
+$schemaFile = dirname(__DIR__) . '/tests/schema.php';
+if (file_exists($schemaFile)) {
+    (new SchemaLoader())->loadInternalFile($schemaFile, 'test');
+} else {
+    // Fall back to migrations when no generated schema file is present.
+    (new Migrator())->run();
+}

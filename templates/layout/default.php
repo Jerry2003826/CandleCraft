@@ -46,7 +46,7 @@ $appTitle = 'CandleCraft Academy';
                         $portalPrefix = match ($role) {
                             'admin' => 'Admin',
                             'teacher' => 'Teacher',
-                            'student', 'parent' => 'Consumer',
+                            'student' => 'Consumer',
                             default => null,
                         };
                     ?>

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use RuntimeException;
+
 class StudentsController extends AppController
 {
     public function index(): void
@@ -37,19 +39,95 @@ class StudentsController extends AppController
     public function add()
     {
         $studentsTable = $this->fetchTable('Students');
+        $usersTable = $this->fetchTable('Users');
         $student = $studentsTable->newEmptyEntity();
+        $createPortalAccount = true;
+        $portalAccount = [
+            'username' => '',
+            'email' => '',
+            'password' => '',
+            'account_status' => 'active',
+        ];
+        $portalAccountErrors = [];
 
         if ($this->request->is('post')) {
-            $student = $studentsTable->patchEntity($student, $this->request->getData());
-            if ($studentsTable->save($student)) {
-                $this->Flash->success(__('The student has been saved.'));
+            $data = $this->request->getData();
+            $createPortalAccount = (bool)$this->request->getData('create_portal_account');
+            $portalAccount = [
+                'username' => trim((string)($data['username'] ?? '')),
+                'email' => trim((string)($data['email'] ?? '')),
+                'password' => (string)($data['password'] ?? ''),
+                'account_status' => 'active',
+            ];
 
-                return $this->redirect(['action' => 'index']);
+            $student = $studentsTable->patchEntity($student, [
+                'student_name' => $data['student_name'] ?? null,
+                'declared_age' => $data['declared_age'] ?? null,
+                'student_status' => $data['student_status'] ?? 'active',
+                'date_of_birth' => $data['date_of_birth'] ?? null,
+                'medical_notes' => $data['medical_notes'] ?? null,
+            ]);
+
+            if ($createPortalAccount) {
+                $user = $usersTable->newEntity([
+                    'username' => $portalAccount['username'],
+                    'email' => $portalAccount['email'],
+                    'password_hash' => $portalAccount['password'],
+                    'user_role' => 'student',
+                    'account_status' => $portalAccount['account_status'],
+                    'age_verified_by_admin' => false,
+                    'self_declared_adult' => false,
+                ]);
+
+                $portalAccountErrors = $user->getErrors();
+                if ($user->hasErrors()) {
+                    $this->Flash->error($this->extractFirstValidationError($portalAccountErrors, 'The portal account information is invalid.'));
+
+                    $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
+
+                    return;
+                }
+
+                if ($student->hasErrors()) {
+                    $this->Flash->error($this->extractFirstValidationError($student->getErrors(), 'The student profile could not be saved.'));
+
+                    $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
+
+                    return;
+                }
+
+                $connection = $studentsTable->getConnection();
+                $connection->begin();
+                try {
+                    $savedUser = $usersTable->save($user);
+                    if (!$savedUser) {
+                        throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'Could not create the student login.'));
+                    }
+
+                    $student->user_id = $savedUser->user_id;
+                    $savedStudent = $studentsTable->save($student);
+                    if (!$savedStudent) {
+                        throw new RuntimeException($this->extractFirstValidationError($student->getErrors(), 'Could not save the student profile.'));
+                    }
+
+                    $connection->commit();
+                    $this->Flash->success(__('The student and portal account have been created. Adult verification is still required before booking and payment unlock.'));
+
+                    return $this->redirect(['action' => 'view', $savedStudent->student_id]);
+                } catch (\Throwable $exception) {
+                    $connection->rollback();
+                    $this->Flash->error($exception->getMessage());
+                }
+            } elseif ($studentsTable->save($student)) {
+                $this->Flash->success(__('The student profile has been saved without a portal login.'));
+
+                return $this->redirect(['action' => 'view', $student->student_id]);
             }
+
             $this->Flash->error(__('The student could not be saved. Please try again.'));
         }
 
-        $this->set(compact('student'));
+        $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
     }
 
     public function edit(?string $id = null)
@@ -82,19 +160,19 @@ class StudentsController extends AppController
         if (!$student->user) {
             $this->Flash->error(__('This student has no linked user account.'));
 
-            return $this->redirect(['action' => 'view', $id]);
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
 
         $user = $usersTable->get($student->user->user_id);
         $user->age_verified_by_admin = true;
 
         if ($usersTable->save($user)) {
-            $this->Flash->success(__('Age verified for {0}. Payment features are now enabled.', $student->student_name));
+            $this->Flash->success(__('Adult verification recorded for {0}. Booking and payment features are now enabled.', $student->student_name));
         } else {
             $this->Flash->error(__('Could not verify age. Please try again.'));
         }
 
-        return $this->redirect(['action' => 'view', $id]);
+        return $this->redirect($this->referer(['action' => 'view', $id], true));
     }
 
     public function delete(?string $id = null)
@@ -110,5 +188,22 @@ class StudentsController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function extractFirstValidationError(array $errors, string $fallback): string
+    {
+        foreach ($errors as $fieldErrors) {
+            if (!is_array($fieldErrors)) {
+                continue;
+            }
+
+            foreach ($fieldErrors as $message) {
+                if (is_string($message) && $message !== '') {
+                    return $message;
+                }
+            }
+        }
+
+        return $fallback;
     }
 }

@@ -1,11 +1,10 @@
-
 <?php
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Message $enquiry
  * @var array<string, string> $enquirySubjects
+ * @var bool $requestAccount
  * @var string $sourcePage
- * @var string $captchaQuestion
  */
 $this->disableAutoLayout();
 
@@ -18,7 +17,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
 <head>
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CandleCraft Academy - Contact</title>
+    <title>CandleCraft Academy - Enquiry Form</title>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['fonts', 'cake', 'home']) ?>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -42,7 +41,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                             </div>
                         </div>
                     </div>
-                    <a href="#enquiry">Enquire</a>
+                    <a href="#enquiry">Enquiry Form</a>
                     <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
                 </div>
             </nav>
@@ -53,20 +52,19 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 CandleCraft Academy
             </p>
             <h1 style="font-family: var(--font-grown); font-size: clamp(2.5rem, 5vw, 4rem); color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0; line-height: 1;">
-                Enquiry
+                Enquiry Form
             </h1>
             <div style="width: 60px; height: 2px; background: var(--home-accent); margin: 24px auto 0; opacity: 0.6;"></div>
         </div>
 
         <main id="main-content" style="max-width: 900px; margin: 0 auto 80px; padding: 0 20px;">
-
             <div class="enquiry-card" id="enquiry" style="background: rgba(47, 34, 25, 0.85); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid rgba(210, 154, 88, 0.3); padding: 40px; box-shadow: var(--home-shadow);">
                 
                 <p style="font-family: var(--font-grown); color: var(--home-text-muted); text-align: center; margin-bottom: 30px; font-size: 1.4rem;">
-                    Use the form below and someone from our team will be in touch shortly!
+                    Use the enquiry form below and someone from our team will be in touch shortly.
                 </p>
 
-                <?= $this->Flash->render() ?>
+                <?= $this->Flash->render('enquiry') ?>
 
                 <div class="enquiry-form">
                     <?= $this->Form->create($enquiry, [
@@ -79,6 +77,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                     ]) ?>
 
                     <?= $this->Form->hidden('source_page', ['value' => $sourcePage]) ?>
+                    <?= $this->Form->hidden('form_type', ['value' => 'enquiry']) ?>
 
                     <div class="visually-hidden" aria-hidden="true">
                         <label for="enquiry-website">Website</label>
@@ -132,6 +131,53 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1;">
+                            <div style="padding: 20px; background: rgba(210, 154, 88, 0.1); border: 1px solid rgba(210, 154, 88, 0.3); border-radius: 12px;">
+                                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.9rem; line-height: 1.5;">
+                                    <?= $this->Form->checkbox('request_account', [
+                                        'id' => 'request-account',
+                                        'checked' => $requestAccount,
+                                        'hiddenField' => false,
+                                        'style' => 'width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--home-accent);',
+                                    ]) ?>
+                                    <span>
+                                        I would like CandleCraft Academy to <strong style="color: var(--home-accent);">create a portal account for me</strong>.
+                                        <br>
+                                        <small style="color: var(--home-text-muted);">
+                                            Tick this box if you want the admin team to set up your student login after reviewing this enquiry.
+                                        </small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="request-account-fields" style="grid-column: 1 / -1; display: none;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 20px; padding: 20px; background: rgba(210, 154, 88, 0.08); border: 1px solid rgba(210, 154, 88, 0.22); border-radius: 18px;">
+                                <div class="form-group" style="display: flex; flex-direction: column;">
+                                    <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Student account request</label>
+                                    <div style="padding: 16px; background: rgba(210, 154, 88, 0.1); border: 1px solid rgba(210, 154, 88, 0.22); border-radius: 12px; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.95rem; line-height: 1.5; flex: 1;">
+                                        Account applications submitted here are treated as <strong style="color: var(--home-accent);">student portal requests</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Your age *</label>
+                                    <?= $this->Form->number('declared_age', [
+                                        'id' => 'declared-age',
+                                        'value' => $this->request->getData('declared_age'),
+                                        'min' => 1,
+                                        'max' => 120,
+                                        'placeholder' => 'Enter your age',
+                                        'required' => $requestAccount,
+                                    ]) ?>
+                                    <?= $this->Form->error('declared_age') ?>
+                                    <small style="display: block; margin-top: 10px; color: var(--home-text-muted); font-family: var(--font-grown);">
+                                        Students cannot book or pay until an administrator confirms they are 18 or older.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
                             <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Message *</label>
                             <?= $this->Form->textarea('message_text', [
                                 'rows' => 5,
@@ -139,24 +185,6 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                                 'required' => true,
                             ]) ?>
                             <?= $this->Form->error('message_text') ?>
-                        </div>
-
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <div style="padding: 20px; background: rgba(210, 154, 88, 0.1); border: 1px solid rgba(210, 154, 88, 0.3); border-radius: 12px;">
-                                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.9rem; line-height: 1.5;">
-                                    <?= $this->Form->checkbox('self_declared_adult', [
-                                        'style' => 'width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--home-accent);',
-                                    ]) ?>
-                                    <span>
-                                        I confirm that I am <strong style="color: var(--home-accent);">18 years of age or older</strong>.
-                                        <br>
-                                        <small style="color: var(--home-text-muted);">
-                                            If you are 18+, our team will create an account for you with full booking and payment access.
-                                            If under 18, you can still be enrolled by a parent or guardian.
-                                        </small>
-                                    </span>
-                                </label>
-                            </div>
                         </div>
 
                         <div class="form-group" style="grid-column: 1 / -1; text-align: center;">
@@ -174,7 +202,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
 
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 34px; flex-wrap: wrap; gap: 20px;">
                         <p style="margin: 0; font-size: 0.85rem; color: var(--home-text-muted); font-family: var(--font-grown);">Protected by CAPTCHA and anti-spam checks.</p>
-                        <?= $this->Form->button('Send Enquiry', ['class' => 'btn-primary', 'style' => 'min-width: 260px; padding: 18px 40px; font-size: 1.1rem;']) ?>
+                        <?= $this->Form->button('Send Enquiry Form', ['class' => 'btn-primary', 'style' => 'min-width: 260px; padding: 18px 40px; font-size: 1.1rem;']) ?>
                     </div>
 
                     <?= $this->Form->end() ?>
@@ -187,5 +215,33 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
             <p>&copy; <?= date('Y') ?> CANDLECRAFT ACADEMY. All rights reserved.</p>
         </footer>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const requestAccount = document.getElementById('request-account');
+        const requestAccountFields = document.getElementById('request-account-fields');
+        const declaredAge = document.getElementById('declared-age');
+
+        if (!requestAccount || !requestAccountFields) {
+            return;
+        }
+
+        const syncRequestAccountFields = () => {
+            const wantsAccount = requestAccount.checked;
+            requestAccountFields.style.display = wantsAccount ? 'block' : 'none';
+
+            if (declaredAge) {
+                declaredAge.required = wantsAccount;
+            }
+
+            if (!wantsAccount && declaredAge) {
+                declaredAge.value = '';
+            }
+        };
+
+        requestAccount.addEventListener('change', syncRequestAccountFields);
+        syncRequestAccountFields();
+    });
+    </script>
 </body>
 </html>

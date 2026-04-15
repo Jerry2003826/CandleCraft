@@ -27,6 +27,18 @@ class MessagesTable extends Table
             'foreignKey' => 'receiver_user_id',
             'bindingKey' => 'user_id',
         ]);
+
+        $this->belongsTo('ParentMessages', [
+            'className' => 'Messages',
+            'foreignKey' => 'parent_message_id',
+            'bindingKey' => 'message_id',
+        ]);
+
+        $this->hasMany('ChildMessages', [
+            'className' => 'Messages',
+            'foreignKey' => 'parent_message_id',
+            'bindingKey' => 'message_id',
+        ]);
     }
 
     public function validationDefault(Validator $validator): Validator
@@ -34,21 +46,30 @@ class MessagesTable extends Table
         $validator
             ->scalar('sender_name')
             ->maxLength('sender_name', 500, 'Name cannot exceed 500 characters.')
-            ->notEmptyString('sender_name');
+            ->allowEmptyString('sender_name');
 
         $validator
             ->email('sender_email')
-            ->notEmptyString('sender_email');
+            ->allowEmptyString('sender_email');
+
+        $validator
+            ->scalar('recipient_name')
+            ->maxLength('recipient_name', 100)
+            ->allowEmptyString('recipient_name');
+
+        $validator
+            ->email('recipient_email')
+            ->allowEmptyString('recipient_email');
 
         $validator
             ->scalar('sender_phone')
-            ->maxLength('sender_phone', 15, 'Phone number cannot exceed 15 digits.')
-            ->notEmptyString('sender_phone');
+            ->maxLength('sender_phone', 30, 'Phone number cannot exceed 30 characters.')
+            ->allowEmptyString('sender_phone');
 
         $validator
             ->scalar('source_page')
             ->maxLength('source_page', 255)
-            ->notEmptyString('source_page');
+            ->allowEmptyString('source_page');
 
         $validator
             ->scalar('subject')
@@ -63,12 +84,16 @@ class MessagesTable extends Table
             ->notEmptyString('message_text');
 
         $validator
-            ->inList('message_type', ['internal', 'contact_form'])
+            ->inList('message_type', ['internal', 'contact_form', 'email_reply'])
             ->notEmptyString('message_type');
 
         $validator
             ->inList('message_status', ['unread', 'read', 'replied', 'archived'])
             ->notEmptyString('message_status');
+
+        $validator
+            ->inList('delivery_status', ['pending', 'sent', 'failed'])
+            ->allowEmptyString('delivery_status');
 
         return $validator;
     }

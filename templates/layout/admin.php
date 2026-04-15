@@ -38,7 +38,7 @@ $this->Paginator->setTemplates([
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        CandleCraft Academy - Admin
+        CandleCraft Academy - Admin Portal
         <?php if ($this->fetch('title')): ?> | <?= $this->fetch('title') ?><?php endif; ?>
     </title>
     <script>
@@ -68,7 +68,7 @@ $this->Paginator->setTemplates([
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column" style="height: 100%;">
-            <div class="flex-grow-1" style="overflow-y: auto; padding-right: 8px; margin-right: -8px;">
+            <div class="flex-grow-1" data-sidebar-scroll-key="admin-sidebar-scroll" style="overflow-y: auto; padding-right: 8px; margin-right: -8px;">
                 <!-- Brand (redesign) -->
                 <div class="admin-brand">
                     <div class="admin-brand-icon"></div>
@@ -83,7 +83,7 @@ $this->Paginator->setTemplates([
                     </a>
                     <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'index']) ?>"
                        class="nav-link <?= $controller === 'Students' ? 'active' : '' ?>">
-                        <i class="bi bi-people"></i><span>Students</span>
+                        <i class="bi bi-people"></i><span>Customers</span>
                     </a>
                     <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Teachers', 'action' => 'index']) ?>"
                        class="nav-link <?= $controller === 'Teachers' ? 'active' : '' ?>">
@@ -111,7 +111,7 @@ $this->Paginator->setTemplates([
                     </a>
                     <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index']) ?>"
                        class="nav-link <?= $controller === 'Messages' ? 'active' : '' ?>">
-                        <i class="bi bi-chat-square-text"></i><span>Messages</span>
+                        <i class="bi bi-chat-square-text"></i><span>Enquiries</span>
                     </a>
                 </nav>
             </div>
@@ -121,7 +121,7 @@ $this->Paginator->setTemplates([
                 <a href="#" class="nav-link" id="themeToggle">
                     <i class="bi bi-moon"></i><span id="themeToggleText">Dark Mode</span>
                 </a>
-                <a href="#" class="nav-link">
+                <a href="#" class="nav-link" id="settingsPlaceholder">
                     <i class="bi bi-gear"></i><span>Settings</span>
                 </a>
                 <?= $this->Form->postLink(
@@ -161,6 +161,8 @@ $this->Paginator->setTemplates([
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const themeToggle = document.getElementById('themeToggle');
+        const settingsPlaceholder = document.getElementById('settingsPlaceholder');
+        const sidebarScrollContainer = document.querySelector('[data-sidebar-scroll-key="admin-sidebar-scroll"]');
         if (themeToggle) {
             const themeToggleText = document.getElementById('themeToggleText');
             const themeToggleIcon = themeToggle.querySelector('i');
@@ -194,6 +196,27 @@ $this->Paginator->setTemplates([
                 const currentlyDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 setTheme(!currentlyDark);
             });
+        }
+
+        if (settingsPlaceholder) {
+            settingsPlaceholder.addEventListener('click', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        if (sidebarScrollContainer) {
+            const storageKey = sidebarScrollContainer.dataset.sidebarScrollKey;
+            const savedScrollTop = sessionStorage.getItem(storageKey);
+            if (savedScrollTop !== null) {
+                sidebarScrollContainer.scrollTop = Number(savedScrollTop) || 0;
+            }
+
+            const persistScrollPosition = () => {
+                sessionStorage.setItem(storageKey, String(sidebarScrollContainer.scrollTop));
+            };
+
+            sidebarScrollContainer.addEventListener('scroll', persistScrollPosition, { passive: true });
+            window.addEventListener('pagehide', persistScrollPosition);
         }
     });
     </script>

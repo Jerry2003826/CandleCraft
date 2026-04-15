@@ -3,108 +3,267 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Message $message
  * @var \Cake\ORM\ResultSet $replies
+ * @var array<string, mixed> $requestMeta
+ * @var \App\Model\Entity\User|null $existingUser
+ * @var \App\Model\Entity\Student|null $linkedStudent
  */
-$this->assign('title', 'View Message');
+$this->assign('title', 'View Enquiry');
+
+$isAccountRequest = (bool)($requestMeta['is_account_request'] ?? false);
+$declaredAge = $requestMeta['declared_age'] ?? null;
+$isDeclared18 = is_int($declaredAge) && $declaredAge >= 18;
+$hasAgeDeclaration = $declaredAge !== null;
+$displayText = $isAccountRequest
+    ? (string)($requestMeta['clean_message_text'] ?? '')
+    : str_replace(['[AGE DECLARATION: 18+]', '[AGE DECLARATION: Under 18]'], '', (string)$message->message_text);
+$displayText = trim($displayText);
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm">&larr; Back to Messages</a>
-    <div class="btn-group btn-group-sm">
-        <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="btn btn-outline-success">Reply</a>
-        <?= $this->Form->postLink('Delete', ['action' => 'delete', $message->message_id], [
-            'confirm' => __('Are you sure you want to delete this message?'),
-            'class' => 'btn btn-outline-danger',
-        ]) ?>
+<div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-0">
+        <i class="bi bi-arrow-left"></i> Back to Enquiries
+    </a>
+    <div class="d-flex align-items-center gap-2">
+        <?php if ($isAccountRequest && !$existingUser): ?>
+            <a href="<?= $this->Url->build(['action' => 'createAccount', $message->message_id]) ?>" class="admin-btn-primary" style="padding: 6px 16px; font-size: 13px;">
+                <i class="bi bi-person-plus me-1"></i> Register Customer
+            </a>
+        <?php elseif ($linkedStudent): ?>
+            <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'view', $linkedStudent->student_id, '?' => ['message' => $message->message_id]]) ?>" class="admin-btn-secondary" style="padding: 6px 16px; font-size: 13px;">
+                View Customer Record
+            </a>
+        <?php endif; ?>
+        <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-btn-secondary" style="color: #10B981; padding: 6px 16px; font-size: 13px;">
+            <i class="bi bi-reply me-1"></i> Respond
+        </a>
+        <?= $this->Form->postLink(
+                '<i class="bi bi-trash me-1"></i> Delete',
+                ['action' => 'delete', $message->message_id],
+                [
+                'confirm' => __('Are you sure you want to delete this enquiry?'),
+                'class' => 'admin-btn-secondary',
+                'style' => 'color: #EF4444; padding: 6px 16px; font-size: 13px;',
+                'escape' => false
+            ]
+        ) ?>
     </div>
 </div>
 
-<?php
-$isDeclared18 = str_contains($message->message_text ?? '', '[AGE DECLARATION: 18+]');
-$isDeclaredUnder18 = str_contains($message->message_text ?? '', '[AGE DECLARATION: Under 18]');
-$hasAgeDeclaration = $isDeclared18 || $isDeclaredUnder18;
-?>
-
-<?php if ($hasAgeDeclaration): ?>
-    <div class="alert <?= $isDeclared18 ? 'alert-success' : 'alert-secondary' ?> d-flex align-items-center justify-content-between mb-3">
+<?php if ($isAccountRequest): ?>
+    <div class="admin-form-card d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4" style="background-color: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.3); padding: 20px; max-width: 100%;">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background-color: rgba(59, 130, 246, 0.1); display: flex; justify-content: center; align-items: center;">
+                <i class="bi bi-person-plus" style="font-size: 20px; color: #3B82F6;"></i>
+            </div>
+            <div>
+                <strong style="color: var(--admin-text-primary); font-family: 'Inter', sans-serif; font-size: 15px;">Portal Access Request:</strong>
+                <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px;">Requested access as <strong style="color: var(--admin-text-primary);">Student</strong>.</span>
+                <?php if ($hasAgeDeclaration): ?>
+                    <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px; margin-left: 8px;">Declared age: <strong style="color: var(--admin-text-primary);"><?= h((string)$declaredAge) ?></strong>.</span>
+                <?php endif; ?>
+            </div>
+        </div>
         <div>
-            <i class="bi <?= $isDeclared18 ? 'bi-shield-check' : 'bi-info-circle' ?> me-2"></i>
-            <strong>Age Declaration:</strong>
-            <?php if ($isDeclared18): ?>
-                Customer self-declared they are <strong>18 years or older</strong>.
+            <?php if ($existingUser): ?>
+                <span class="admin-badge admin-badge-success" style="padding: 6px 12px; font-size: 13px;">Existing account: <?= h($existingUser->username) ?></span>
             <?php else: ?>
-                Customer indicated they are <strong>under 18</strong>.
+                <a href="<?= $this->Url->build(['action' => 'createAccount', $message->message_id]) ?>" class="admin-btn-primary" style="padding: 6px 16px; font-size: 13px; background-color: #3B82F6; color: #FFFFFF; box-shadow: none;">
+                    <i class="bi bi-person-plus me-1"></i> Register Customer
+                </a>
             <?php endif; ?>
         </div>
-        <a href="<?= $this->Url->build(['controller' => 'Students', 'action' => 'add']) ?>" class="btn btn-sm btn-success">
-            <i class="bi bi-person-plus me-1"></i>Create Account
-        </a>
+    </div>
+<?php elseif ($hasAgeDeclaration): ?>
+    <?php 
+        $alertBg = $isDeclared18 ? 'rgba(16, 185, 129, 0.05)' : 'var(--admin-search-bg)';
+        $alertBorder = $isDeclared18 ? 'rgba(16, 185, 129, 0.3)' : 'var(--admin-card-border)';
+        $iconColor = $isDeclared18 ? '#10B981' : 'var(--admin-text-secondary)';
+        $iconClass = $isDeclared18 ? 'bi-shield-check' : 'bi-info-circle';
+    ?>
+    <div class="admin-form-card d-flex align-items-center gap-3 mb-4" style="background-color: <?= $alertBg ?>; border: 1px solid <?= $alertBorder ?>; padding: 20px; max-width: 100%;">
+        <div style="width: 40px; height: 40px; border-radius: 8px; background-color: <?= $isDeclared18 ? 'rgba(16, 185, 129, 0.1)' : 'var(--admin-card-bg)' ?>; display: flex; justify-content: center; align-items: center; border: 1px solid <?= $alertBorder ?>;">
+            <i class="bi <?= $iconClass ?>" style="font-size: 20px; color: <?= $iconColor ?>;"></i>
+        </div>
+        <div>
+            <strong style="color: var(--admin-text-primary); font-family: 'Inter', sans-serif; font-size: 15px;">Age Declaration:</strong>
+            <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px;">
+                <?php if ($isDeclared18): ?>
+                    Customer self-declared they are <strong style="color: var(--admin-text-primary);">18 years or older</strong>.
+                <?php else: ?>
+                    Customer indicated they are <strong style="color: var(--admin-text-primary);">under 18</strong>.
+                <?php endif; ?>
+            </span>
+        </div>
     </div>
 <?php endif; ?>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><?= h($message->subject) ?></h5>
-        <?= $this->Badge->status($message->message_status) ?>
+<div class="admin-form-card mb-4" style="max-width: 100%; padding: 32px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3" style="border-bottom: 1px solid var(--admin-card-border);">
+        <h2 class="admin-form-title" style="font-size: 20px; margin: 0;"><?= h($message->subject) ?></h2>
+        <?php 
+            $statusClass = 'admin-badge-neutral';
+            if ($message->message_status === 'unread') $statusClass = 'admin-badge-info';
+            if ($message->message_status === 'replied') $statusClass = 'admin-badge-success';
+        ?>
+        <span class="admin-badge <?= $statusClass ?>" style="padding: 6px 12px; font-size: 13px;"><?= h(ucfirst($message->message_status)) ?></span>
     </div>
-    <div class="card-body">
-        <table class="table table-borderless">
-            <tr><th class="text-end text-muted" style="width:150px">From:</th><td>
-                <?php if ($message->sender_user): ?>
-                    <?= h($message->sender_user->username) ?> (<?= h($message->sender_user->email) ?>)
-                <?php else: ?>
-                    <?= h($message->sender_name ?: 'Unknown') ?>
-                    <?php if ($message->sender_email): ?> (<?= h($message->sender_email) ?>)<?php endif; ?>
-                <?php endif; ?>
-            </td></tr>
-            <tr><th class="text-end text-muted">Type:</th><td><?= ucfirst(h(str_replace('_', ' ', $message->message_type))) ?></td></tr>
-            <tr><th class="text-end text-muted">Phone:</th><td><?= h($message->sender_phone ?: '-') ?></td></tr>
-            <tr><th class="text-end text-muted">Source page:</th><td><?= h($message->source_page ?: '-') ?></td></tr>
-            <tr><th class="text-end text-muted">Received:</th><td><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></td></tr>
-            <?php if ($hasAgeDeclaration): ?>
-                <tr><th class="text-end text-muted">Age (18+):</th><td>
-                    <?php if ($isDeclared18): ?>
-                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Self-declared 18+</span>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">From</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                    <?php if ($message->sender_user): ?>
+                        <?= h($message->sender_user->username) ?> 
+                        <span style="font-weight: 400; color: var(--admin-text-secondary); font-size: 14px;">(<?= h($message->sender_user->email) ?>)</span>
                     <?php else: ?>
-                        <span class="badge bg-secondary">Under 18</span>
+                        <?= h($message->sender_name ?: 'Unknown') ?>
+                        <?php if ($message->sender_email): ?>
+                            <span style="font-weight: 400; color: var(--admin-text-secondary); font-size: 14px;">(<?= h($message->sender_email) ?>)</span>
+                        <?php endif; ?>
                     <?php endif; ?>
-                </td></tr>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Phone</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                    <?= h($message->sender_phone ?: '-') ?>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Type</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
+                    <?= $isAccountRequest ? 'Account Request' : 'Enquiry' ?>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Received</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
+                    <?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Source Page</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
+                    <?= h($message->source_page ?: '-') ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <?php if ($isAccountRequest): ?>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Requested Account</div>
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                        Student
+                    </div>
+                </div>
+                <?php if ($existingUser): ?>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Existing Account</div>
+                        <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                            <?= h($existingUser->username) ?> 
+                            <span style="font-weight: 400; color: var(--admin-text-secondary); font-size: 14px;">(<?= h($existingUser->email) ?>)</span>
+                        </div>
+                    </div>
+                    <?php if ($linkedStudent): ?>
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Student Record</div>
+                            <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'view', $linkedStudent->student_id, '?' => ['message' => $message->message_id]]) ?>" class="admin-action-link view" style="padding: 4px 12px; height: auto; width: auto; font-size: 13px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Open Customer Profile
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
             <?php endif; ?>
-        </table>
+            
+            <?php if ($hasAgeDeclaration): ?>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Declared Age</div>
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                        <?= h((string)$declaredAge) ?>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Adult Status</div>
+                    <span class="admin-badge <?= $isDeclared18 ? 'admin-badge-success' : 'admin-badge-neutral' ?>" style="padding: 4px 10px; font-size: 12px;">
+                        <?= $isDeclared18 ? '18 or older' : 'Under 18' ?>
+                    </span>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header"><h5 class="mb-0">Message</h5></div>
-    <div class="card-body">
-        <div class="message-thread">
-            <div class="message-bubble">
-                <div class="meta">
-                    <strong>
-                        <?php if ($message->sender_user): ?><?= h($message->sender_user->username) ?>
-                        <?php else: ?><?= h($message->sender_name ?: 'Unknown') ?><?php endif; ?>
-                    </strong>
-                    &mdash; <?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '' ?>
-                </div>
-                <?php
-                $displayText = $message->message_text;
-                $displayText = str_replace(['[AGE DECLARATION: 18+]', '[AGE DECLARATION: Under 18]'], '', $displayText);
-                $displayText = ltrim($displayText, "\n");
-                ?>
-                <div class="body"><?= nl2br(h($displayText)) ?></div>
-            </div>
-
-            <?php foreach ($replies as $reply): ?>
-                <div class="message-bubble bg-light">
-                    <div class="meta">
-                        <strong>
-                            <?php if ($reply->sender_user): ?><?= h($reply->sender_user->username) ?>
-                            <?php else: ?>Admin<?php endif; ?>
-                        </strong>
-                        &mdash; <?= $reply->sent_at ? $reply->sent_at->format('j M Y, g:ia') : '' ?>
+<h3 class="admin-form-title mb-3" style="font-size: 18px;">Enquiry Thread</h3>
+<div class="admin-form-card" style="max-width: 100%; padding: 0; background-color: transparent; border: none; box-shadow: none;">
+    <div class="d-flex flex-column gap-3">
+        <!-- Original Enquiry -->
+        <div style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border); border-radius: 12px; padding: 20px;">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid var(--admin-card-border);">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--admin-search-bg); display: flex; justify-content: center; align-items: center; color: var(--admin-text-secondary);">
+                        <i class="bi bi-person"></i>
                     </div>
-                    <div class="body"><?= nl2br(h($reply->message_text)) ?></div>
+                    <div>
+                        <strong style="display: block; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary);">
+                            <?php if ($message->sender_user): ?><?= h($message->sender_user->username) ?>
+                            <?php else: ?><?= h($message->sender_name ?: 'Unknown') ?><?php endif; ?>
+                        </strong>
+                        <span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--admin-text-secondary);">
+                            <?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '' ?>
+                        </span>
+                    </div>
                 </div>
-            <?php endforeach; ?>
+                <span class="admin-badge admin-badge-neutral">Original enquiry</span>
+            </div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: var(--admin-text-primary); line-height: 1.6; white-space: pre-wrap;"><?= h($displayText !== '' ? $displayText : 'No additional notes provided.') ?></div>
         </div>
+
+        <!-- Replies -->
+        <?php foreach ($replies as $reply): ?>
+            <?php
+                $deliveryClass = 'admin-badge-neutral';
+                $deliveryLabel = ucfirst((string)($reply->delivery_status ?: 'pending'));
+                if ($reply->delivery_status === 'sent') {
+                    $deliveryClass = 'admin-badge-success';
+                } elseif ($reply->delivery_status === 'failed') {
+                    $deliveryClass = 'admin-badge-danger';
+                } elseif ($reply->delivery_status === 'pending') {
+                    $deliveryClass = 'admin-badge-warning';
+                }
+            ?>
+            <div style="background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border); border-radius: 12px; padding: 20px; margin-left: 32px; position: relative;">
+                <div style="position: absolute; left: -20px; top: 32px; width: 20px; height: 1px; background-color: var(--admin-card-border);"></div>
+                <div style="position: absolute; left: -20px; top: -16px; width: 1px; height: 48px; background-color: var(--admin-card-border);"></div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid var(--admin-card-border);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--admin-card-bg); display: flex; justify-content: center; align-items: center; color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary);">
+                                <?php if ($reply->sender_user): ?><?= h($reply->sender_user->username) ?>
+                                <?php else: ?>Admin<?php endif; ?>
+                            </strong>
+                            <span style="font-family: 'Inter', sans-serif; font-size: 12px; color: var(--admin-text-secondary);">
+                                <?= $reply->sent_at ? $reply->sent_at->format('j M Y, g:ia') : '' ?>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="admin-badge <?= $deliveryClass ?>"><?= h($deliveryLabel) ?></span>
+                    </div>
+                </div>
+                <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); margin-bottom: 12px;">
+                    Reply sent to <?= h($reply->recipient_name ?: $reply->recipient_email ?: 'external contact') ?>
+                    <?php if ($reply->recipient_email): ?>
+                        <span style="opacity: 0.65;">(<?= h($reply->recipient_email) ?>)</span>
+                    <?php endif; ?>
+                </div>
+                <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: var(--admin-text-primary); line-height: 1.6; white-space: pre-wrap;"><?= h($reply->message_text) ?></div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>

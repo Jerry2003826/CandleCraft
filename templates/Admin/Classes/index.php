@@ -45,12 +45,10 @@ $this->assign('title', 'Classes');
                     $pct = $cap > 0 ? round($booked / $cap * 100) : 0;
                     $barColor = $pct >= 90 ? 'bg-danger' : ($pct >= 70 ? 'bg-warning' : 'bg-success');
                 ?>
-                <tr>
-                    <td>
-                        <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="admin-table-primary-text text-decoration-none" style="color: var(--admin-brand-icon);">
-                            <?= h($class->class_code) ?>
-                        </a>
-                    </td>
+	                <tr>
+	                    <td>
+	                        <p class="admin-table-primary-text" style="color: var(--admin-brand-icon);"><?= h($class->class_code) ?></p>
+	                    </td>
                     <td>
                         <p class="admin-table-primary-text"><?= $class->course ? h($class->course->course_name) : '-' ?></p>
                     </td>
@@ -77,16 +75,19 @@ $this->assign('title', 'Classes');
                     <td>
                         <p class="admin-table-secondary-text"><?= h($class->location) ?></p>
                     </td>
-                    <td>
-                        <div class="admin-action-links justify-content-end">
-                            <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="admin-action-link view" title="View">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-action-link edit" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </div>
-                    </td>
+	                    <td>
+	                        <div class="admin-action-links justify-content-end">
+	                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-action-link edit" title="Edit">
+	                                <i class="bi bi-pencil"></i>
+	                            </a>
+	                            <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $class->class_id], [
+	                                'confirm' => __('Are you sure you want to delete {0}?', $class->class_code),
+	                                'class' => 'admin-action-link delete',
+	                                'title' => 'Delete',
+	                                'escape' => false
+	                            ]) ?>
+	                        </div>
+	                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

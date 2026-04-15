@@ -30,10 +30,12 @@ $this->assign('title', 'Edit Student');
             </div>
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="date-of-birth" class="admin-form-label">Date of Birth</label>
-                    <?= $this->Form->date('date_of_birth', [
-                        'id' => 'date-of-birth', 
+                    <label for="declared-age" class="admin-form-label">Declared Age</label>
+                    <?= $this->Form->number('declared_age', [
+                        'id' => 'declared-age', 
                         'required' => true,
+                        'min' => 1,
+                        'max' => 120,
                         'class' => 'admin-form-input'
                     ]) ?>
                 </div>
@@ -47,6 +49,17 @@ $this->assign('title', 'Edit Student');
                     ], [
                         'id' => 'student-status',
                         'class' => 'admin-form-select'
+                    ]) ?>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-form-group mb-0">
+                    <label for="date-of-birth" class="admin-form-label">Date of Birth (Optional)</label>
+                    <?= $this->Form->date('date_of_birth', [
+                        'id' => 'date-of-birth',
+                        'required' => false,
+                        'empty' => true,
+                        'class' => 'admin-form-input'
                     ]) ?>
                 </div>
             </div>
@@ -75,10 +88,6 @@ $this->assign('title', 'Edit Student');
                         <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= h($linkedUser->account_status) ?></strong>
                     </div>
                     <div style="margin-bottom: 8px;">
-                        <span style="color: var(--admin-text-secondary); font-size: 14px;">Self-declared 18+:</span> 
-                        <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= $linkedUser->self_declared_adult ? 'Yes' : 'No' ?></strong>
-                    </div>
-                    <div>
                         <span style="color: var(--admin-text-secondary); font-size: 14px;">Admin verified 18+:</span> 
                         <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= $linkedUser->age_verified_by_admin ? 'Yes' : 'No' ?></strong>
                     </div>

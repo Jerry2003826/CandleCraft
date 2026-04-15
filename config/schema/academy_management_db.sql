@@ -31,8 +31,10 @@ CREATE TABLE users (
     username              VARCHAR(50) NOT NULL,
     email                 VARCHAR(255) NOT NULL,
     password_hash         VARCHAR(255) NOT NULL,
-    user_role             ENUM('admin', 'parent', 'teacher', 'student') NOT NULL,
+    user_role             ENUM('admin', 'teacher', 'student') NOT NULL,
     account_status        ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
+    age_verified_by_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    self_declared_adult   BOOLEAN NOT NULL DEFAULT FALSE,
     last_login_at         DATETIME NULL,
     created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -90,7 +92,8 @@ CREATE TABLE students (
     student_id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id               BIGINT UNSIGNED NULL,
     student_name          VARCHAR(100) NOT NULL,
-    date_of_birth         DATE NOT NULL,
+    declared_age          TINYINT UNSIGNED NULL,
+    date_of_birth         DATE NULL,
     student_status        ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     medical_notes         TEXT NULL,
     created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,6 +109,7 @@ CREATE TABLE students (
 ) ENGINE=InnoDB COMMENT='Student records; login is optional';
 
 CREATE INDEX idx_students_name ON students (student_name);
+CREATE INDEX idx_students_declared_age ON students (declared_age);
 CREATE INDEX idx_students_status ON students (student_status);
 
 CREATE TABLE teachers (
@@ -245,7 +249,7 @@ CREATE INDEX idx_learning_resources_resource_type ON learning_resources (resourc
 CREATE TABLE bookings (
     booking_id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     class_id              BIGINT UNSIGNED NOT NULL,
-    parent_id             BIGINT UNSIGNED NOT NULL,
+    parent_id             BIGINT UNSIGNED NULL,
     student_id            BIGINT UNSIGNED NOT NULL,
     booking_date          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     booking_status        ENUM('pending', 'confirmed', 'cancelled', 'completed', 'waitlisted') NOT NULL DEFAULT 'pending',
@@ -267,7 +271,7 @@ CREATE TABLE bookings (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
     CONSTRAINT chk_bookings_price_non_negative CHECK (price_at_booking >= 0)
-) ENGINE=InnoDB COMMENT='Class reservations made by parents for students';
+) ENGINE=InnoDB COMMENT='Class reservations made in the portal; parent linkage is optional legacy data';
 
 CREATE INDEX idx_bookings_parent_id ON bookings (parent_id);
 CREATE INDEX idx_bookings_student_id ON bookings (student_id);
@@ -414,7 +418,7 @@ SELECT
     t.teacher_name
 FROM bookings b
 JOIN students s ON s.student_id = b.student_id
-JOIN parents p ON p.parent_id = b.parent_id
+LEFT JOIN parents p ON p.parent_id = b.parent_id
 JOIN classes c ON c.class_id = b.class_id
 JOIN courses co ON co.course_id = c.course_id
 JOIN teachers t ON t.teacher_id = c.teacher_id;
@@ -431,7 +435,7 @@ SELECT
     COALESCE(SUM(py.refunded_amount), 0) AS total_refunded
 FROM bookings b
 JOIN students s ON s.student_id = b.student_id
-JOIN parents p ON p.parent_id = b.parent_id
+LEFT JOIN parents p ON p.parent_id = b.parent_id
 JOIN classes c ON c.class_id = b.class_id
 JOIN courses co ON co.course_id = c.course_id
 LEFT JOIN payments py ON py.booking_id = b.booking_id

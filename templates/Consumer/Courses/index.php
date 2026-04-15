@@ -2,12 +2,12 @@
 /**
  * @var \App\View\AppView $this
  * @var array $courseData
- * @var bool $isAdult
+ * @var bool $bookingAccessEnabled
  * @var array $calendarEvents
  * @var \Cake\I18n\DateTime $weekStart
  * @var \Cake\I18n\DateTime $weekEnd
  */
-$this->assign('title', 'Browse Courses');
+$this->assign('title', 'Booking System');
 
 $prevWeek = $weekStart->modify('-7 days')->format('Y-m-d');
 $nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
@@ -50,7 +50,7 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
     </div>
     
     <div id="listNav" class="<?= $showCalendar ? 'd-none' : '' ?>">
-        <h2 class="admin-form-title m-0" style="font-size: 18px;">All Courses</h2>
+        <h2 class="admin-form-title m-0" style="font-size: 18px;">Available Classes</h2>
     </div>
 
     <!-- Right: View Toggle -->
@@ -157,13 +157,13 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
                                                     $<?= number_format((float)$course->course_price, 2) ?>
                                                 </div>
                                                 
-                                                <?php if ($isAdult && $class->available_slots > 0): ?>
+                                                <?php if ($bookingAccessEnabled && $class->available_slots > 0): ?>
                                                     <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>" class="admin-btn-primary" style="padding: 8px 24px;">
                                                         Book Now
                                                     </a>
-                                                <?php elseif (!$isAdult): ?>
+                                                <?php elseif (!$bookingAccessEnabled): ?>
                                                     <div style="padding: 8px 16px; background-color: var(--admin-search-bg); border-radius: 8px; color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
-                                                        <i class="bi bi-lock"></i> Adults only
+                                                        <i class="bi bi-lock"></i> Awaiting adult verification
                                                     </div>
                                                 <?php else: ?>
                                                     <div style="padding: 8px 16px; background-color: var(--admin-search-bg); border-radius: 8px; color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
@@ -222,10 +222,10 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
                                 <strong class="wc-evt__title"><?= h($ev['title']) ?></strong>
                                 <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
                                 <span class="wc-evt__loc"><?= h($ev['available_slots']) ?> spots left</span>
-                                <?php if ($isAdult && $ev['available_slots'] > 0): ?>
+                                <?php if ($bookingAccessEnabled && $ev['available_slots'] > 0): ?>
                                     <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'add', $ev['class_id']]) ?>" class="admin-btn-primary" style="padding: 2px 8px; font-size: 11px; width: fit-content; margin-top: 4px;">Book</a>
-                                <?php elseif (!$isAdult): ?>
-                                    <span style="font-size: 10px; color: #EF4444; margin-top: 4px;">Adults only</span>
+                                <?php elseif (!$bookingAccessEnabled): ?>
+                                    <span style="font-size: 10px; color: #EF4444; margin-top: 4px;">Verification pending</span>
                                 <?php else: ?>
                                     <span style="font-size: 10px; color: #EF4444; margin-top: 4px;">Full</span>
                                 <?php endif; ?>

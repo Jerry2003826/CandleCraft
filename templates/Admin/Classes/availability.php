@@ -14,9 +14,75 @@ $dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 $today = (new \DateTimeImmutable())->format('Y-m-d');
 $weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
 $totalSlots = 0;
+$calendarEvents = [];
+$earliestMinutes = null;
+$latestMinutes = null;
 foreach ($classesByDay as $daySlots) {
     $totalSlots += count($daySlots);
 }
+
+foreach ($days as $day) {
+    $dayKey = $day->format('Y-m-d');
+    foreach (($classesByDay[$dayKey] ?? []) as $class) {
+        if (!$class->start_datetime || !$class->end_datetime) {
+            continue;
+        }
+
+        $courseType = strtolower((string)($class->course->course_type ?? 'default'));
+        $eventColor = match ($courseType) {
+            'pottery' => '#3B82F6',
+            'knitting' => '#F59E0B',
+            default => '#6B7280',
+        };
+        $eventBackground = match ($courseType) {
+            'pottery' => 'rgba(59, 130, 246, 0.16)',
+            'knitting' => 'rgba(245, 158, 11, 0.16)',
+            default => 'rgba(107, 114, 128, 0.16)',
+        };
+
+        $startHour = (int)$class->start_datetime->format('G');
+        $startMinute = (int)$class->start_datetime->format('i');
+        $endHour = (int)$class->end_datetime->format('G');
+        $endMinute = (int)$class->end_datetime->format('i');
+        $startTotalMinutes = ($startHour * 60) + $startMinute;
+        $endTotalMinutes = ($endHour * 60) + $endMinute;
+
+        $earliestMinutes = $earliestMinutes === null ? $startTotalMinutes : min($earliestMinutes, $startTotalMinutes);
+        $latestMinutes = $latestMinutes === null ? $endTotalMinutes : max($latestMinutes, $endTotalMinutes);
+
+        $calendarEvents[] = [
+            'class_id' => $class->class_id,
+            'full_date' => $dayKey,
+            'title' => (string)($class->course ? $class->course->course_name : $class->class_code),
+            'class_code' => (string)$class->class_code,
+            'teacher' => (string)($class->teacher ? $class->teacher->teacher_name : '-'),
+            'location' => (string)($class->location ?? ''),
+            'spots' => count($class->bookings ?? []) . '/' . (int)$class->capacity . ' spots',
+            'start_hour' => $startHour,
+            'start_minute' => $startMinute,
+            'end_hour' => $endHour,
+            'end_minute' => $endMinute,
+            'color' => $eventColor,
+            'background' => $eventBackground,
+        ];
+    }
+}
+
+if ($earliestMinutes === null || $latestMinutes === null) {
+    $calHourStart = 8;
+    $calHourEnd = 20;
+} else {
+    $calHourStart = max(6, (int)floor(($earliestMinutes - 60) / 60));
+    $calHourEnd = min(22, (int)ceil(($latestMinutes + 60) / 60));
+    if ($calHourEnd <= $calHourStart) {
+        $calHourEnd = min(22, $calHourStart + 1);
+    }
+}
+
+$currentWeekStart = (new \DateTimeImmutable('monday this week'))->format('Y-m-d');
+$isCurrentWeek = $days[0]->format('Y-m-d') === $currentWeekStart;
+$nowHour = (int)date('G');
+$nowMinute = (int)date('i');
 ?>
 
 <!-- Tab Navigation -->
@@ -45,47 +111,88 @@ foreach ($classesByDay as $daySlots) {
 </div>
 
 <!-- Weekly Calendar Grid -->
-<div class="avail-grid-wrapper">
-    <div class="avail-grid">
+<div class="wc-wrapper admin-availability-calendar">
+    <div class="wc-header">
+        <div class="wc-gutter-header"></div>
         <?php foreach ($days as $i => $day):
             $dayKey = $day->format('Y-m-d');
             $isToday = $dayKey === $today;
-            $slotsForDay = $classesByDay[$dayKey] ?? [];
         ?>
-        <div class="avail-day <?= $isToday ? 'avail-day--today' : '' ?>">
-            <div class="avail-day__header <?= $isToday ? 'avail-day__header--today' : '' ?>">
-                <span class="avail-day__name"><?= $dayNames[$i] ?></span>
-                <span class="avail-day__num"><?= $day->format('j') ?></span>
+            <div class="wc-col-header <?= $isToday ? 'wc-col-header--today' : '' ?>">
+                <span class="wc-col-header__name"><?= $dayNames[$i] ?></span>
+                <span class="wc-col-header__num <?= $isToday ? 'wc-col-header__num--today' : '' ?>"><?= $day->format('j') ?></span>
             </div>
-            <div class="avail-day__body">
-                <?php if (empty($slotsForDay)): ?>
-                    <div class="avail-empty">No classes</div>
-                <?php else: ?>
-                    <?php foreach ($slotsForDay as $class):
-                        $courseType = strtolower($class->course->course_type ?? 'default');
-                        $slotColorClass = match($courseType) {
-                            'pottery' => 'avail-slot--pottery',
-                            'knitting' => 'avail-slot--knitting',
-                            default => '',
-                        };
-                    ?>
-                        <a href="<?= $this->Url->build(['action' => 'view', $class->class_id]) ?>" class="avail-slot <?= $slotColorClass ?>">
-                            <span class="avail-slot__time">
-                                <?= $class->start_datetime->format('H:i') ?> – <?= $class->end_datetime->format('H:i') ?>
-                            </span>
-                            <span class="avail-slot__title"><?= h($class->course ? $class->course->course_name : $class->class_code) ?></span>
-                            <span class="avail-slot__teacher"><?= h($class->teacher ? $class->teacher->teacher_name : '-') ?></span>
-                            <span class="avail-slot__spots">
-                                <?= count($class->bookings ?? []) ?>/<?= h($class->capacity) ?> spots
-                            </span>
-                        </a>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
         <?php endforeach; ?>
     </div>
+
+    <div class="wc-scroll" id="adminAvailabilityScroll">
+        <div class="wc-body-grid" style="--wc-rows: <?= $calHourEnd - $calHourStart ?>;">
+            <div class="wc-gutter">
+                <?php for ($h = $calHourStart; $h < $calHourEnd; $h++): ?>
+                    <div class="wc-gutter__label" style="top: calc(<?= ($h - $calHourStart) ?> * var(--wc-hour-h));">
+                        <?= sprintf('%02d:00', $h) ?>
+                    </div>
+                <?php endfor; ?>
+            </div>
+
+            <?php foreach ($days as $day): ?>
+                <?php
+                    $dayKey = $day->format('Y-m-d');
+                    $isToday = $dayKey === $today;
+                    $slotsForDay = $classesByDay[$dayKey] ?? [];
+                ?>
+                <div class="wc-day <?= $isToday ? 'wc-day--today' : '' ?>">
+                    <?php for ($h = $calHourStart; $h < $calHourEnd; $h++): ?>
+                        <div class="wc-hour-line" style="top: calc(<?= ($h - $calHourStart) ?> * var(--wc-hour-h));"></div>
+                    <?php endfor; ?>
+
+                    <?php if (empty($slotsForDay)): ?>
+                        <div class="admin-availability-empty-day">No classes</div>
+                    <?php endif; ?>
+
+                    <?php foreach ($calendarEvents as $event): ?>
+                        <?php
+                            if ($event['full_date'] !== $dayKey) {
+                                continue;
+                            }
+                            $topMin = ($event['start_hour'] - $calHourStart) * 60 + $event['start_minute'];
+                            $durMin = ($event['end_hour'] - $event['start_hour']) * 60 + ($event['end_minute'] - $event['start_minute']);
+                            if ($durMin < 30) {
+                                $durMin = 30;
+                            }
+                            $startFmt = sprintf('%02d:%02d', $event['start_hour'], $event['start_minute']);
+                            $endFmt = sprintf('%02d:%02d', $event['end_hour'], $event['end_minute']);
+                        ?>
+                        <a
+                            href="<?= $this->Url->build(['action' => 'edit', $event['class_id']]) ?>"
+                            class="wc-evt"
+                            style="top: calc(<?= $topMin ?> * var(--wc-min-h)); height: calc(<?= $durMin ?> * var(--wc-min-h)); --evt-color: <?= h($event['color']) ?>; background-color: <?= h($event['background']) ?>;"
+                            title="<?= h($event['title']) ?>"
+                        >
+                            <strong class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></strong>
+                            <strong class="wc-evt__title"><?= h($event['title']) ?></strong>
+                            <span class="wc-evt__loc"><?= h($event['teacher']) ?></span>
+                            <span class="wc-evt__loc"><?= h($event['class_code']) ?><?= $event['location'] !== '' ? ' · ' . h($event['location']) : '' ?></span>
+                            <span class="wc-evt__loc"><?= h($event['spots']) ?></span>
+                        </a>
+                    <?php endforeach; ?>
+
+                    <?php if ($isCurrentWeek && $isToday && $nowHour >= $calHourStart && $nowHour < $calHourEnd): ?>
+                        <div class="wc-now-line" style="top: calc(<?= (($nowHour - $calHourStart) * 60) + $nowMinute ?> * var(--wc-min-h));">
+                            <span class="wc-now-dot"></span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
 </div>
+
+<?php if (empty($calendarEvents)): ?>
+    <div class="text-center py-4 text-muted">
+        <p class="mb-0">No classes scheduled this week.</p>
+    </div>
+<?php endif; ?>
 
 <!-- Course Summary Panel -->
 <div class="admin-form-card mt-4" style="max-width: 100%; padding: 0;">

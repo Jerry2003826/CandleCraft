@@ -23,6 +23,7 @@ class User extends Entity
         'parent' => true,
         'teacher' => true,
         'student' => true,
+        'payment_profiles' => true,
     ];
 
     protected array $_hidden = [
