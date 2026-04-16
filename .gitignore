@@ -71,3 +71,9 @@ nbproject/*
 # yarn
 yarn-debug.log
 yarn-error.log
+
+# Playwright CLI cache
+.playwright-cli/
+
+# Test output logs
+output/
