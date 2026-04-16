@@ -94,4 +94,15 @@ return [
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
+
+    /*
+     * Stripe payment configuration.
+     *
+     * Used by Student/Consumer/Parent PaymentsController for payment processing.
+     */
+    'Stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY', null),
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', null),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
+    ],
 ];
