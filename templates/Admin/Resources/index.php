@@ -65,7 +65,7 @@ $this->assign('title', 'Learning Resources');
                             <?php 
                                 $statusClass = 'admin-badge-neutral';
                                 if ($resource->resource_status === 'active') $statusClass = 'admin-badge-success';
-                                if ($resource->resource_status === 'inactive') $statusClass = 'admin-badge-danger';
+                                if ($resource->resource_status === 'archived') $statusClass = 'admin-badge-warning';
                             ?>
                             <span class="admin-badge <?= $statusClass ?>"><?= ucfirst(h($resource->resource_status)) ?></span>
                         </td>

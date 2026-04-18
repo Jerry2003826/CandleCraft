@@ -7,6 +7,7 @@ use App\Service\PaymentConfirmationService;
 use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Http\Response;
+use Cake\Log\Log;
 use RuntimeException;
 
 class StripeWebhooksController extends Controller
@@ -33,7 +34,11 @@ class StripeWebhooksController extends Controller
             try {
                 (new PaymentConfirmationService())->confirmCheckoutSession($event->data->object);
             } catch (RuntimeException $exception) {
-                return $this->jsonResponse(400, ['error' => $exception->getMessage()]);
+                Log::warning('Stripe webhook completed session could not be fully applied: ' . json_encode([
+                    'event_type' => $event->type,
+                    'session_id' => (string)($event->data->object->id ?? ''),
+                    'error' => $exception->getMessage(),
+                ]));
             }
         }
 

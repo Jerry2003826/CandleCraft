@@ -420,6 +420,10 @@ return [
         'defaults' => 'php',
     ],
 
+    'Payments' => [
+        'demo_mode' => filter_var(env('PAYMENTS_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     /**
      * DebugKit configuration.
      *

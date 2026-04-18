@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Parent;
 
+use App\Service\BookingCancellationService;
 use Cake\Http\Response;
+use RuntimeException;
 
 class BookingsController extends AppController
 {
@@ -238,6 +240,7 @@ class BookingsController extends AppController
 
     public function cancel(?int $bookingId = null): ?Response
     {
+        $this->request->allowMethod(['post']);
         $parent = $this->getParentEntity();
         $children = $this->getChildrenForParent((int)$parent->parent_id);
         $studentIds = array_keys($children);
@@ -249,13 +252,13 @@ class BookingsController extends AppController
             ])
             ->firstOrFail();
 
-        $this->request->allowMethod(['post']);
-        $booking->booking_status = 'cancelled';
-
-        if ($this->fetchTable('Bookings')->save($booking)) {
+        try {
+            (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
+                'portal_source' => 'parent_portal',
+            ]);
             $this->Flash->success(__('Booking has been cancelled.'));
-        } else {
-            $this->Flash->error(__('Could not cancel booking. Please try again.'));
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__($exception->getMessage()));
         }
 
         return $this->redirect(['action' => 'index']);

@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Consumer;
 
+use App\Service\BookingCancellationService;
 use App\Service\BookingService;
 use Cake\Http\Response;
+use RuntimeException;
 
 class BookingsController extends AppController
 {
@@ -130,9 +132,8 @@ class BookingsController extends AppController
     {
         $this->request->allowMethod(['post']);
         $identity = $this->Authentication->getIdentity();
-        $bookingsTable = $this->fetchTable('Bookings');
         $student = $this->getStudentEntity($identity);
-        $booking = $bookingsTable->find()
+        $booking = $this->fetchTable('Bookings')->find()
             ->contain(['Classes' => ['Courses']])
             ->where([
                 'Bookings.booking_id' => $bookingId,
@@ -140,11 +141,13 @@ class BookingsController extends AppController
             ])
             ->firstOrFail();
 
-        $booking->booking_status = 'cancelled';
-        if ($bookingsTable->save($booking)) {
+        try {
+            (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
+                'portal_source' => 'consumer_portal',
+            ]);
             $this->Flash->success(__('Booking has been cancelled.'));
-        } else {
-            $this->Flash->error(__('Could not cancel booking. Please try again.'));
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__($exception->getMessage()));
         }
 
         return $this->redirect(['action' => 'index']);

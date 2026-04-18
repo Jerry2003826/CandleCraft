@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\EntityInterface;
+use Cake\Event\EventInterface;
+use Cake\I18n\DateTime;
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -51,7 +55,7 @@ class PaymentsTable extends Table
             ->notEmptyString('payment_method');
 
         $validator
-            ->inList('payment_status', ['pending', 'paid', 'failed', 'refunded', 'partially_refunded'])
+            ->inList('payment_status', ['pending', 'paid', 'failed', 'expired', 'voided', 'refund_required', 'refunded', 'partially_refunded'])
             ->notEmptyString('payment_status');
 
         $validator
@@ -70,10 +74,40 @@ class PaymentsTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('booking_id', 'Bookings'), ['errorField' => 'booking_id']);
+        $rules->add($rules->isUnique(
+            ['transaction_reference'],
+            'This Stripe checkout session has already been recorded.'
+        ), [
+            'errorField' => 'transaction_reference',
+            'allowMultipleNulls' => true,
+        ]);
 
         return $rules;
+    }
+
+    public function beforeSave(EventInterface $event, EntityInterface $entity): void
+    {
+        if ($entity->isNew() && !$entity->get('payment_id')) {
+            $maxId = (int)($this->find()
+                ->select(['max_id' => $this->find()->func()->max('payment_id')])
+                ->disableHydration()
+                ->first()['max_id'] ?? 0);
+
+            $entity->set('payment_id', $maxId + 1);
+        }
+
+        if (!$entity->get('payment_date')) {
+            $entity->set('payment_date', DateTime::now());
+        }
+
+        if (!$entity->get('created_at')) {
+            $entity->set('created_at', DateTime::now());
+        }
+        if (!$entity->get('updated_at')) {
+            $entity->set('updated_at', DateTime::now());
+        }
     }
 }

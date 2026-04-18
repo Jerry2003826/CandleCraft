@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Event\EventInterface;
+use Cake\Datasource\EntityInterface;
+use Cake\I18n\DateTime;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
@@ -53,11 +56,36 @@ class LearningResourcesTable extends Table
         $validator
             ->scalar('resource_url')
             ->maxLength('resource_url', 500)
-            ->allowEmptyString('resource_url');
+            ->allowEmptyString('resource_url')
+            ->url('resource_url')
+            ->add('resource_url', 'scheme', [
+                'rule' => function ($value) {
+                    if ($value === null || $value === '') {
+                        return true;
+                    }
+
+                    $scheme = strtolower((string)parse_url((string)$value, PHP_URL_SCHEME));
+
+                    return in_array($scheme, ['http', 'https'], true);
+                },
+                'message' => 'Only http/https links are allowed.',
+            ]);
 
         $validator
             ->scalar('file_path')
             ->maxLength('file_path', 255)
+            ->allowEmptyString('file_path');
+        $validator
+            ->add('file_path', 'pathPattern', [
+                'rule' => function ($value) {
+                    if ($value === null || $value === '') {
+                        return true;
+                    }
+
+                    return preg_match('/^uploads\/resources\/[A-Za-z0-9._-]+$/', (string)$value) === 1;
+                },
+                'message' => 'Uploaded files must stay within uploads/resources.',
+            ])
             ->allowEmptyString('file_path');
 
         $validator
@@ -72,5 +100,22 @@ class LearningResourcesTable extends Table
         $rules->add($rules->existsIn('class_id', 'Classes'), ['errorField' => 'class_id']);
 
         return $rules;
+    }
+
+    public function beforeSave(EventInterface $event, EntityInterface $entity): void
+    {
+        if (!$entity->isNew() || $entity->get('resource_id')) {
+            return;
+        }
+
+        $maxId = (int)($this->find()
+            ->select(['max_id' => $this->find()->func()->max('resource_id')])
+            ->disableHydration()
+            ->first()['max_id'] ?? 0);
+
+        $entity->set('resource_id', $maxId + 1);
+        if (!$entity->get('uploaded_at')) {
+            $entity->set('uploaded_at', DateTime::now());
+        }
     }
 }

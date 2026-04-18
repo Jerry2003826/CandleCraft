@@ -41,29 +41,14 @@ $this->assign('title', 'Edit Resource');
             </div>
         </div>
         
-        <div class="row g-4 mt-1">
-            <div class="col-md-6">
-                <div class="admin-form-group mb-0">
-                    <label for="resource-type" class="admin-form-label">Resource Type</label>
-                    <?= $this->Form->select('resource_type', $resourceTypes, [
-                        'id' => 'resource-type', 
-                        'required' => true,
-                        'class' => 'admin-form-select'
-                    ]) ?>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="admin-form-group mb-0">
-                    <label for="resource-status" class="admin-form-label">Status</label>
-                    <?= $this->Form->select('resource_status', [
-                        'active' => 'Active', 
-                        'archived' => 'Archived'
-                    ], [
-                        'id' => 'resource-status', 
-                        'class' => 'admin-form-select'
-                    ]) ?>
-                </div>
-            </div>
+        <div class="admin-form-group mt-4">
+            <label for="resource-type" class="admin-form-label">Resource Type</label>
+            <?= $this->Form->select('resource_type', $resourceTypes, [
+                'id' => 'resource-type',
+                'required' => true,
+                'class' => 'admin-form-select',
+                'style' => 'max-width: 300px;'
+            ]) ?>
         </div>
 
         <div class="admin-form-group mt-4">

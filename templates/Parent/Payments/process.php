@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Booking $booking
  * @var bool $stripeReady
+ * @var bool $demoModeEnabled
  */
 $this->assign('title', 'Payment');
 ?>
@@ -50,14 +51,19 @@ $this->assign('title', 'Payment');
             <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
             <?= $this->Form->button('<i class="bi bi-lock me-2"></i>Proceed to Secure Payment', ['class' => 'btn btn-primary w-100 py-2', 'escape' => false]) ?>
             <?= $this->Form->end() ?>
-        <?php else: ?>
+        <?php elseif (!empty($demoModeEnabled)): ?>
             <div class="alert alert-warning d-flex align-items-center">
                 <i class="bi bi-info-circle me-2"></i>
-                <div><strong>Demo Mode</strong> — Stripe is not configured. Click below to simulate a successful payment.</div>
+                <div><strong>Demo Mode</strong> — Stripe is not configured for this environment, so the payment form is using an explicit local demo flow.</div>
             </div>
             <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
             <?= $this->Form->button('<i class="bi bi-check-circle me-2"></i>Complete Demo Payment', ['class' => 'btn btn-primary w-100 py-2', 'escape' => false]) ?>
             <?= $this->Form->end() ?>
+        <?php else: ?>
+            <div class="alert alert-warning d-flex align-items-center mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <div>Online payments are temporarily unavailable. Please try again later or contact the studio for help.</div>
+            </div>
         <?php endif; ?>
     </div>
 </div>

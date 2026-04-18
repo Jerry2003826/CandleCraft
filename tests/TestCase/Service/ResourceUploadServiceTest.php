@@ -47,4 +47,25 @@ class ResourceUploadServiceTest extends TestCase
             'application/pdf'
         ));
     }
+
+    public function testDeleteStoredFileCannotEscapeUploadsRoot(): void
+    {
+        $resourcesDir = WWW_ROOT . 'uploads' . DIRECTORY_SEPARATOR . 'resources';
+        $outsideDir = WWW_ROOT . 'uploads';
+        if (!is_dir($resourcesDir)) {
+            mkdir($resourcesDir, 0755, true);
+        }
+        if (!is_dir($outsideDir)) {
+            mkdir($outsideDir, 0755, true);
+        }
+
+        $outsideFile = $outsideDir . DIRECTORY_SEPARATOR . 'escape.txt';
+        file_put_contents($outsideFile, 'keep me');
+
+        $service = new ResourceUploadService();
+        $service->deleteStoredFile('uploads/resources/../escape.txt');
+
+        $this->assertFileExists($outsideFile);
+        unlink($outsideFile);
+    }
 }

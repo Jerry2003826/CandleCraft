@@ -68,10 +68,9 @@ class ResourcesController extends AppController
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
-            unset($data['uploaded_by_teacher_id']);
             $this->assertTeacherOwnsClass($teacher->teacher_id, (int)($data['class_id'] ?? 0));
-            $data['uploaded_by_teacher_id'] = $teacher->teacher_id;
-            $resource = $resourcesTable->newEntity($data);
+            $resource = $resourcesTable->newEntity($this->buildTeacherPayload($data));
+            $resource->uploaded_by_teacher_id = $teacher->teacher_id;
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -127,10 +126,10 @@ class ResourcesController extends AppController
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
-            unset($data['uploaded_by_teacher_id']);
             $this->assertTeacherOwnsClass($teacher->teacher_id, (int)($data['class_id'] ?? $resource->class_id));
             $oldFilePath = $resource->file_path;
-            $resource = $resourcesTable->patchEntity($resource, $data);
+            $resource = $resourcesTable->patchEntity($resource, $this->buildTeacherPayload($data));
+            $resource->uploaded_by_teacher_id = $teacher->teacher_id;
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -208,5 +207,16 @@ class ResourcesController extends AppController
         if (!$ownsClass) {
             throw new ForbiddenException('Class does not belong to this teacher.');
         }
+    }
+
+    private function buildTeacherPayload(array $data): array
+    {
+        return [
+            'class_id' => (int)($data['class_id'] ?? 0),
+            'resource_name' => trim((string)($data['resource_name'] ?? '')),
+            'resource_type' => (string)($data['resource_type'] ?? ''),
+            'resource_url' => trim((string)($data['resource_url'] ?? '')),
+            'resource_description' => trim((string)($data['resource_description'] ?? '')),
+        ];
     }
 }

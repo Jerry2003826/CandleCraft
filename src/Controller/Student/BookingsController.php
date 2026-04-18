@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Student;
 
+use App\Service\BookingCancellationService;
 use Cake\Http\Response;
+use RuntimeException;
 
 class BookingsController extends AppController
 {
@@ -208,15 +210,15 @@ class BookingsController extends AppController
 
     public function cancel(?int $bookingId = null): ?Response
     {
+        $this->request->allowMethod(['post']);
         $identity = $this->Authentication->getIdentity();
         $studentsTable = $this->fetchTable('Students');
-        $bookingsTable = $this->fetchTable('Bookings');
 
         $student = $studentsTable->find()
             ->where(['Students.user_id' => $identity?->get('user_id')])
             ->firstOrFail();
 
-        $booking = $bookingsTable->find()
+        $booking = $this->fetchTable('Bookings')->find()
             ->contain(['Classes' => ['Courses']])
             ->where([
                 'Bookings.booking_id' => $bookingId,
@@ -224,20 +226,15 @@ class BookingsController extends AppController
             ])
             ->firstOrFail();
 
-        if ($this->request->is('post')) {
-            $booking->booking_status = 'cancelled';
-            if ($bookingsTable->save($booking)) {
-                $this->Flash->success(__('Booking has been cancelled.'));
-            } else {
-                $this->Flash->error(__('Could not cancel booking. Please try again.'));
-            }
-
-            return $this->redirect(['action' => 'index']);
+        try {
+            (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
+                'portal_source' => 'student_portal',
+            ]);
+            $this->Flash->success(__('Booking has been cancelled.'));
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__($exception->getMessage()));
         }
 
-        $this->set(compact('booking'));
-        $this->set('title', 'Cancel Booking');
-
-        return null;
+        return $this->redirect(['action' => 'index']);
     }
 }

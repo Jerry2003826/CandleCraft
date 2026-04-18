@@ -20,6 +20,7 @@ use App\Middleware\CsrfRetryMiddleware;
 use App\Middleware\ConditionalAuthenticationMiddleware;
 use App\Middleware\ConditionalCsrfProtectionMiddleware;
 use App\Middleware\HostHeaderMiddleware;
+use App\Support\WebhookRequestMatcher;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationServiceProviderInterface;
@@ -101,34 +102,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             ->add(new ConditionalCsrfProtectionMiddleware(new CsrfProtectionMiddleware([
                 'httponly' => true,
                 'skipCheckCallback' => function ($request) {
-                    $candidates = [
-                        (string)$request->getPath(),
-                        (string)$request->getRequestTarget(),
-                        (string)$request->getUri()->getPath(),
-                    ];
-                    $controller = (string)$request->getParam('controller');
-                    $action = (string)$request->getParam('action');
-
-                    if ($controller === 'StripeWebhooks' && $action === 'checkout') {
-                        return true;
-                    }
-
-                    foreach ($candidates as $candidate) {
-                        $normalized = strtok($candidate, '?') ?: '';
-                        $normalized = '/' . ltrim($normalized, '/');
-
-                        if (
-                            in_array($normalized, [
-                                '/stripe/webhook',
-                                '/consumer/payments/webhook',
-                                '/student/payments/webhook',
-                            ], true)
-                        ) {
-                            return true;
-                        }
-                    }
-
-                    return false;
+                    return WebhookRequestMatcher::isStripeWebhookRequest($request);
                 },
             ])))
 

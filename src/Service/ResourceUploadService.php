@@ -69,13 +69,65 @@ class ResourceUploadService
 
     public function deleteStoredFile(?string $relativePath): void
     {
-        if (!$relativePath || !str_starts_with($relativePath, 'uploads/')) {
+        if (!$relativePath || !str_starts_with($relativePath, 'uploads/resources/')) {
             return;
         }
 
-        $absolutePath = WWW_ROOT . str_replace('/', DS, $relativePath);
-        if (is_file($absolutePath)) {
-            unlink($absolutePath);
+        $uploadsRoot = realpath(WWW_ROOT . 'uploads' . DS . 'resources');
+        if ($uploadsRoot === false) {
+            return;
         }
+
+        $absolutePath = realpath(WWW_ROOT . str_replace('/', DS, $relativePath));
+        if ($absolutePath === false || !is_file($absolutePath)) {
+            return;
+        }
+
+        $normalizedRoot = rtrim($uploadsRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($absolutePath, $normalizedRoot)) {
+            return;
+        }
+
+        unlink($absolutePath);
+    }
+
+    public function getMaxFileSize(): int
+    {
+        return self::MAX_FILE_SIZE;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedExtensions(): array
+    {
+        return self::ALLOWED_EXTENSIONS;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedMediaTypes(): array
+    {
+        return self::ALLOWED_MEDIA_TYPES;
+    }
+
+    public function getStorageDirectory(): string
+    {
+        return 'uploads/resources';
+    }
+
+    public function getStorageAbsoluteDirectory(): string
+    {
+        return WWW_ROOT . 'uploads' . DS . 'resources';
+    }
+
+    public function normalizeStoredPath(?string $relativePath): ?string
+    {
+        if (!$relativePath || !str_starts_with($relativePath, 'uploads/resources/')) {
+            return null;
+        }
+
+        return $relativePath;
     }
 }

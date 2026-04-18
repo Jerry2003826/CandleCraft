@@ -47,6 +47,20 @@ session_id('cli');
 // Otherwise, table objects inside migrations would use the default datasource
 ConnectionHelper::addTestAliases();
 
+$testDatasource = (array)Configure::read('Datasources.test', []);
+if (($testDatasource['driver'] ?? null) === 'Cake\Database\Driver\Sqlite') {
+    $database = (string)($testDatasource['database'] ?? '');
+    if ($database !== '') {
+        $databasePath = str_starts_with($database, DIRECTORY_SEPARATOR)
+            ? $database
+            : dirname(__DIR__) . DIRECTORY_SEPARATOR . $database;
+
+        if (file_exists($databasePath)) {
+            unlink($databasePath);
+        }
+    }
+}
+
 $schemaFile = dirname(__DIR__) . '/tests/schema.php';
 if (file_exists($schemaFile)) {
     (new SchemaLoader())->loadInternalFile($schemaFile, 'test');

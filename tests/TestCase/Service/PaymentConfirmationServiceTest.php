@@ -1,0 +1,107 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Test\TestCase\Service;
+
+use App\Service\PaymentConfirmationService;
+use Cake\Datasource\FactoryLocator;
+use Cake\TestSuite\TestCase;
+
+class PaymentConfirmationServiceTest extends TestCase
+{
+    protected array $fixtures = [
+        'app.Bookings',
+        'app.Payments',
+        'app.Classes',
+        'app.Courses',
+        'app.Students',
+        'app.Users',
+    ];
+
+    private PaymentConfirmationService $service;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->service = new PaymentConfirmationService();
+    }
+
+    public function testWebhookConfirmsPendingBooking(): void
+    {
+        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('confirmed', $result);
+        $this->assertSame('paid', $payment->payment_status);
+        $this->assertSame('confirmed', $booking->booking_status);
+    }
+
+    public function testWebhookDoesNotReconfirmCancelledBooking(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'cancelled';
+        $bookings->saveOrFail($booking);
+
+        $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertSame('cancelled', $booking->booking_status);
+    }
+
+    public function testWebhookIsIdempotentForAlreadyPaidPayment(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+
+        $payment = $payments->get(1);
+        $payment->payment_status = 'paid';
+        $payments->saveOrFail($payment);
+
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+
+        $payment = $payments->get(1);
+        $booking = $bookings->get(1);
+
+        $this->assertSame('idempotent', $result);
+        $this->assertSame('paid', $payment->payment_status);
+        $this->assertSame('confirmed', $booking->booking_status);
+    }
+
+    public function testWebhookMarksCancelledBookingPaymentRefundRequired(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'cancelled';
+        $bookings->saveOrFail($booking);
+
+        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+
+        $this->assertSame('refund_required', $result);
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertStringContainsString('manual_review_required', (string)$payment->notes);
+    }
+
+    private function makeSession(string $id, int $bookingId, int $amountTotal): object
+    {
+        return (object)[
+            'id' => $id,
+            'amount_total' => $amountTotal,
+            'currency' => 'aud',
+            'payment_intent' => 'pi_' . $id,
+            'metadata' => (object)[
+                'booking_id' => $bookingId,
+            ],
+        ];
+    }
+}

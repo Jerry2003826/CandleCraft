@@ -1,0 +1,51 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Test\TestCase\Model\Table;
+
+use App\Model\Table\LearningResourcesTable;
+use Cake\TestSuite\TestCase;
+
+class LearningResourcesTableTest extends TestCase
+{
+    protected array $fixtures = [
+        'app.LearningResources',
+        'app.Classes',
+        'app.Teachers',
+    ];
+
+    private LearningResourcesTable $LearningResources;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $config = $this->getTableLocator()->exists('LearningResources') ? [] : ['className' => LearningResourcesTable::class];
+        $this->LearningResources = $this->getTableLocator()->get('LearningResources', $config);
+    }
+
+    public function testResourceUrlRejectsJavascriptScheme(): void
+    {
+        $resource = $this->LearningResources->newEntity([
+            'class_id' => 1,
+            'resource_name' => 'Bad scheme',
+            'resource_type' => 'link',
+            'resource_url' => 'javascript:alert(1)',
+            'resource_status' => 'active',
+        ]);
+
+        $this->assertNotEmpty($resource->getErrors()['resource_url'] ?? []);
+    }
+
+    public function testResourceUrlRejectsDataScheme(): void
+    {
+        $resource = $this->LearningResources->newEntity([
+            'class_id' => 1,
+            'resource_name' => 'Bad data scheme',
+            'resource_type' => 'link',
+            'resource_url' => 'data:text/html;base64,PHNjcmlwdD4=',
+            'resource_status' => 'active',
+        ]);
+
+        $this->assertNotEmpty($resource->getErrors()['resource_url'] ?? []);
+    }
+}

@@ -101,6 +101,10 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
     ],
 
+    'Payments' => [
+        'demo_mode' => filter_var(env('PAYMENTS_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     'Recaptcha' => [
         'site_key' => env('RECAPTCHA_SITE_KEY', null),
         'secret_key' => env('RECAPTCHA_SECRET_KEY', null),

@@ -41,7 +41,7 @@ class ResourcesController extends AppController
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
-            $resource = $resourcesTable->newEntity($data);
+            $resource = $resourcesTable->newEntity($this->buildAdminPayload($data));
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -95,7 +95,7 @@ class ResourcesController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
             $oldFilePath = $resource->file_path;
-            $resource = $resourcesTable->patchEntity($resource, $data);
+            $resource = $resourcesTable->patchEntity($resource, $this->buildAdminPayload($data));
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -158,5 +158,17 @@ class ResourcesController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function buildAdminPayload(array $data): array
+    {
+        return [
+            'class_id' => (int)($data['class_id'] ?? 0),
+            'resource_name' => trim((string)($data['resource_name'] ?? '')),
+            'resource_type' => (string)($data['resource_type'] ?? ''),
+            'resource_url' => trim((string)($data['resource_url'] ?? '')),
+            'resource_description' => trim((string)($data['resource_description'] ?? '')),
+            'resource_status' => (string)($data['resource_status'] ?? 'active'),
+        ];
     }
 }

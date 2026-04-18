@@ -20,7 +20,7 @@ class PaymentConfirmationService
         $this->bookingsTable = $locator->get('Bookings');
     }
 
-    public function confirmCheckoutSession(object $session): void
+    public function confirmCheckoutSession(object $session): string
     {
         $transactionReference = (string)($session->id ?? '');
         if ($transactionReference === '') {
@@ -28,7 +28,7 @@ class PaymentConfirmationService
         }
 
         $connection = $this->paymentsTable->getConnection();
-        $connection->transactional(function () use ($session, $transactionReference): void {
+        return $connection->transactional(function () use ($session, $transactionReference): string {
             $payment = $this->paymentsTable->find()
                 ->where(['Payments.transaction_reference' => $transactionReference])
                 ->first();
@@ -52,36 +52,60 @@ class PaymentConfirmationService
                 throw new RuntimeException('Unsupported Stripe currency.');
             }
 
-            if ($payment->payment_status !== 'paid') {
-                $payment->payment_status = 'paid';
-                $payment->payment_date = DateTime::now();
-                $payment->notes = $this->mergeNotes($payment->notes, [
-                    'stripe_checkout' => true,
-                    'payment_intent' => (string)($session->payment_intent ?? ''),
-                    'confirmation_source' => 'stripe_webhook',
-                ]);
-                $this->paymentsTable->saveOrFail($payment);
-            }
-
             $booking = $this->bookingsTable->get($payment->booking_id);
-            if (!in_array($booking->booking_status, ['confirmed', 'completed'], true)) {
-                $booking->booking_status = 'confirmed';
-                $this->bookingsTable->saveOrFail($booking);
+            $paymentMetadata = [
+                'stripe_checkout' => true,
+                'payment_intent' => (string)($session->payment_intent ?? ''),
+                'confirmation_source' => 'stripe_webhook',
+            ];
+
+            switch ((string)$booking->booking_status) {
+                case 'pending':
+                    $payment->payment_status = 'paid';
+                    $payment->payment_date = DateTime::now();
+                    $payment->notes = PaymentNotes::merge($payment->notes, $paymentMetadata);
+                    $this->paymentsTable->saveOrFail($payment);
+
+                    $booking->booking_status = 'confirmed';
+                    $this->bookingsTable->saveOrFail($booking);
+
+                    return 'confirmed';
+
+                case 'confirmed':
+                case 'completed':
+                    if ($payment->payment_status !== 'paid') {
+                        $payment->payment_status = 'paid';
+                        $payment->payment_date = DateTime::now();
+                        $payment->notes = PaymentNotes::merge($payment->notes, $paymentMetadata);
+                        $this->paymentsTable->saveOrFail($payment);
+                    }
+
+                    return 'idempotent';
+
+                case 'cancelled':
+                    if (!in_array($payment->payment_status, ['refund_required', 'refunded', 'partially_refunded'], true)) {
+                        $payment->payment_status = 'refund_required';
+                    }
+                    $payment->payment_date = $payment->payment_date ?: DateTime::now();
+                    $payment->notes = PaymentNotes::merge($payment->notes, array_merge($paymentMetadata, [
+                        'booking_status_at_confirmation' => 'cancelled',
+                        'manual_review_required' => true,
+                    ]));
+                    $this->paymentsTable->saveOrFail($payment);
+
+                    return 'refund_required';
+
+                default:
+                    $payment->payment_status = 'refund_required';
+                    $payment->payment_date = $payment->payment_date ?: DateTime::now();
+                    $payment->notes = PaymentNotes::merge($payment->notes, array_merge($paymentMetadata, [
+                        'booking_status_at_confirmation' => (string)$booking->booking_status,
+                        'manual_review_required' => true,
+                    ]));
+                    $this->paymentsTable->saveOrFail($payment);
+
+                    return 'manual_review';
             }
         });
-    }
-
-    private function mergeNotes(?string $existingNotes, array $newNotes): string
-    {
-        if (!$existingNotes) {
-            return (string)json_encode($newNotes);
-        }
-
-        $decoded = json_decode($existingNotes, true);
-        if (!is_array($decoded)) {
-            $decoded = ['legacy_notes' => $existingNotes];
-        }
-
-        return (string)json_encode(array_merge($decoded, $newNotes));
     }
 }

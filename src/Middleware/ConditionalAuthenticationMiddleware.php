@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Support\WebhookRequestMatcher;
 use Authentication\Middleware\AuthenticationMiddleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,14 +19,7 @@ class ConditionalAuthenticationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $path = '/' . ltrim((string)$request->getUri()->getPath(), '/');
-        $excludedPaths = [
-            '/stripe/webhook',
-            '/consumer/payments/webhook',
-            '/student/payments/webhook',
-        ];
-
-        if (in_array($path, $excludedPaths, true)) {
+        if (WebhookRequestMatcher::isStripeWebhookRequest($request)) {
             return $handler->handle($request);
         }
 

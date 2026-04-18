@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Booking $booking
  * @var bool $stripeReady
+ * @var bool $demoModeEnabled
  */
 $this->assign('title', 'Payment');
 ?>
@@ -73,11 +74,11 @@ $this->assign('title', 'Payment');
             <i class="bi bi-lock me-2"></i> Proceed to Secure Payment
         </button>
         <?= $this->Form->end() ?>
-    <?php else: ?>
+    <?php elseif (!empty($demoModeEnabled)): ?>
         <div class="alert alert-warning d-flex align-items-center mb-4" style="border-radius: 12px; border: 1px solid var(--admin-card-border);">
             <i class="bi bi-info-circle me-2" style="font-size: 20px;"></i>
             <div style="font-family: 'Inter', sans-serif; font-size: 14px;">
-                <strong>Demo Mode</strong> — Stripe is not configured. Click below to simulate a successful payment.
+                <strong>Demo Mode</strong> — Stripe is not configured for this environment, so the payment form is using an explicit local demo flow.
             </div>
         </div>
         <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
@@ -85,5 +86,12 @@ $this->assign('title', 'Payment');
             <i class="bi bi-check-circle me-2"></i> Complete Demo Payment
         </button>
         <?= $this->Form->end() ?>
+    <?php else: ?>
+        <div class="alert alert-warning d-flex align-items-center mb-0" style="border-radius: 12px; border: 1px solid var(--admin-card-border);">
+            <i class="bi bi-exclamation-triangle me-2" style="font-size: 20px;"></i>
+            <div style="font-family: 'Inter', sans-serif; font-size: 14px;">
+                Online payments are temporarily unavailable. Please try again later or contact the studio for help.
+            </div>
+        </div>
     <?php endif; ?>
 </div>
