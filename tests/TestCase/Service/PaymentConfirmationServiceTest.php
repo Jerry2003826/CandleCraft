@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Service;
 
+use App\Exception\Payments\ManualReviewWebhookException;
+use App\Exception\Payments\NonRetriableWebhookException;
+use App\Exception\Payments\RetriableWebhookException;
 use App\Service\PaymentConfirmationService;
 use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\TestCase;
@@ -38,14 +41,19 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('confirmed', $booking->booking_status);
     }
 
-    public function testWebhookDoesNotReconfirmCancelledBooking(): void
+    public function testWebhookThrowsManualReviewForCancelledBooking(): void
     {
         $bookings = FactoryLocator::get('Table')->get('Bookings');
         $booking = $bookings->get(1);
         $booking->booking_status = 'cancelled';
         $bookings->saveOrFail($booking);
 
-        $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame('cancelled_booking_paid_late', $exception->getContext()['reason_code'] ?? null);
+        }
 
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
         $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
@@ -77,19 +85,37 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('confirmed', $booking->booking_status);
     }
 
-    public function testWebhookMarksCancelledBookingPaymentRefundRequired(): void
+    public function testWebhookThrowsNonRetriableForAmountMismatch(): void
     {
-        $bookings = FactoryLocator::get('Table')->get('Bookings');
-        $booking = $bookings->get(1);
-        $booking->booking_status = 'cancelled';
-        $bookings->saveOrFail($booking);
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 9999));
+            $this->fail('Expected non-retriable exception was not thrown.');
+        } catch (NonRetriableWebhookException $exception) {
+            $this->assertSame('amount_mismatch', $exception->getContext()['reason_code'] ?? null);
+        }
 
-        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
 
-        $this->assertSame('refund_required', $result);
         $this->assertSame('refund_required', $payment->payment_status);
         $this->assertStringContainsString('manual_review_required', (string)$payment->notes);
+        $this->assertStringContainsString('amount_mismatch', (string)$payment->notes);
+    }
+
+    public function testWebhookThrowsRetriableWhenPaymentPersistenceFails(): void
+    {
+        $service = new class() extends PaymentConfirmationService {
+            protected function persistPayment(object $payment): void
+            {
+                throw new \RuntimeException('database temporarily unavailable');
+            }
+        };
+
+        try {
+            $service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected retriable exception was not thrown.');
+        } catch (RetriableWebhookException $exception) {
+            $this->assertSame('payment_confirmation', $exception->getContext()['reason_code'] ?? null);
+        }
     }
 
     private function makeSession(string $id, int $bookingId, int $amountTotal): object

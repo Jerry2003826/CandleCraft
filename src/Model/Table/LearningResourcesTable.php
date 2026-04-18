@@ -104,16 +104,6 @@ class LearningResourcesTable extends Table
 
     public function beforeSave(EventInterface $event, EntityInterface $entity): void
     {
-        if (!$entity->isNew() || $entity->get('resource_id')) {
-            return;
-        }
-
-        $maxId = (int)($this->find()
-            ->select(['max_id' => $this->find()->func()->max('resource_id')])
-            ->disableHydration()
-            ->first()['max_id'] ?? 0);
-
-        $entity->set('resource_id', $maxId + 1);
         if (!$entity->get('uploaded_at')) {
             $entity->set('uploaded_at', DateTime::now());
         }

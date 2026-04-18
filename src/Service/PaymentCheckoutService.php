@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Exception\Payments\PaymentWebhookException;
 use Cake\Core\Configure;
 use Cake\Database\Driver\Mysql;
 use Cake\Datasource\FactoryLocator;
@@ -17,12 +18,12 @@ class PaymentCheckoutService
     private object $bookingsTable;
     private object $paymentsTable;
     private StripeCheckoutGatewayInterface $gateway;
-    private PaymentConfirmationService $paymentConfirmationService;
+    private PaymentConfirmationServiceInterface $paymentConfirmationService;
 
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
-        ?PaymentConfirmationService $paymentConfirmationService = null,
+        ?PaymentConfirmationServiceInterface $paymentConfirmationService = null,
     ) {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->bookingsTable = $locator->get('Bookings');
@@ -94,19 +95,44 @@ class PaymentCheckoutService
                 ->all();
 
             foreach ($pendingPayments as $pendingPayment) {
-                $reusableUrl = $this->getReusablePendingSessionUrl($pendingPayment);
-                if ($reusableUrl !== null) {
+                $inspection = $this->inspectPendingSession($pendingPayment);
+
+                if (($inspection['kind'] ?? null) === 'reuse') {
                     return [
                         'kind' => 'redirect',
-                        'redirectUrl' => $reusableUrl,
+                        'redirectUrl' => (string)$inspection['url'],
                         'reused' => true,
                     ];
                 }
 
-                $this->transitionPayment($pendingPayment, 'expired', [
-                    'payment_resolution' => 'replaced_checkout',
-                    'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
-                ]);
+                if (($inspection['kind'] ?? null) === 'already_completed') {
+                    try {
+                        $result = $this->paymentConfirmationService->confirmCheckoutSession($inspection['session']);
+                    } catch (PaymentWebhookException $exception) {
+                        $this->logCheckoutFailure(
+                            'Completed Stripe session could not be synchronized locally',
+                            $booking,
+                            $context,
+                            (string)($inspection['session']->id ?? $pendingPayment->transaction_reference ?? ''),
+                            $exception
+                        );
+
+                        throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                    }
+
+                    if (in_array($result, ['confirmed', 'idempotent'], true)) {
+                        return ['kind' => 'already_paid'];
+                    }
+
+                    throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                }
+
+                if (($inspection['kind'] ?? null) === 'stale') {
+                    $this->transitionPayment($pendingPayment, 'expired', [
+                        'payment_resolution' => 'replaced_checkout',
+                        'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+                    ]);
+                }
             }
 
             $session = $this->createStripeSession($booking, $context);
@@ -212,32 +238,37 @@ class PaymentCheckoutService
         });
     }
 
-    private function getReusablePendingSessionUrl(object $payment): ?string
+    private function inspectPendingSession(object $payment): array
     {
         $transactionReference = (string)($payment->transaction_reference ?? '');
         if ($transactionReference === '' || !$this->isStripeConfigured()) {
-            return null;
+            return ['kind' => 'stale'];
         }
 
         try {
             $session = $this->gateway->retrieveCheckoutSession($transactionReference);
         } catch (Throwable) {
-            return null;
+            return ['kind' => 'stale'];
         }
 
         $paymentStatus = strtolower((string)($session->payment_status ?? ''));
         $sessionStatus = strtolower((string)($session->status ?? ''));
         if ($paymentStatus === 'paid' || $sessionStatus === 'complete') {
-            $this->paymentConfirmationService->confirmCheckoutSession($session);
-
-            return null;
+            return [
+                'kind' => 'already_completed',
+                'session' => $session,
+            ];
         }
 
         if ($sessionStatus === 'open' && $paymentStatus === 'unpaid' && !empty($session->url)) {
-            return (string)$session->url;
+            return [
+                'kind' => 'reuse',
+                'url' => (string)$session->url,
+                'session' => $session,
+            ];
         }
 
-        return null;
+        return ['kind' => 'stale'];
     }
 
     private function createStripeSession(object $booking, array $context): object

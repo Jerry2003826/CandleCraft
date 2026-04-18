@@ -20,6 +20,15 @@ foreach ($rawSchema as $tableName => $tableSchema) {
     foreach ($tableSchema->columns() as $columnName) {
         $column = $tableSchema->getColumn($columnName);
         if ($column !== null) {
+            if (
+                in_array($tableName, ['payments', 'learning_resources'], true) &&
+                in_array($columnName, ['payment_id', 'resource_id'], true) &&
+                ($column['autoIncrement'] ?? false) === true &&
+                ($column['type'] ?? null) === 'biginteger'
+            ) {
+                $column['type'] = 'integer';
+            }
+
             $table['columns'][$columnName] = $column;
         }
     }

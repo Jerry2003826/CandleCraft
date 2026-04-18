@@ -90,15 +90,6 @@ class PaymentsTable extends Table
 
     public function beforeSave(EventInterface $event, EntityInterface $entity): void
     {
-        if ($entity->isNew() && !$entity->get('payment_id')) {
-            $maxId = (int)($this->find()
-                ->select(['max_id' => $this->find()->func()->max('payment_id')])
-                ->disableHydration()
-                ->first()['max_id'] ?? 0);
-
-            $entity->set('payment_id', $maxId + 1);
-        }
-
         if (!$entity->get('payment_date')) {
             $entity->set('payment_date', DateTime::now());
         }
