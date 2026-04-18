@@ -24,16 +24,114 @@
 set -e
 
 # ---- Configuration ----
-CPANEL_USER="${1:-cpaneluser}"
-DOMAIN="${2:-example.com}"
+CPANEL_USER=""
+DOMAIN=""
 APP_NAME="CandleCraft"
 OUTPUT_DIR="./cpanel-output"
 SRC_DIR="$(pwd)"
+DEV_DB_PASS=""
+PRODUCTION_DB_PASS=""
+REVIEW_DB_PASS=""
+SKIP_COMPOSER_INSTALL=false
 
 # ---- Colors ----
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+
+generate_salt() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 32
+        return
+    fi
+
+    php -r 'echo bin2hex(random_bytes(32));'
+}
+
+prompt_for_password() {
+    local env_name="$1"
+    local current_value="$2"
+    local result="$current_value"
+
+    if [ -z "$result" ]; then
+        read -rsp "${env_name} database password: " result
+        echo ""
+    fi
+
+    [ -z "$result" ] && {
+        echo "Error: ${env_name} database password is required."
+        exit 1
+    }
+
+    printf '%s' "$result"
+}
+
+validate_generated_app_local() {
+    local file_path="$1"
+    local env_name="$2"
+
+    grep -q "__SALT__" "$file_path" && {
+        echo "Error: ${env_name} app_local.php still contains __SALT__"
+        exit 1
+    }
+
+    grep -q "CHANGE_ME_" "$file_path" && {
+        echo "Error: ${env_name} app_local.php still contains placeholder database credentials"
+        exit 1
+    }
+
+    if [ "$env_name" = "production" ]; then
+        grep -q "'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN)," "$file_path" || {
+            echo "Error: production app_local.php must default debug to false"
+            exit 1
+        }
+    fi
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
+        --dev-db-pass) DEV_DB_PASS="$2"; shift 2 ;;
+        --production-db-pass) PRODUCTION_DB_PASS="$2"; shift 2 ;;
+        --review-db-pass) REVIEW_DB_PASS="$2"; shift 2 ;;
+        --skip-composer-install) SKIP_COMPOSER_INSTALL=true; shift ;;
+        --help|-h)
+            cat <<'EOF'
+Usage:
+  ./scripts/cpanel-deploy.sh [CPANEL_USER] [DOMAIN] [OPTIONS]
+
+Options:
+  --output-dir PATH            Output directory (default: ./cpanel-output)
+  --dev-db-pass PASSWORD       dev environment database password
+  --production-db-pass PASSWORD production environment database password
+  --review-db-pass PASSWORD    review environment database password
+  --skip-composer-install      Reuse the current vendor/ directory without running composer install
+EOF
+            exit 0
+            ;;
+        --*)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+        *)
+            if [ -z "$CPANEL_USER" ]; then
+                CPANEL_USER="$1"
+            elif [ -z "$DOMAIN" ]; then
+                DOMAIN="$1"
+            else
+                echo "Unexpected extra argument: $1"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+CPANEL_USER="${CPANEL_USER:-cpaneluser}"
+DOMAIN="${DOMAIN:-example.com}"
+DEV_DB_PASS="$(prompt_for_password "dev" "${DEV_DB_PASS}")"
+PRODUCTION_DB_PASS="$(prompt_for_password "production" "${PRODUCTION_DB_PASS}")"
+REVIEW_DB_PASS="$(prompt_for_password "review" "${REVIEW_DB_PASS}")"
 
 echo -e "${BLUE}=== cPanel Deployment Packager for ${APP_NAME} ===${NC}"
 echo ""
@@ -49,9 +147,13 @@ mkdir -p "${OUTPUT_DIR}/database"
 
 # ---- Step 2: Install production dependencies ----
 echo -e "${GREEN}[2/6] Installing production dependencies...${NC}"
-composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
-    echo "Warning: composer install failed. Using existing vendor/ directory."
-}
+if [ "${SKIP_COMPOSER_INSTALL}" = true ]; then
+    echo "Skipping composer install and reusing the current vendor/ directory."
+else
+    composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
+        echo "Warning: composer install failed. Using existing vendor/ directory."
+    }
+fi
 
 # ---- Step 3: Create app packages for each environment ----
 for ENV in dev production review; do
@@ -59,6 +161,15 @@ for ENV in dev production review; do
 
     ENV_DIR="${OUTPUT_DIR}/${ENV}_app"
     mkdir -p "${ENV_DIR}"
+    ENV_SALT="$(generate_salt)"
+
+    if [ "$ENV" = "production" ]; then
+        DB_PASSWORD="${PRODUCTION_DB_PASS}"
+    elif [ "$ENV" = "review" ]; then
+        DB_PASSWORD="${REVIEW_DB_PASS}"
+    else
+        DB_PASSWORD="${DEV_DB_PASS}"
+    fi
 
     # Copy full CakePHP application
     cp -r bin "${ENV_DIR}/"
@@ -97,21 +208,21 @@ return [
     'debug' => filter_var(env('DEBUG', $([ "$ENV" = "production" ] && echo "false" || echo "true")), FILTER_VALIDATE_BOOLEAN),
 
     'Security' => [
-        'salt' => env('SECURITY_SALT', '__SALT__'),
+        'salt' => env('SECURITY_SALT', '${ENV_SALT}'),
     ],
 
     'Datasources' => [
         'default' => [
             'host' => 'localhost',
             'username' => '${CPANEL_USER}_${ENV}',
-            'password' => 'CHANGE_ME_${ENV}_DB_PASSWORD',
+            'password' => '${DB_PASSWORD}',
             'database' => '${CPANEL_USER}_${ENV}_db',
             'url' => env('DATABASE_URL', null),
         ],
         'test' => [
             'host' => 'localhost',
             'username' => '${CPANEL_USER}_${ENV}',
-            'password' => 'CHANGE_ME_${ENV}_DB_PASSWORD',
+            'password' => '${DB_PASSWORD}',
             'database' => '${CPANEL_USER}_${ENV}_test_db',
             'url' => env('DATABASE_TEST_URL', null),
         ],
@@ -140,6 +251,8 @@ return [
     ],
 ];
 PHPEOF
+
+    validate_generated_app_local "${ENV_DIR}/config/app_local.php" "${ENV}"
 
     # ---- Modify App.base for subdirectory routing ----
     if [ "$ENV" = "production" ]; then
@@ -234,9 +347,14 @@ done
 # ---- Step 5: Export database ----
 echo -e "${GREEN}[5/6] Preparing database export instructions...${NC}"
 
+cp "${SRC_DIR}/config/schema/academy_management_db.sql" "${OUTPUT_DIR}/database/academy_management_db.sql"
+cp "${SRC_DIR}/config/schema/seed_admin.sql" "${OUTPUT_DIR}/database/seed_admin.sql"
+
 # Create a helper SQL file that creates the database and user
 cat > "${OUTPUT_DIR}/database/README.md" << 'MDEOF'
 # Database Setup for cPanel
+
+Prefer CakePHP migrations + seeds for new environments. The SQL files in this folder are kept only as a fallback/reference path.
 
 ## Option A: phpMyAdmin Import (No SSH)
 
@@ -246,7 +364,8 @@ cat > "${OUTPUT_DIR}/database/README.md" << 'MDEOF'
    - `username_production_db`
    - `username_review_db`
 3. Create database users and assign them to the respective databases
-4. Go to phpMyAdmin, select each database, and Import the SQL file
+4. Go to phpMyAdmin, select each database, and import `academy_management_db.sql`
+5. Import `seed_admin.sql` only for a local/demo admin account if you explicitly need the legacy sample seed
 
 ## Option B: SSH/Terminal
 
@@ -256,12 +375,15 @@ mysql -u username -p -e "CREATE DATABASE username_dev_db;"
 mysql -u username -p -e "CREATE DATABASE username_production_db;"
 mysql -u username -p -e "CREATE DATABASE username_review_db;"
 
-# Import schema
-mysql -u username -p username_dev_db < schema.sql
-mysql -u username -p username_production_db < schema.sql
-mysql -u username -p username_review_db < schema.sql
+# Import legacy reference SQL (optional fallback)
+mysql -u username -p username_dev_db < academy_management_db.sql
+mysql -u username -p username_production_db < academy_management_db.sql
+mysql -u username -p username_review_db < academy_management_db.sql
 
-# Or run migrations
+# Optional legacy sample admin seed
+mysql -u username -p username_dev_db < seed_admin.sql
+
+# Preferred path: run migrations + seeds
 cd /home/username/dev_app && php bin/cake.php migrations migrate
 cd /home/username/production_app && php bin/cake.php migrations migrate
 cd /home/username/review_app && php bin/cake.php migrations migrate
@@ -297,8 +419,7 @@ chmod 755 /home/${CPANEL_USER}/public_html/dev/uploads/
 \`\`\`
 
 ### 4. Configure Databases
-Edit \`config/app_local.php\` in each \`*_app/\` directory and set:
-- Database name, username, and password
+Review the generated \`config/app_local.php\` in each \`*_app/\` directory and rotate database credentials if needed.
 
 ### 5. Verify
 Visit:
@@ -311,6 +432,7 @@ Visit:
 - Set PHP version to 8.2+ in MultiPHP Manager
 - Ensure \`mod_rewrite\` is enabled
 - Update \`APP_FULL_BASE_URL\` if you encounter Host header errors
+- For database setup, prefer CakePHP migrations + seeds. Legacy SQL references live in \`database/academy_management_db.sql\` and \`database/seed_admin.sql\`.
 MDEOF
 
 # ---- Create ZIP archives for easy upload ----
@@ -338,6 +460,6 @@ echo "Next steps:"
 echo "  1. Upload *_app.zip files to /home/${CPANEL_USER}/ and extract"
 echo "  2. Upload public_html contents to public_html/{dev,production,review}/"
 echo "  3. Create MySQL databases in cPanel"
-echo "  4. Edit config/app_local.php in each environment with DB credentials"
-echo "  5. Run migrations or import SQL via phpMyAdmin"
+echo "  4. Verify the generated config/app_local.php files and rotate secrets if needed"
+echo "  5. Prefer migrations + seeds, or import academy_management_db.sql / seed_admin.sql as a fallback"
 echo ""

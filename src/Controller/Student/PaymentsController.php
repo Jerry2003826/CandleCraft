@@ -59,6 +59,7 @@ class PaymentsController extends AppController
         $identity = $this->Authentication->getIdentity();
         $studentsTable = $this->fetchTable('Students');
         $bookingsTable = $this->fetchTable('Bookings');
+        $paymentsTable = $this->fetchTable('Payments');
 
         $student = $studentsTable->find()
             ->where(['Students.user_id' => $identity?->get('user_id')])
@@ -141,7 +142,10 @@ class PaymentsController extends AppController
                 );
             }
 
-            $this->Flash->success(__('Demo payment completed successfully! Booking confirmed.'));
+            $message = ($result['completed_reason'] ?? null) === 'zero_amount'
+                ? __('Free booking confirmed successfully.')
+                : __('Demo payment completed successfully! Booking confirmed.');
+            $this->Flash->success($message);
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }

@@ -282,10 +282,10 @@ CREATE TABLE payments (
     payment_id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     booking_id            BIGINT UNSIGNED NOT NULL,
     amount                DECIMAL(10,2) NOT NULL,
-    currency_code         CHAR(3) NOT NULL DEFAULT 'USD',
+    currency_code         CHAR(3) NOT NULL DEFAULT 'AUD',
     payment_date          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     payment_method        ENUM('cash', 'card', 'bank_transfer', 'online', 'other') NOT NULL,
-    payment_status        ENUM('pending', 'paid', 'failed', 'refunded', 'partially_refunded') NOT NULL DEFAULT 'pending',
+    payment_status        ENUM('pending', 'paid', 'failed', 'expired', 'voided', 'refund_required', 'refunded', 'partially_refunded') NOT NULL DEFAULT 'pending',
     transaction_reference VARCHAR(100) NULL,
     refunded_amount       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     notes                 TEXT NULL,
@@ -299,11 +299,11 @@ CREATE TABLE payments (
         REFERENCES bookings (booking_id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
-    CONSTRAINT chk_payments_amount_positive CHECK (amount > 0),
+    CONSTRAINT chk_payments_amount_non_negative CHECK (amount >= 0),
     CONSTRAINT chk_payments_refunded_amount_range CHECK (
         refunded_amount >= 0 AND refunded_amount <= amount
     )
-) ENGINE=InnoDB COMMENT='Payment transactions for bookings';
+) ENGINE=InnoDB COMMENT='Payment transactions for bookings. Zero-amount bookings are confirmed locally and do not require Stripe checkout.';
 
 CREATE INDEX idx_payments_booking_id ON payments (booking_id);
 CREATE INDEX idx_payments_payment_status ON payments (payment_status);

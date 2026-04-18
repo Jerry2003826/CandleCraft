@@ -38,7 +38,7 @@ $env:ADMIN_SEED_PASSWORD = "admin123"
 bin/cake seeds run AdminSeed -q
 ```
 
-> `config/schema/academy_management_db.sql` and `config/schema/seed_admin.sql` are kept as legacy reference files only. New environments should use migrations + seeds.
+> `config/schema/academy_management_db.sql` and `config/schema/seed_admin.sql` are kept as legacy reference files only. New environments should use migrations + seeds. The legacy `payments` reference is still maintained to match the current state machine, including zero-amount bookings being confirmed locally without Stripe.
 
 ### Step 3: Configure & Run
 

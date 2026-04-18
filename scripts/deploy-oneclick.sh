@@ -57,6 +57,8 @@ STRIPE_WEBHOOK_SECRET=""
 
 # Derived
 OUTPUT_DIR="./deploy-output"
+PACKAGE_ONLY=false
+SKIP_COMPOSER_INSTALL=false
 
 # ============================================================================
 # COLORS & HELPERS
@@ -106,6 +108,28 @@ die() {
     exit 1
 }
 
+generate_salt() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 32
+        return
+    fi
+
+    php -r 'echo bin2hex(random_bytes(32));'
+}
+
+validate_generated_app_local() {
+    local file_path="$1"
+    local env_name="$2"
+
+    grep -q "__SALT__" "$file_path" && die "Generated ${env_name} app_local.php still contains __SALT__"
+    grep -q "'password' => ''" "$file_path" && die "Generated ${env_name} app_local.php has an empty database password"
+
+    if [ "$env_name" = "production" ]; then
+        grep -q "'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN)," "$file_path" || \
+            die "Generated production app_local.php must default debug to false"
+    fi
+}
+
 # ============================================================================
 # PARSE ARGUMENTS
 # ============================================================================
@@ -118,6 +142,9 @@ while [[ $# -gt 0 ]]; do
         --ssh-key)      SSH_KEY="$2"; shift 2 ;;
         --db-user)      DB_USER="$2"; shift 2 ;;
         --db-pass)      DB_PASS="$2"; shift 2 ;;
+        --output-dir)   OUTPUT_DIR="$2"; shift 2 ;;
+        --package-only) PACKAGE_ONLY=true; shift ;;
+        --skip-composer-install) SKIP_COMPOSER_INSTALL=true; shift ;;
         --local-db)     LOCAL_DB_NAME="$2"; shift 2 ;;
         --local-db-user) LOCAL_DB_USER="$2"; shift 2 ;;
         --local-db-pass) LOCAL_DB_PASS="$2"; shift 2 ;;
@@ -134,6 +161,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --ssh-key PATH       SSH private key path"
             echo "  --db-user USER       Remote MySQL username"
             echo "  --db-pass PASS       Remote MySQL password"
+            echo "  --output-dir PATH    Output directory (default: ./deploy-output)"
+            echo "  --package-only       Build local deployment packages without SSH/database steps"
+            echo "  --skip-composer-install  Reuse current vendor/ without running composer install"
             echo "  --local-db NAME      Local database name (default: academy_management_db)"
             echo "  --local-db-user USER Local MySQL username (default: root)"
             echo "  --local-db-pass PASS Local MySQL password (default: root)"
@@ -152,10 +182,14 @@ done
 
 banner
 
-if [ -z "$REMOTE_HOST" ]; then
+if [ -z "$REMOTE_HOST" ] && [ "${PACKAGE_ONLY}" != true ]; then
     echo -e "${BOLD}Please enter your cPanel server details:${NC}"
     read -rp "  SSH Host (e.g. ssh.example.com): " REMOTE_HOST
     [ -z "$REMOTE_HOST" ] && die "SSH host is required"
+fi
+
+if [ -z "$REMOTE_HOST" ] && [ "${PACKAGE_ONLY}" = true ]; then
+    REMOTE_HOST="package-only.local"
 fi
 
 if [ -z "$REMOTE_USER" ]; then
@@ -192,24 +226,26 @@ REMOTE_HOME="/home/${REMOTE_USER}"
 # STEP 0: Verify connectivity
 # ============================================================================
 
-step "Step 0/8: Verifying SSH connection"
-info "Connecting to ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PORT}..."
+if [ "${PACKAGE_ONLY}" != true ]; then
+    step "Step 0/8: Verifying SSH connection"
+    info "Connecting to ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PORT}..."
 
-$SSH_CMD "echo 'SSH connection successful'" > /dev/null 2>&1 || {
-    die "Cannot connect via SSH. Check your credentials and ensure SSH is enabled in cPanel."
-}
-success "SSH connection established"
+    $SSH_CMD "echo 'SSH connection successful'" > /dev/null 2>&1 || {
+        die "Cannot connect via SSH. Check your credentials and ensure SSH is enabled in cPanel."
+    }
+    success "SSH connection established"
 
-# Check remote PHP version
-REMOTE_PHP=$($SSH_CMD "php -v 2>/dev/null | head -1" || echo "PHP not found")
-info "Remote PHP: ${REMOTE_PHP}"
+    # Check remote PHP version
+    REMOTE_PHP=$($SSH_CMD "php -v 2>/dev/null | head -1" || echo "PHP not found")
+    info "Remote PHP: ${REMOTE_PHP}"
 
-# Check if mysql client is available on remote
-$SSH_CMD "which mysql > /dev/null 2>&1" && {
-    success "Remote MySQL client available"
-} || {
-    warn "MySQL client not found on remote server, will use cPanel UAPI for database operations"
-}
+    # Check if mysql client is available on remote
+    $SSH_CMD "which mysql > /dev/null 2>&1" && {
+        success "Remote MySQL client available"
+    } || {
+        warn "MySQL client not found on remote server, will use cPanel UAPI for database operations"
+    }
+fi
 
 # ============================================================================
 # STEP 1: Build packages locally
@@ -221,9 +257,13 @@ rm -rf "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 
 info "Running composer install --no-dev..."
-composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
-    warn "Composer install failed, using existing vendor/"
-}
+if [ "${SKIP_COMPOSER_INSTALL}" = true ]; then
+    info "Skipping composer install and reusing the current vendor/ directory"
+else
+    composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
+        warn "Composer install failed, using existing vendor/"
+    }
+fi
 
 for ENV in dev production review; do
     ENV_DIR="${OUTPUT_DIR}/${ENV}_app"
@@ -244,6 +284,7 @@ for ENV in dev production review; do
     # --- Generate app_local.php ---
     DEBUG_VAL="true"
     [ "$ENV" = "production" ] && DEBUG_VAL="false"
+    ENV_SALT="$(generate_salt)"
 
     cat > "${ENV_DIR}/config/app_local.php" << PHPEOF
 <?php
@@ -253,7 +294,7 @@ use function Cake\Core\env;
 return [
     'debug' => filter_var(env('DEBUG', ${DEBUG_VAL}), FILTER_VALIDATE_BOOLEAN),
     'Security' => [
-        'salt' => env('SECURITY_SALT', '__SALT__'),
+        'salt' => env('SECURITY_SALT', '${ENV_SALT}'),
     ],
     'Datasources' => [
         'default' => [
@@ -292,6 +333,8 @@ return [
     ],
 ];
 PHPEOF
+
+    validate_generated_app_local "${ENV_DIR}/config/app_local.php" "${ENV}"
 
     # Set App.base for subdirectory routing
     if [ "$ENV" = "production" ]; then
@@ -364,6 +407,11 @@ zip -rq "public_all.zip" public_dev/ public_production/ public_review/
 cd - > /dev/null
 
 success "Packages built in ${OUTPUT_DIR}/"
+
+if [ "${PACKAGE_ONLY}" = true ]; then
+    success "Package-only mode complete. Skipping SSH upload and remote deployment steps."
+    exit 0
+fi
 
 # ============================================================================
 # STEP 2: Export local database

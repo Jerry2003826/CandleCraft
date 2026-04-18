@@ -46,6 +46,10 @@ class PaymentCheckoutService
 
     public function startCheckout(object $booking, array $context): array
     {
+        if ($this->isZeroAmountBooking($booking)) {
+            return $this->completeZeroAmountPayment((int)$booking->booking_id, $context);
+        }
+
         if ($this->isStripeConfigured()) {
             return $this->startStripeCheckout((int)$booking->booking_id, $context);
         }
@@ -55,6 +59,78 @@ class PaymentCheckoutService
         }
 
         throw new RuntimeException('Online payments are temporarily unavailable.');
+    }
+
+    private function completeZeroAmountPayment(int $bookingId, array $context): array
+    {
+        $connection = $this->paymentsTable->getConnection();
+
+        return $connection->transactional(function () use ($bookingId, $context): array {
+            $booking = $this->loadBookingForUpdate($bookingId);
+            $blockingPayment = $this->paymentsTable->find()
+                ->where([
+                    'Payments.booking_id' => $bookingId,
+                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
+                ])
+                ->orderBy(['Payments.payment_id' => 'DESC'])
+                ->first();
+
+            if ($blockingPayment) {
+                if (
+                    $blockingPayment->payment_status === 'paid' &&
+                    in_array($booking->booking_status, ['confirmed', 'completed'], true)
+                ) {
+                    return ['kind' => 'already_paid'];
+                }
+
+                throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+            }
+
+            if ($booking->booking_status === 'cancelled') {
+                throw new RuntimeException('Cancelled bookings cannot be paid.');
+            }
+
+            $pendingPayments = $this->paymentsTable->find()
+                ->where([
+                    'Payments.booking_id' => $bookingId,
+                    'Payments.payment_status' => 'pending',
+                ])
+                ->all();
+
+            foreach ($pendingPayments as $pendingPayment) {
+                $this->transitionPayment($pendingPayment, 'voided', [
+                    'payment_resolution' => 'zero_amount_override',
+                    'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+                    'zero_amount_checkout' => true,
+                ]);
+            }
+
+            $referenceTimestamp = DateTime::now()->format('YmdHisv');
+            $payment = $this->paymentsTable->newEntity([
+                'booking_id' => $bookingId,
+                'amount' => 0,
+                'currency_code' => 'AUD',
+                'payment_date' => DateTime::now(),
+                'payment_method' => 'online',
+                'payment_status' => 'paid',
+                'transaction_reference' => sprintf('ZERO-%d-%s', $bookingId, $referenceTimestamp),
+                'notes' => PaymentNotes::merge(null, [
+                    'zero_amount_checkout' => true,
+                    'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+                ]),
+            ]);
+            $this->paymentsTable->saveOrFail($payment);
+
+            $booking->booking_status = 'confirmed';
+            $this->bookingsTable->saveOrFail($booking);
+
+            return [
+                'kind' => 'completed',
+                'completed_reason' => 'zero_amount',
+                'payment' => $payment,
+                'booking' => $booking,
+            ];
+        });
     }
 
     private function startStripeCheckout(int $bookingId, array $context): array
@@ -232,6 +308,7 @@ class PaymentCheckoutService
 
             return [
                 'kind' => 'completed',
+                'completed_reason' => 'demo',
                 'payment' => $payment,
                 'booking' => $booking,
             ];
@@ -382,5 +459,10 @@ class PaymentCheckoutService
             'stripe_session_id' => $sessionId,
             'error' => $exception?->getMessage(),
         ]));
+    }
+
+    private function isZeroAmountBooking(object $booking): bool
+    {
+        return round((float)($booking->price_at_booking ?? 0), 2) === 0.0;
     }
 }

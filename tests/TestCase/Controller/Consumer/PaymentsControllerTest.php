@@ -159,6 +159,43 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         $this->assertSame(['cs_repeat_once'], FakeStripeCheckoutGateway::$retrievedSessionIds);
     }
 
+    public function testZeroAmountBookingDoesNotRedirectToStripe(): void
+    {
+        Configure::write('Stripe.secret_key', null);
+        Configure::write('Payments.demo_mode', false);
+        Configure::write('Payments.gateway_class', FakeStripeCheckoutGateway::class);
+
+        $bookingId = $this->insertBooking([
+            'class_id' => 2,
+            'student_id' => 1,
+            'parent_id' => null,
+            'booking_status' => 'pending',
+            'price_at_booking' => 0.00,
+            'booking_date' => '2026-04-10 12:00:00',
+            'created_at' => '2026-04-10 12:00:00',
+            'updated_at' => '2026-04-10 12:00:00',
+        ]);
+
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/process/' . $bookingId);
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer/bookings');
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->find()
+            ->where(['Payments.booking_id' => $bookingId])
+            ->firstOrFail();
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get($bookingId);
+
+        $this->assertSame('paid', $payment->payment_status);
+        $this->assertSame(0.0, (float)$payment->amount);
+        $this->assertSame('confirmed', $booking->booking_status);
+        $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
+    }
+
     private function insertBooking(array $values): int
     {
         $connection = FactoryLocator::get('Table')->get('Bookings')->getConnection();
