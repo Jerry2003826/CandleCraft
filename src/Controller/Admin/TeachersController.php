@@ -53,7 +53,12 @@ class TeachersController extends AppController
                 'account_status' => 'active',
             ];
 
-            $user = $usersTable->newEntity($userData);
+            $user = $usersTable->newEntity($userData, [
+                'accessibleFields' => [
+                    'user_role' => true,
+                    'account_status' => true,
+                ],
+            ]);
             $teacher = $teachersTable->patchEntity($teacher, [
                 'teacher_name' => $data['teacher_name'] ?? null,
                 'phone_number' => $data['phone_number'] ?? null,

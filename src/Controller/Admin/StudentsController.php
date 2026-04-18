@@ -69,15 +69,25 @@ class StudentsController extends AppController
             ]);
 
             if ($createPortalAccount) {
-                $user = $usersTable->newEntity([
-                    'username' => $portalAccount['username'],
-                    'email' => $portalAccount['email'],
-                    'password_hash' => $portalAccount['password'],
-                    'user_role' => 'student',
-                    'account_status' => $portalAccount['account_status'],
-                    'age_verified_by_admin' => false,
-                    'self_declared_adult' => false,
-                ]);
+                $user = $usersTable->newEntity(
+                    [
+                        'username' => $portalAccount['username'],
+                        'email' => $portalAccount['email'],
+                        'password_hash' => $portalAccount['password'],
+                        'user_role' => 'student',
+                        'account_status' => $portalAccount['account_status'],
+                        'age_verified_by_admin' => false,
+                        'self_declared_adult' => false,
+                    ],
+                    [
+                        'accessibleFields' => [
+                            'user_role' => true,
+                            'account_status' => true,
+                            'age_verified_by_admin' => true,
+                            'self_declared_adult' => true,
+                        ],
+                    ],
+                );
 
                 $portalAccountErrors = $user->getErrors();
                 if ($user->hasErrors()) {

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Event\EventInterface;
+use Cake\Http\Exception\ForbiddenException;
+
 /**
  * Categories Controller
  *
@@ -10,6 +13,16 @@ namespace App\Controller;
  */
 class CategoriesController extends AppController
 {
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+
+        $identity = $this->Authentication->getIdentity();
+        if ($identity && $identity->get('user_role') !== 'admin') {
+            throw new ForbiddenException('Only administrators can manage categories.');
+        }
+    }
+
     /**
      * Index method
      *

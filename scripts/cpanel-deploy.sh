@@ -97,7 +97,7 @@ return [
     'debug' => filter_var(env('DEBUG', $([ "$ENV" = "production" ] && echo "false" || echo "true")), FILTER_VALIDATE_BOOLEAN),
 
     'Security' => [
-        'salt' => env('SECURITY_SALT', '3436c7d7d974eaf95cfabc19255e3d5d122f7c13df7bf0d58aee692cd00bc3bf'),
+        'salt' => env('SECURITY_SALT', '__SALT__'),
     ],
 
     'Datasources' => [
@@ -132,6 +132,11 @@ return [
         'secret_key' => env('STRIPE_SECRET_KEY', null),
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', null),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
+    ],
+
+    'Recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY', null),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY', null),
     ],
 ];
 PHPEOF

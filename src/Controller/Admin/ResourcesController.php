@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Service\ResourceUploadService;
 use Cake\Http\Response;
+use RuntimeException;
 
 class ResourcesController extends AppController
 {
@@ -35,21 +37,30 @@ class ResourcesController extends AppController
     {
         $resourcesTable = $this->fetchTable('LearningResources');
         $resource = $resourcesTable->newEmptyEntity();
+        $uploadService = new ResourceUploadService();
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
             $resource = $resourcesTable->newEntity($data);
 
             $file = $this->request->getUploadedFile('file_upload');
+            $uploadedFilePath = null;
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
-                $filename = time() . '_' . $file->getClientFilename();
-                $file->moveTo(WWW_ROOT . 'uploads' . DS . 'resources' . DS . $filename);
-                $resource->file_path = 'uploads/resources/' . $filename;
+                try {
+                    $uploadedFilePath = $uploadService->storeUploadedFile($file);
+                    $resource->file_path = $uploadedFilePath;
+                } catch (RuntimeException $exception) {
+                    $resource->setError('file_upload', [$exception->getMessage()]);
+                }
             }
 
-            if ($resourcesTable->save($resource)) {
+            if (!$resource->hasErrors() && $resourcesTable->save($resource)) {
                 $this->Flash->success(__('Resource has been added.'));
                 return $this->redirect(['action' => 'index']);
+            }
+
+            if ($uploadedFilePath) {
+                $uploadService->deleteStoredFile($uploadedFilePath);
             }
             $this->Flash->error(__('Could not add resource. Please try again.'));
         }
@@ -79,21 +90,34 @@ class ResourcesController extends AppController
     {
         $resourcesTable = $this->fetchTable('LearningResources');
         $resource = $resourcesTable->get($resourceId);
+        $uploadService = new ResourceUploadService();
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
+            $oldFilePath = $resource->file_path;
             $resource = $resourcesTable->patchEntity($resource, $data);
 
             $file = $this->request->getUploadedFile('file_upload');
+            $uploadedFilePath = null;
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
-                $filename = time() . '_' . $file->getClientFilename();
-                $file->moveTo(WWW_ROOT . 'uploads' . DS . 'resources' . DS . $filename);
-                $resource->file_path = 'uploads/resources/' . $filename;
+                try {
+                    $uploadedFilePath = $uploadService->storeUploadedFile($file);
+                    $resource->file_path = $uploadedFilePath;
+                } catch (RuntimeException $exception) {
+                    $resource->setError('file_upload', [$exception->getMessage()]);
+                }
             }
 
-            if ($resourcesTable->save($resource)) {
+            if (!$resource->hasErrors() && $resourcesTable->save($resource)) {
+                if ($uploadedFilePath && $oldFilePath && $oldFilePath !== $uploadedFilePath) {
+                    $uploadService->deleteStoredFile($oldFilePath);
+                }
                 $this->Flash->success(__('Resource has been updated.'));
                 return $this->redirect(['action' => 'index']);
+            }
+
+            if ($uploadedFilePath) {
+                $uploadService->deleteStoredFile($uploadedFilePath);
             }
             $this->Flash->error(__('Could not update resource. Please try again.'));
         }
@@ -124,8 +148,10 @@ class ResourcesController extends AppController
         $this->request->allowMethod(['post', 'delete']);
         $resourcesTable = $this->fetchTable('LearningResources');
         $resource = $resourcesTable->get($resourceId);
+        $uploadService = new ResourceUploadService();
 
         if ($resourcesTable->delete($resource)) {
+            $uploadService->deleteStoredFile($resource->file_path);
             $this->Flash->success(__('Resource has been deleted.'));
         } else {
             $this->Flash->error(__('Could not delete resource. Please try again.'));

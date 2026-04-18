@@ -17,6 +17,8 @@ declare(strict_types=1);
 namespace App;
 
 use App\Middleware\CsrfRetryMiddleware;
+use App\Middleware\ConditionalAuthenticationMiddleware;
+use App\Middleware\ConditionalCsrfProtectionMiddleware;
 use App\Middleware\HostHeaderMiddleware;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
@@ -96,19 +98,41 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
             ->add(new CsrfRetryMiddleware())
 
-            ->add(new CsrfProtectionMiddleware([
+            ->add(new ConditionalCsrfProtectionMiddleware(new CsrfProtectionMiddleware([
                 'httponly' => true,
                 'skipCheckCallback' => function ($request) {
-                    $path = $request->getPath();
-                    if ($path === '/student/payments/webhook' || $path === '/consumer/payments/webhook') {
+                    $candidates = [
+                        (string)$request->getPath(),
+                        (string)$request->getRequestTarget(),
+                        (string)$request->getUri()->getPath(),
+                    ];
+                    $controller = (string)$request->getParam('controller');
+                    $action = (string)$request->getParam('action');
+
+                    if ($controller === 'StripeWebhooks' && $action === 'checkout') {
                         return true;
+                    }
+
+                    foreach ($candidates as $candidate) {
+                        $normalized = strtok($candidate, '?') ?: '';
+                        $normalized = '/' . ltrim($normalized, '/');
+
+                        if (
+                            in_array($normalized, [
+                                '/stripe/webhook',
+                                '/consumer/payments/webhook',
+                                '/student/payments/webhook',
+                            ], true)
+                        ) {
+                            return true;
+                        }
                     }
 
                     return false;
                 },
-            ]))
+            ])))
 
-            ->add(new AuthenticationMiddleware($this));
+            ->add(new ConditionalAuthenticationMiddleware(new AuthenticationMiddleware($this)));
 
         return $middlewareQueue;
     }

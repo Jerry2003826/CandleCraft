@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Teacher;
 
+use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 
 class AttendanceController extends AppController
@@ -22,21 +23,28 @@ class AttendanceController extends AppController
         $classes = $classesTable->find()
             ->where(['Classes.teacher_id' => $teacher->teacher_id])
             ->contain(['Courses'])
-            ->order(['Classes.start_datetime' => 'DESC'])
+            ->orderBy(['Classes.start_datetime' => 'DESC'])
             ->all();
 
         $students = [];
         $selectedClass = null;
         if ($selectedClassId) {
-            $selectedClass = $classesTable->get($selectedClassId, ['contain' => ['Courses']]);
+            $selectedClass = $classesTable->find()
+                ->where([
+                    'Classes.class_id' => $selectedClassId,
+                    'Classes.teacher_id' => $teacher->teacher_id,
+                ])
+                ->contain(['Courses'])
+                ->firstOrFail();
 
             $bookingsTable = $this->fetchTable('Bookings');
             $students = $bookingsTable->find()
                 ->where([
-                    'Bookings.class_id' => $selectedClassId,
+                    'Bookings.class_id' => $selectedClass->class_id,
                     'Bookings.booking_status IN' => ['pending', 'confirmed', 'completed'],
                 ])
                 ->contain(['Students', 'AttendanceRecords'])
+                ->orderBy(['Bookings.booking_id' => 'ASC'])
                 ->all();
         }
 
@@ -56,9 +64,21 @@ class AttendanceController extends AppController
             ->where(['Teachers.user_id' => $identity?->get('user_id')])
             ->firstOrFail();
 
-        $bookingId = $this->request->getData('booking_id');
-        $status = $this->request->getData('attendance_status');
+        $bookingId = (int)$this->request->getData('booking_id');
+        $status = (string)$this->request->getData('attendance_status');
         $notes = $this->request->getData('attendance_notes', '');
+
+        $allowedStatuses = ['present', 'absent', 'late', 'excused'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            throw new BadRequestException('Invalid attendance status.');
+        }
+
+        $booking = $this->fetchTable('Bookings')->find()
+            ->innerJoinWith('Classes', function ($query) use ($teacher) {
+                return $query->where(['Classes.teacher_id' => $teacher->teacher_id]);
+            })
+            ->where(['Bookings.booking_id' => $bookingId])
+            ->firstOrFail();
 
         $existing = $attendanceRecordsTable->find()
             ->where(['AttendanceRecords.booking_id' => $bookingId])
@@ -75,7 +95,7 @@ class AttendanceController extends AppController
                 'marked_by_teacher_id' => $teacher->teacher_id,
                 'attendance_status' => $status,
                 'attendance_notes' => $notes,
-                'attendance_date' => date('Y-m-d H:i:s'),
+                'attendance_date' => new \Cake\I18n\DateTime(),
             ]);
         }
 
@@ -85,9 +105,7 @@ class AttendanceController extends AppController
             $this->Flash->error(__('Could not save attendance.'));
         }
 
-        $classId = $this->request->getData('class_id');
-
-        return $this->redirect(['action' => 'index', '?' => ['class_id' => $classId]]);
+        return $this->redirect(['action' => 'index', '?' => ['class_id' => $booking->class_id]]);
     }
 
     public function history(): void
@@ -121,7 +139,7 @@ class AttendanceController extends AppController
                     'Classes' => ['Courses'],
                     'AttendanceRecords',
                 ])
-                ->order(['Bookings.booking_id' => 'DESC']);
+                ->orderBy(['Bookings.booking_id' => 'DESC']);
 
             if ($statusFilter) {
                 $query->matching('AttendanceRecords', function ($q) use ($statusFilter) {

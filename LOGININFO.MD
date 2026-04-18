@@ -1,6 +1,8 @@
-Default password for all seeded accounts:
+Local demo login notes:
 
-admin123
+- `ADMIN_SEED_PASSWORD` controls the seeded admin password.
+- Local helper scripts default it to `admin123`.
+- Replace demo credentials before any shared or production deployment.
 
 ------------------------
 Admin Portal

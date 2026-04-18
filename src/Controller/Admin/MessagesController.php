@@ -393,15 +393,25 @@ class MessagesController extends AppController
         $connection->begin();
 
         try {
-            $user = $usersTable->newEntity([
-                'username' => $account['username'] ?? '',
-                'email' => $account['email'] ?? '',
-                'password_hash' => $account['password'] ?? '',
-                'user_role' => $role,
-                'account_status' => $account['account_status'] ?? 'active',
-                'age_verified_by_admin' => false,
-                'self_declared_adult' => false,
-            ]);
+            $user = $usersTable->newEntity(
+                [
+                    'username' => $account['username'] ?? '',
+                    'email' => $account['email'] ?? '',
+                    'password_hash' => $account['password'] ?? '',
+                    'user_role' => $role,
+                    'account_status' => $account['account_status'] ?? 'active',
+                    'age_verified_by_admin' => false,
+                    'self_declared_adult' => false,
+                ],
+                [
+                    'accessibleFields' => [
+                        'user_role' => true,
+                        'account_status' => true,
+                        'age_verified_by_admin' => true,
+                        'self_declared_adult' => true,
+                    ],
+                ],
+            );
 
             if ($user->hasErrors()) {
                 throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'The user account details are invalid.'));

@@ -37,6 +37,9 @@ foreach ($rawSchema as $tableName => $tableSchema) {
 
     $constraints = [];
     foreach ($tableSchema->constraints() as $constraintName) {
+        if (!is_string($constraintName)) {
+            continue;
+        }
         $constraint = $tableSchema->getConstraint($constraintName);
         if ($constraint !== null && ($constraint['type'] ?? null) !== 'check') {
             $constraints[$constraintName] = $constraint;

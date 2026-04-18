@@ -12,10 +12,10 @@ class User extends Entity
         'username' => true,
         'email' => true,
         'password_hash' => true,
-        'user_role' => true,
-        'account_status' => true,
-        'age_verified_by_admin' => true,
-        'self_declared_adult' => true,
+        'user_role' => false,
+        'account_status' => false,
+        'age_verified_by_admin' => false,
+        'self_declared_adult' => false,
         'last_login_at' => true,
         'created_at' => true,
         'updated_at' => true,
@@ -24,6 +24,7 @@ class User extends Entity
         'teacher' => true,
         'student' => true,
         'payment_profiles' => true,
+        '*' => false,
     ];
 
     protected array $_hidden = [

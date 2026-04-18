@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Consumer;
 
+use App\Service\BookingService;
 use Cake\Http\Response;
 
 class BookingsController extends AppController
@@ -74,14 +75,7 @@ class BookingsController extends AppController
         $student = $this->getStudentEntity($identity);
 
         if ($this->request->is('post')) {
-            $result = $this->processBooking(
-                $bookingsTable,
-                $classId,
-                $student->student_id,
-                null,
-                $class,
-                $identity,
-            );
+            $result = $this->processBooking($classId, $student->student_id, null, $class, $identity);
             if ($result) {
                 return $result;
             }
@@ -95,62 +89,12 @@ class BookingsController extends AppController
         return null;
     }
 
-    private function processBooking($bookingsTable, int $classId, int $studentId, ?int $parentId, $class, $identity): ?Response
+    private function processBooking(int $classId, int $studentId, ?int $parentId, $class, $identity): ?Response
     {
-        $existingBooking = $bookingsTable->find()
-            ->where([
-                'Bookings.student_id' => $studentId,
-                'Bookings.class_id' => $classId,
-                'Bookings.booking_status IN' => ['pending', 'confirmed'],
-            ])
-            ->first();
+        try {
+            $result = (new BookingService())->createBookingForStudent($classId, $studentId, $parentId);
+            $booking = $result['booking'];
 
-        if ($existingBooking) {
-            $this->Flash->error(__('This student is already booked for this class.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        $existingAnyStatusBooking = $bookingsTable->find()
-            ->where([
-                'Bookings.student_id' => $studentId,
-                'Bookings.class_id' => $classId,
-            ])
-            ->first();
-
-        if ($existingAnyStatusBooking) {
-            if ($existingAnyStatusBooking->booking_status === 'cancelled') {
-                $existingAnyStatusBooking->booking_status = 'pending';
-                $existingAnyStatusBooking->parent_id = $parentId ?? $existingAnyStatusBooking->parent_id;
-                $existingAnyStatusBooking->price_at_booking = $class->course?->course_price ?? 0;
-                $existingAnyStatusBooking->booking_date = new \Cake\I18n\DateTime();
-
-                if ($bookingsTable->save($existingAnyStatusBooking)) {
-                    $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
-
-                    return $this->redirect([
-                        'prefix' => 'Consumer',
-                        'controller' => 'Payments',
-                        'action' => 'process',
-                        $existingAnyStatusBooking->booking_id,
-                    ]);
-                }
-            }
-
-            $this->Flash->error(__('A booking record for this class already exists and cannot be duplicated.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        $booking = $bookingsTable->newEntity([
-            'class_id' => $classId,
-            'student_id' => $studentId,
-            'parent_id' => $parentId,
-            'booking_status' => 'pending',
-            'price_at_booking' => $class->course?->course_price ?? 0,
-        ]);
-
-        if ($bookingsTable->save($booking)) {
             try {
                 $this->loadComponent('Notification');
                 $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
@@ -163,7 +107,11 @@ class BookingsController extends AppController
             } catch (\Exception $e) {
             }
 
-            $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+            if (!empty($result['reactivated'])) {
+                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+            } else {
+                $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+            }
 
             return $this->redirect([
                 'prefix' => 'Consumer',
@@ -171,9 +119,9 @@ class BookingsController extends AppController
                 'action' => 'process',
                 $booking->booking_id,
             ]);
+        } catch (\RuntimeException $exception) {
+            $this->Flash->error(__($exception->getMessage()));
         }
-
-        $this->Flash->error(__('Could not create booking. Please try again.'));
 
         return null;
     }

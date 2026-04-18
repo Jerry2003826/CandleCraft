@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import platform
+import secrets
 import shutil
 import subprocess
 import sys
@@ -150,6 +151,16 @@ def ensure_app_local() -> None:
     source = ROOT_DIR / "config" / "app_local.example.php"
     if not target.exists():
         target.write_bytes(source.read_bytes())
+    replace_salt_placeholder(target)
+
+
+def replace_salt_placeholder(config_path: Path) -> None:
+    """Replace __SALT__ placeholder with a random hex string when present."""
+    content = config_path.read_text(encoding="utf-8")
+    if "__SALT__" not in content:
+        return
+
+    config_path.write_text(content.replace("__SALT__", secrets.token_hex(32)), encoding="utf-8")
 
 
 def import_sql_file(
@@ -198,6 +209,21 @@ def verify_admin_account(
         "FROM users WHERE email='admin@candlecraft.com';"
     ).encode("utf-8")
     run_command(mysql_args(mysql_cmd, host, port, user, password) + [database], input_bytes=query)
+
+
+def build_runtime_env(config: Mapping[str, Any], admin_seed_password: str) -> dict[str, str]:
+    """Build environment variables used by CakePHP CLI commands."""
+    env = os.environ.copy()
+    env["DATABASE_URL"] = build_database_url(
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
+    )
+    env["ADMIN_SEED_PASSWORD"] = admin_seed_password
+
+    return env
 
 
 def build_database_url(host: str, port: int, user: str, password: str, database: str) -> str:
@@ -343,8 +369,8 @@ def check_env(args: argparse.Namespace) -> None:
 
     print_step("Checking core files")
     required_files = [
-        ROOT_DIR / "config" / "schema" / "academy_management_db.sql",
-        ROOT_DIR / "config" / "schema" / "seed_admin.sql",
+        ROOT_DIR / "config" / "Migrations",
+        ROOT_DIR / "config" / "Seeds" / "AdminSeed.php",
         ROOT_DIR / "bin" / "cake",
     ]
     for file_path in required_files:
@@ -381,6 +407,9 @@ def setup_run(args: argparse.Namespace) -> None:
     print_step("Installing dependencies")
     run_command(["composer", "install"])
 
+    print_step("Ensuring local config file")
+    ensure_app_local()
+
     print_step("Creating database")
     create_database(
         mysql_cmd,
@@ -391,30 +420,14 @@ def setup_run(args: argparse.Namespace) -> None:
         str(config["db_name"]),
     )
 
-    print_step("Importing schema")
-    import_sql_file(
-        mysql_cmd,
-        str(config["db_host"]),
-        int(config["db_port"]),
-        str(config["db_user"]),
-        str(config["db_pass"]),
-        str(config["db_name"]),
-        ROOT_DIR / "config" / "schema" / "academy_management_db.sql",
-    )
+    admin_seed_password = os.getenv("ADMIN_SEED_PASSWORD", "admin123")
+    env = build_runtime_env(config, admin_seed_password)
 
-    print_step("Importing demo seed data")
-    import_sql_file(
-        mysql_cmd,
-        str(config["db_host"]),
-        int(config["db_port"]),
-        str(config["db_user"]),
-        str(config["db_pass"]),
-        str(config["db_name"]),
-        ROOT_DIR / "config" / "schema" / "seed_admin.sql",
-    )
+    print_step("Running database migrations")
+    run_command(["bin/cake", "migrations", "migrate"], env=env)
 
-    print_step("Ensuring local config file")
-    ensure_app_local()
+    print_step("Running admin seed")
+    run_command(["bin/cake", "seeds", "run", "AdminSeed", "-q"], env=env)
 
     print_step("Verifying demo admin account")
     verify_admin_account(
@@ -426,18 +439,9 @@ def setup_run(args: argparse.Namespace) -> None:
         str(config["db_name"]),
     )
 
-    env = os.environ.copy()
-    env["DATABASE_URL"] = build_database_url(
-        str(config["db_host"]),
-        int(config["db_port"]),
-        str(config["db_user"]),
-        str(config["db_pass"]),
-        str(config["db_name"]),
-    )
-
     print_step("Starting CakePHP server")
     print(f"URL: http://localhost:{config['app_port']}")
-    print("Login: admin@candlecraft.com / admin123")
+    print(f"Local demo login: admin@candlecraft.com / {admin_seed_password}")
     run_command(
         ["bin/cake", "server", "-H", str(config["app_host"]), "-p", str(config["app_port"])],
         env=env,

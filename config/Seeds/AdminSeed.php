@@ -8,7 +8,8 @@ class AdminSeed extends BaseSeed
 {
     public function run(): void
     {
-        $hashedPassword = (new DefaultPasswordHasher())->hash('admin123');
+        $seedPassword = (string)(env('ADMIN_SEED_PASSWORD') ?: 'admin123');
+        $hashedPassword = (new DefaultPasswordHasher())->hash($seedPassword);
         $now = date('Y-m-d H:i:s');
 
         $usersData = [
@@ -33,7 +34,7 @@ class AdminSeed extends BaseSeed
                 'user_id' => $userId,
                 'admin_name' => 'System Administrator',
                 'is_super_admin' => true,
-                'notes' => 'Default admin account',
+                'notes' => 'Seeded admin account. Rotate credentials outside local demo environments.',
                 'created_at' => $now,
                 'updated_at' => $now,
             ],

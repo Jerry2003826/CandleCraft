@@ -18,20 +18,31 @@ composer install
 
 ### Step 2: Setup Database
 
-Create the database and import schema + seed data:
+Create the database, run migrations, and seed the local demo admin:
 
 ```bash
 mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS academy_management_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -proot academy_management_db < config/schema/academy_management_db.sql
-mysql -u root -proot academy_management_db < config/schema/seed_admin.sql
+cp config/app_local.example.php config/app_local.php   # Only if composer did not create it for you
+composer run-script post-install-cmd --no-interaction
+bin/cake migrations migrate
+ADMIN_SEED_PASSWORD=admin123 bin/cake seeds run AdminSeed -q
 ```
 
-> If your MySQL credentials are different from `root/root`, edit `config/app_local.php` lines 50-53.
+PowerShell:
+
+```powershell
+Copy-Item config/app_local.example.php config/app_local.php -ErrorAction SilentlyContinue
+composer run-script post-install-cmd --no-interaction
+bin/cake migrations migrate
+$env:ADMIN_SEED_PASSWORD = "admin123"
+bin/cake seeds run AdminSeed -q
+```
+
+> `config/schema/academy_management_db.sql` and `config/schema/seed_admin.sql` are kept as legacy reference files only. New environments should use migrations + seeds.
 
 ### Step 3: Configure & Run
 
 ```bash
-cp config/app_local.example.php config/app_local.php   # Only if app_local.php is missing
 bin/cake server
 ```
 
@@ -40,7 +51,9 @@ Visit [http://localhost:8765](http://localhost:8765) and login:
 | Field    | Value                   |
 |:---------|:------------------------|
 | Email    | `admin@candlecraft.com` |
-| Password | `admin123`              |
+| Password | `admin123` (local demo only) |
+
+Change seeded credentials outside local development. Production deployments must provide a unique `SECURITY_SALT`, database password, Stripe secrets, reCAPTCHA secrets, and a non-default admin password.
 
 ## One-Click Setup (Auto Detect OS)
 
@@ -138,7 +151,7 @@ python3 scripts/dev-setup.py setup-run --mysql-cmd "C:\xampp\mysql\bin\mysql.exe
 
 ## Database Configuration
 
-Edit `config/app_local.php`:
+Edit the generated `config/app_local.php`:
 
 ```php
 'Datasources' => [
@@ -176,7 +189,9 @@ templates/
 │   └── login.php        # Login layout
 config/
 ├── schema/
-│   ├── academy_management_db.sql  # Full database schema (14 tables)
-│   └── seed_admin.sql             # Sample data + admin account
-└── routes.php           # Routing config
+│   ├── academy_management_db.sql  # Legacy schema reference
+│   └── seed_admin.sql             # Legacy sample seed reference
+├── Migrations/                    # Source of truth for schema changes
+├── Seeds/                         # Source of truth for local seed data
+└── routes.php                     # Routing config
 ```

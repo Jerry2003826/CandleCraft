@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Teacher;
 
+use App\Service\ResourceUploadService;
+use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Response;
+use RuntimeException;
 
 class ResourcesController extends AppController
 {
@@ -61,27 +64,34 @@ class ResourcesController extends AppController
         $teacher = $this->getTeacher();
         $resourcesTable = $this->fetchTable('LearningResources');
         $resource = $resourcesTable->newEmptyEntity();
+        $uploadService = new ResourceUploadService();
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
+            unset($data['uploaded_by_teacher_id']);
+            $this->assertTeacherOwnsClass($teacher->teacher_id, (int)($data['class_id'] ?? 0));
             $data['uploaded_by_teacher_id'] = $teacher->teacher_id;
             $resource = $resourcesTable->newEntity($data);
 
             $file = $this->request->getUploadedFile('file_upload');
+            $uploadedFilePath = null;
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
-                $uploadDir = WWW_ROOT . 'uploads' . DS . 'resources';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                try {
+                    $uploadedFilePath = $uploadService->storeUploadedFile($file);
+                    $resource->file_path = $uploadedFilePath;
+                } catch (RuntimeException $exception) {
+                    $resource->setError('file_upload', [$exception->getMessage()]);
                 }
-                $filename = time() . '_' . $file->getClientFilename();
-                $file->moveTo($uploadDir . DS . $filename);
-                $resource->file_path = 'uploads/resources/' . $filename;
             }
 
-            if ($resourcesTable->save($resource)) {
+            if (!$resource->hasErrors() && $resourcesTable->save($resource)) {
                 $this->Flash->success(__('Resource has been added.'));
 
                 return $this->redirect(['action' => 'index']);
+            }
+
+            if ($uploadedFilePath) {
+                $uploadService->deleteStoredFile($uploadedFilePath);
             }
             $this->Flash->error(__('Could not add resource. Please try again.'));
         }
@@ -106,6 +116,7 @@ class ResourcesController extends AppController
     {
         $teacher = $this->getTeacher();
         $resourcesTable = $this->fetchTable('LearningResources');
+        $uploadService = new ResourceUploadService();
 
         $resource = $resourcesTable->find()
             ->where([
@@ -115,23 +126,34 @@ class ResourcesController extends AppController
             ->firstOrFail();
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $resource = $resourcesTable->patchEntity($resource, $this->request->getData());
+            $data = $this->request->getData();
+            unset($data['uploaded_by_teacher_id']);
+            $this->assertTeacherOwnsClass($teacher->teacher_id, (int)($data['class_id'] ?? $resource->class_id));
+            $oldFilePath = $resource->file_path;
+            $resource = $resourcesTable->patchEntity($resource, $data);
 
             $file = $this->request->getUploadedFile('file_upload');
+            $uploadedFilePath = null;
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
-                $uploadDir = WWW_ROOT . 'uploads' . DS . 'resources';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                try {
+                    $uploadedFilePath = $uploadService->storeUploadedFile($file);
+                    $resource->file_path = $uploadedFilePath;
+                } catch (RuntimeException $exception) {
+                    $resource->setError('file_upload', [$exception->getMessage()]);
                 }
-                $filename = time() . '_' . $file->getClientFilename();
-                $file->moveTo($uploadDir . DS . $filename);
-                $resource->file_path = 'uploads/resources/' . $filename;
             }
 
-            if ($resourcesTable->save($resource)) {
+            if (!$resource->hasErrors() && $resourcesTable->save($resource)) {
+                if ($uploadedFilePath && $oldFilePath && $oldFilePath !== $uploadedFilePath) {
+                    $uploadService->deleteStoredFile($oldFilePath);
+                }
                 $this->Flash->success(__('Resource has been updated.'));
 
                 return $this->redirect(['action' => 'index']);
+            }
+
+            if ($uploadedFilePath) {
+                $uploadService->deleteStoredFile($uploadedFilePath);
             }
             $this->Flash->error(__('Could not update resource. Please try again.'));
         }
@@ -165,12 +187,26 @@ class ResourcesController extends AppController
             ])
             ->firstOrFail();
 
+        $uploadService = new ResourceUploadService();
         if ($resourcesTable->delete($resource)) {
+            $uploadService->deleteStoredFile($resource->file_path);
             $this->Flash->success(__('Resource has been deleted.'));
         } else {
             $this->Flash->error(__('Could not delete resource. Please try again.'));
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function assertTeacherOwnsClass(int $teacherId, int $classId): void
+    {
+        $ownsClass = $this->fetchTable('Classes')->exists([
+            'Classes.class_id' => $classId,
+            'Classes.teacher_id' => $teacherId,
+        ]);
+
+        if (!$ownsClass) {
+            throw new ForbiddenException('Class does not belong to this teacher.');
+        }
     }
 }

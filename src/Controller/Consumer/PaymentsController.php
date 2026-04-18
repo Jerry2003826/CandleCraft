@@ -9,12 +9,6 @@ use Cake\Routing\Router;
 
 class PaymentsController extends AppController
 {
-    public function beforeFilter(\Cake\Event\EventInterface $event): void
-    {
-        parent::beforeFilter($event);
-        $this->Authentication->addUnauthenticatedActions(['webhook']);
-    }
-
     private function isStripeConfigured(): bool
     {
         $key = Configure::read('Stripe.secret_key');
@@ -214,35 +208,34 @@ class PaymentsController extends AppController
     {
         $sessionId = $this->request->getQuery('session_id');
         $paymentsTable = $this->fetchTable('Payments');
-        $bookingsTable = $this->fetchTable('Bookings');
+        $identity = $this->Authentication->getIdentity();
+        $student = $this->getStudentForIdentity($identity);
+
+        if (!is_string($sessionId) || $sessionId === '') {
+            $this->Flash->error(__('Payment session could not be found.'));
+
+            return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
+        }
 
         $payment = $paymentsTable->find()
+            ->contain(['Bookings'])
+            ->matching('Bookings', function ($query) use ($student) {
+                return $query->where(['Bookings.student_id' => $student->student_id]);
+            })
             ->where(['Payments.transaction_reference' => $sessionId])
             ->first();
 
-        if ($payment && $payment->payment_status !== 'paid') {
-            \Stripe\Stripe::setApiKey(Configure::read('Stripe.secret_key'));
-            try {
-                $session = \Stripe\Checkout\Session::retrieve($sessionId);
-                if ($session->payment_status === 'paid') {
-                    $payment->payment_status = 'paid';
-                    $payment->payment_date = new \Cake\I18n\DateTime();
-                    $payment->notes = json_encode([
-                        'stripe_checkout' => true,
-                        'payment_intent' => $session->payment_intent,
-                        'source' => 'consumer_portal',
-                    ]);
-                    $paymentsTable->save($payment);
+        if (!$payment) {
+            $this->Flash->error(__('Payment session not found for your account.'));
 
-                    $booking = $bookingsTable->get($payment->booking_id);
-                    $booking->booking_status = 'confirmed';
-                    $bookingsTable->save($booking);
-                }
-            } catch (\Exception $e) {
-            }
+            return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->success(__('Payment completed successfully!'));
+        if ($payment->payment_status === 'paid') {
+            $this->Flash->success(__('Payment completed successfully!'));
+        } else {
+            $this->Flash->info(__('Payment received. Confirmation will appear shortly once Stripe finishes processing the webhook.'));
+        }
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
     }
@@ -252,48 +245,6 @@ class PaymentsController extends AppController
         $this->Flash->warning(__('Payment was cancelled. Booking remains pending.'));
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
-    }
-
-    public function webhook(): Response
-    {
-        $this->request->allowMethod(['post']);
-        $payload = $this->request->getBody()->getContents();
-        $sigHeader = $this->request->getHeaderLine('Stripe-Signature');
-        $endpointSecret = Configure::read('Stripe.webhook_secret');
-
-        try {
-            $event = \Stripe\Webhook::constructEvent($payload, $sigHeader, $endpointSecret);
-        } catch (\UnexpectedValueException $e) {
-            return $this->response->withStatus(400);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            return $this->response->withStatus(400);
-        }
-
-        if ($event->type === 'checkout.session.completed') {
-            $session = $event->data->object;
-            $paymentsTable = $this->fetchTable('Payments');
-            $bookingsTable = $this->fetchTable('Bookings');
-
-            $payment = $paymentsTable->find()
-                ->where(['Payments.transaction_reference' => $session->id])
-                ->first();
-
-            if ($payment && $payment->payment_status !== 'paid') {
-                $payment->payment_status = 'paid';
-                $payment->payment_date = new \Cake\I18n\DateTime();
-                $payment->notes = json_encode([
-                    'stripe_checkout' => true,
-                    'payment_intent' => $session->payment_intent,
-                ]);
-                $paymentsTable->save($payment);
-
-                $booking = $bookingsTable->get($payment->booking_id);
-                $booking->booking_status = 'confirmed';
-                $bookingsTable->save($booking);
-            }
-        }
-
-        return $this->response->withType('application/json')->withStringBody(json_encode(['received' => true]));
     }
 
     public function receipt(?int $paymentId = null): ?Response

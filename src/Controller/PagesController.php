@@ -18,6 +18,7 @@ namespace App\Controller;
 
 use Cake\Core\Configure;
 use Cake\Event\EventInterface;
+use Cake\Http\Client;
 use Cake\I18n\DateTime;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Exception\NotFoundException;
@@ -199,21 +200,29 @@ class PagesController extends AppController
             return false;
         }
 
-        $secretKey = '6Ld-GZosAAAAAKJt-HlWj0eXlDG8EROq_R3cbQ1b';
-        $verify = @file_get_contents(
-            'https://www.google.com/recaptcha/api/siteverify?secret=' .
-            urlencode($secretKey) .
-            '&response=' .
-            urlencode($recaptchaResponse),
-        );
-
-        if ($verify === false) {
+        $secretKey = (string)Configure::read('Recaptcha.secret_key');
+        if ($secretKey === '') {
             return false;
         }
 
-        $captchaSuccess = json_decode($verify);
+        try {
+            $client = new Client(['timeout' => 3]);
+            $response = $client->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret' => $secretKey,
+                'response' => $recaptchaResponse,
+                'remoteip' => $this->request->clientIp(),
+            ]);
+        } catch (\Throwable $exception) {
+            return false;
+        }
 
-        return (bool)($captchaSuccess->success ?? false);
+        if (!$response->isOk()) {
+            return false;
+        }
+
+        $captchaSuccess = $response->getJson();
+
+        return (bool)($captchaSuccess['success'] ?? false);
     }
 
     private function normaliseDeclaredAge(mixed $declaredAge): ?int
@@ -247,17 +256,6 @@ class PagesController extends AppController
         }
 
         return implode("\n", $parts);
-    }
-
-    private function buildCaptchaChallenge(): array
-    {
-        $left = random_int(2, 9);
-        $right = random_int(1, 8);
-
-        return [
-            'question' => sprintf('%d + %d = ?', $left, $right),
-            'answer' => $left + $right,
-        ];
     }
 
     /**

@@ -53,6 +53,15 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'home']);
         $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'contact']);
         $builder->connect('/request-access', ['controller' => 'Pages', 'action' => 'requestAccess']);
+        $builder
+            ->connect('/consumer/payments/webhook', ['controller' => 'LegacyEndpoints', 'action' => 'removedStripeWebhook'])
+            ->setMethods(['POST']);
+        $builder
+            ->connect('/student/payments/webhook', ['controller' => 'LegacyEndpoints', 'action' => 'removedStripeWebhook'])
+            ->setMethods(['POST']);
+        $builder
+            ->connect('/stripe/webhook', ['controller' => 'StripeWebhooks', 'action' => 'checkout'])
+            ->setMethods(['POST']);
         $builder->connect('/courses', ['controller' => 'Courses', 'action' => 'index']);
         $builder->connect('/courses/{id}', ['controller' => 'Courses', 'action' => 'view'])->setPass(['id']);
         $builder->connect('/login', ['controller' => 'Users', 'action' => 'login']);

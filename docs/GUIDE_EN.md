@@ -90,7 +90,7 @@ This command will:
 
 1. install Composer dependencies
 2. create the database
-3. import schema and demo seed data
+3. run migrations and seed the local demo admin
 4. verify the demo admin account
 5. start the app server
 
@@ -98,7 +98,9 @@ This command will:
 
 - URL: `http://localhost:8765`
 - Email: `admin@candlecraft.com`
-- Password: `admin123`
+- Password: `admin123` (local demo default from `ADMIN_SEED_PASSWORD`)
+
+This project now uses CakePHP migrations and seeds as the database source of truth. `config/schema/*.sql` is kept only as legacy reference data.
 
 ## Optional: Custom Database Credentials
 

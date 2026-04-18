@@ -19,7 +19,7 @@ class AvailabilityController extends AppController
 
         $availabilities = $availabilitiesTable->find()
             ->where(['TeacherAvailabilities.teacher_id' => $teacher->teacher_id])
-            ->order(['TeacherAvailabilities.day_of_week' => 'ASC', 'TeacherAvailabilities.start_time' => 'ASC'])
+            ->orderBy(['TeacherAvailabilities.day_of_week' => 'ASC', 'TeacherAvailabilities.start_time' => 'ASC'])
             ->all();
 
         $daysMap = [
@@ -67,39 +67,49 @@ class AvailabilityController extends AppController
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
-
-            $availabilitiesTable->deleteAll(['TeacherAvailabilities.teacher_id' => $teacher->teacher_id]);
-
-            $saved = true;
+            $entities = [];
+            $hasValidationErrors = false;
             if (!empty($data['slots'])) {
                 foreach ($data['slots'] as $slot) {
-                    if (!empty($slot['day_of_week']) && !empty($slot['start_time']) && !empty($slot['end_time'])) {
-                        $availability = $availabilitiesTable->newEntity([
-                            'teacher_id' => $teacher->teacher_id,
-                            'day_of_week' => (int)$slot['day_of_week'],
-                            'start_time' => $slot['start_time'],
-                            'end_time' => $slot['end_time'],
-                            'is_available' => true,
-                        ]);
-
-                        if (!$availabilitiesTable->save($availability)) {
-                            $saved = false;
-                        }
+                    if (empty($slot['day_of_week']) || empty($slot['start_time']) || empty($slot['end_time'])) {
+                        continue;
                     }
+
+                    $availability = $availabilitiesTable->newEntity([
+                        'teacher_id' => $teacher->teacher_id,
+                        'day_of_week' => (int)$slot['day_of_week'],
+                        'start_time' => $slot['start_time'],
+                        'end_time' => $slot['end_time'],
+                        'is_available' => true,
+                    ]);
+
+                    if ($availability->hasErrors()) {
+                        $hasValidationErrors = true;
+                    }
+                    $entities[] = $availability;
                 }
             }
 
-            if ($saved) {
+            if ($hasValidationErrors) {
+                $this->Flash->error(__('Could not update schedule. Please review the submitted time slots.'));
+            } else {
+                $connection = $availabilitiesTable->getConnection();
+                $connection->transactional(function () use ($availabilitiesTable, $teacher, $entities): void {
+                    $availabilitiesTable->deleteAll(['TeacherAvailabilities.teacher_id' => $teacher->teacher_id]);
+                    foreach ($entities as $entity) {
+                        $availabilitiesTable->saveOrFail($entity);
+                    }
+                });
+
                 $this->Flash->success(__('Schedule updated successfully.'));
 
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('Could not update schedule. Please try again.'));
         }
 
         $existingSlots = $availabilitiesTable->find()
             ->where(['TeacherAvailabilities.teacher_id' => $teacher->teacher_id])
-            ->order(['TeacherAvailabilities.day_of_week' => 'ASC', 'TeacherAvailabilities.start_time' => 'ASC'])
+            ->orderBy(['TeacherAvailabilities.day_of_week' => 'ASC', 'TeacherAvailabilities.start_time' => 'ASC'])
             ->all();
 
         $this->set(compact('daysMap', 'existingSlots'));
