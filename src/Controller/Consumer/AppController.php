@@ -5,6 +5,7 @@ namespace App\Controller\Consumer;
 
 use App\Controller\AppController as BaseAppController;
 use Cake\Event\EventInterface;
+use Cake\Http\Response;
 
 class AppController extends BaseAppController
 {
@@ -20,11 +21,20 @@ class AppController extends BaseAppController
         $identity = $this->Authentication->getIdentity();
         $this->userRole = $identity ? (string)$identity->get('user_role') : '';
 
-        if (!$identity || $this->userRole !== 'student') {
-            $this->Flash->error(__('Please sign in with a student account to continue.'));
-            $this->Authentication->logout();
-            $event->stopPropagation();
-            $this->setResponse($this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']));
+        if (!$identity) {
+            $this->shortCircuitRequest(
+                $event,
+                $this->rejectUnauthenticatedAccess('Please sign in with a student account to continue.')
+            );
+
+            return;
+        }
+
+        if ($this->userRole !== 'student') {
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a student account to continue.')
+            );
 
             return;
         }
@@ -37,8 +47,10 @@ class AppController extends BaseAppController
         if (!$student) {
             $this->Flash->error(__('Your student profile could not be found. Please contact an administrator.'));
             $this->Authentication->logout();
-            $event->stopPropagation();
-            $this->setResponse($this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']));
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+            );
 
             return;
         }
@@ -46,7 +58,12 @@ class AppController extends BaseAppController
         $this->declaredAge = $this->determineDeclaredAge($student);
         $this->ageVerifiedByAdmin = (bool)($student->user?->age_verified_by_admin ?? false);
         $this->bookingAccessEnabled = $this->ageVerifiedByAdmin;
-        $this->enforceAgeRestrictions($event);
+        $restrictedResponse = $this->enforceAgeRestrictions();
+        if ($restrictedResponse !== null) {
+            $this->shortCircuitRequest($event, $restrictedResponse);
+
+            return;
+        }
 
         $this->viewBuilder()->setLayout('portal');
         $this->set('portalContext', $this->buildPortalContext());
@@ -72,7 +89,7 @@ class AppController extends BaseAppController
         return (int)$dob->diff($now)->y;
     }
 
-    private function enforceAgeRestrictions(EventInterface $event): void
+    private function enforceAgeRestrictions(): ?Response
     {
         $controller = $this->request->getParam('controller');
         $action = $this->request->getParam('action');
@@ -88,11 +105,10 @@ class AppController extends BaseAppController
             && in_array($action, $restricted[$controller], true)
         ) {
             $this->Flash->warning(__('Your adult verification is still pending. You can browse courses, but booking and payment stay locked until an administrator confirms you are 18 or older.'));
-            $event->stopPropagation();
-            $this->setResponse($this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']));
-
-            return;
+            return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']);
         }
+
+        return null;
     }
 
     private function buildPortalContext(): array

@@ -13,11 +13,20 @@ class AppController extends BaseAppController
         parent::beforeFilter($event);
 
         $identity = $this->Authentication->getIdentity();
-        if (!$identity || $identity->get('user_role') !== 'teacher') {
-            $this->Flash->error(__('Please sign in with a teacher account to continue.'));
-            $this->Authentication->logout();
-            $event->stopPropagation();
-            $this->setResponse($this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']));
+        if (!$identity) {
+            $this->shortCircuitRequest(
+                $event,
+                $this->rejectUnauthenticatedAccess('Please sign in with a teacher account to continue.')
+            );
+
+            return;
+        }
+
+        if ($identity->get('user_role') !== 'teacher') {
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a teacher account to continue.')
+            );
 
             return;
         }

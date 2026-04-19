@@ -13,11 +13,20 @@ class AppController extends BaseAppController
         parent::beforeFilter($event);
 
         $identity = $this->Authentication->getIdentity();
-        if (!$identity || $identity->get('user_role') !== 'admin') {
-            $this->Flash->error(__('You do not have permission to access the admin area.'));
-            $this->Authentication->logout();
-            $event->stopPropagation();
-            $this->setResponse($this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']));
+        if (!$identity) {
+            $this->shortCircuitRequest(
+                $event,
+                $this->rejectUnauthenticatedAccess('You do not have permission to access the admin area.')
+            );
+
+            return;
+        }
+
+        if ($identity->get('user_role') !== 'admin') {
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirectAuthenticatedRoleMismatch($identity, 'You do not have permission to access the admin area.')
+            );
 
             return;
         }

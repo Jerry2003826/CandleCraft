@@ -25,7 +25,7 @@ class DashboardController extends AppController
                     'AttendanceRecords',
                 ],
             ])
-            ->order(['Classes.start_datetime' => 'ASC'])
+            ->orderBy(['Classes.start_datetime' => 'ASC'])
             ->all();
 
         $classCount = $classes->count();

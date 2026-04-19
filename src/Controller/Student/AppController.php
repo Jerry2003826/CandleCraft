@@ -13,7 +13,9 @@ class AppController extends BaseAppController
         parent::beforeFilter($event);
 
         // Legacy Student prefix: redirect to Consumer portal
-        $event->stopPropagation();
-        $this->setResponse($this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']));
+        $this->shortCircuitRequest(
+            $event,
+            $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'])
+        );
     }
 }

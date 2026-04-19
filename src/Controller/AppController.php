@@ -17,6 +17,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Controller\Controller;
+use Cake\Event\EventInterface;
+use Cake\Http\Response;
 
 /**
  * Application Controller
@@ -43,5 +45,54 @@ class AppController extends Controller
 
         $this->loadComponent('Flash');
         $this->loadComponent('Authentication.Authentication');
+    }
+
+    protected function rejectUnauthenticatedAccess(string $message): Response
+    {
+        $this->Flash->error(__($message));
+
+        return $this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']);
+    }
+
+    protected function redirectAuthenticatedRoleMismatch(mixed $identity, string $message): Response
+    {
+        $role = $this->identityRole($identity);
+        if ($role === '') {
+            return $this->rejectUnauthenticatedAccess($message);
+        }
+
+        $this->Flash->error(__($message));
+
+        return $this->redirect($this->dashboardRouteForRole($role));
+    }
+
+    private function identityRole(mixed $identity): string
+    {
+        if (!is_object($identity) || !method_exists($identity, 'get')) {
+            return '';
+        }
+
+        return (string)$identity->get('user_role');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dashboardRouteForRole(string $role): array
+    {
+        return match ($role) {
+            'admin' => ['prefix' => 'Admin', 'controller' => 'Dashboard', 'action' => 'index'],
+            'teacher' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
+            'parent' => ['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index'],
+            'student' => ['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'],
+            default => ['prefix' => false, 'controller' => 'Users', 'action' => 'login'],
+        };
+    }
+
+    protected function shortCircuitRequest(EventInterface $event, Response $response): void
+    {
+        $event->stopPropagation();
+        $event->setResult($response);
+        $this->setResponse($response);
     }
 }
