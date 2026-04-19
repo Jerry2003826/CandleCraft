@@ -5,7 +5,9 @@ namespace App\Controller\Consumer;
 
 use App\Service\BookingCancellationService;
 use App\Service\BookingService;
+use Cake\I18n\DateTime;
 use Cake\Http\Response;
+use Cake\Log\Log;
 use RuntimeException;
 
 class BookingsController extends AppController
@@ -26,11 +28,10 @@ class BookingsController extends AppController
                 'Payments',
                 'AttendanceRecords',
             ])
-            ->order(['Bookings.booking_date' => 'DESC'])
+            ->orderBy(['Bookings.booking_date' => 'DESC'])
             ->all();
 
-        $weekStartParam = $this->request->getQuery('week_start');
-        $ref = $weekStartParam ? new \Cake\I18n\DateTime($weekStartParam) : new \Cake\I18n\DateTime('now');
+        $ref = $this->resolveWeekReference($this->request->getQuery('week_start'));
         $dow = (int)$ref->format('w');
         $weekStart = $ref->modify("-{$dow} days")->startOfDay();
         $weekEnd = $weekStart->modify('+6 days');
@@ -106,7 +107,13 @@ class BookingsController extends AppController
                     $className,
                     $schedule,
                 );
-            } catch (\Exception $e) {
+            } catch (\Throwable $exception) {
+                Log::warning('Booking confirmation notification failed.', [
+                    'booking_id' => $booking->booking_id ?? null,
+                    'student_id' => $studentId,
+                    'portal' => 'consumer',
+                    'error' => $exception->getMessage(),
+                ]);
             }
 
             if (!empty($result['reactivated'])) {
@@ -209,5 +216,18 @@ class BookingsController extends AppController
         }
 
         return $calendarEvents;
+    }
+
+    private function resolveWeekReference(mixed $weekStartParam): DateTime
+    {
+        if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
+            return new DateTime('now');
+        }
+
+        try {
+            return new DateTime($weekStartParam);
+        } catch (\Throwable) {
+            return new DateTime('now');
+        }
     }
 }

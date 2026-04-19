@@ -62,11 +62,11 @@ $this->assign('title', 'Learning Center');
                                         </div>
                                         <div>
                                             <?php if ($resource->resource_type === 'link' && $resource->resource_url): ?>
-                                                <a href="<?= h($resource->resource_url) ?>" target="_blank" class="admin-btn-secondary" style="padding: 6px 16px; font-size: 13px;">
+                                                <a href="<?= h($resource->resource_url) ?>" target="_blank" rel="noopener noreferrer" class="admin-btn-secondary" style="padding: 6px 16px; font-size: 13px;">
                                                     <i class="bi bi-box-arrow-up-right me-1"></i> Open
                                                 </a>
                                             <?php elseif ($resource->file_path): ?>
-                                                <a href="<?= $this->Url->build('/' . $resource->file_path) ?>" target="_blank" class="admin-btn-secondary" style="padding: 6px 16px; font-size: 13px;">
+                                                <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" class="admin-btn-secondary" style="padding: 6px 16px; font-size: 13px;">
                                                     <i class="bi bi-download me-1"></i> Download
                                                 </a>
                                             <?php else: ?>

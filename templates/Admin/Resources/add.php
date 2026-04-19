@@ -57,7 +57,7 @@ $this->assign('title', 'Add Resource');
                     <label for="resource-status" class="admin-form-label">Status</label>
                     <?= $this->Form->select('resource_status', [
                         'active' => 'Active', 
-                        'inactive' => 'Inactive'
+                        'archived' => 'Archived'
                     ], [
                         'id' => 'resource-status', 
                         'default' => 'active',

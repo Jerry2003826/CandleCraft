@@ -502,8 +502,8 @@ for ENV in dev production review; do
 
     ENV_SALT="$(generate_salt)"
     DB_NAME="${REMOTE_USER}_${ENV}_db"
-    UPLOADS_ROOT="${REMOTE_HOME}/public_html/${SUBDIR}/uploads/resources"
-    UPLOADS_URL_PREFIX="/${SUBDIR}/uploads/resources"
+    UPLOADS_ROOT="${REMOTE_HOME}/${ENV}_app/storage/resources"
+    UPLOADS_URL_PREFIX="/resources"
 
     write_app_local "${ENV_DIR}/config/app_local.template.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" false "${UPLOADS_ROOT}" "${UPLOADS_URL_PREFIX}"
 

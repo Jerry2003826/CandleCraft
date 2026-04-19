@@ -85,7 +85,7 @@ $this->assign('title', 'Edit Resource');
                     ]) ?>
                     <?php if ($resource->file_path): ?>
                         <p style="font-size: 12px; color: var(--admin-text-secondary); margin-top: 8px;">
-                            Current file: <a href="/<?= h($resource->file_path) ?>" target="_blank" style="color: var(--admin-brand-icon);"><?= h(basename($resource->file_path)) ?></a>
+                            Current file: <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" style="color: var(--admin-brand-icon);"><?= h(basename($resource->file_path)) ?></a>
                         </p>
                     <?php endif; ?>
                 </div>

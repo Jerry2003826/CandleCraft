@@ -57,7 +57,7 @@ $this->assign('title', 'Edit Resource');
                     <label for="resource-status" class="admin-form-label">Status</label>
                     <?= $this->Form->select('resource_status', [
                         'active' => 'Active', 
-                        'inactive' => 'Inactive'
+                        'archived' => 'Archived'
                     ], [
                         'id' => 'resource-status', 
                         'class' => 'admin-form-select'
@@ -100,7 +100,7 @@ $this->assign('title', 'Edit Resource');
                     ]) ?>
                     <?php if ($resource->file_path): ?>
                         <p style="font-size: 12px; color: var(--admin-text-secondary); margin-top: 8px;">
-                            Current file: <?= h($resource->file_path) ?>
+                            Current file: <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" style="color: var(--admin-brand-icon);"><?= h(basename($resource->file_path)) ?></a>
                         </p>
                     <?php endif; ?>
                 </div>

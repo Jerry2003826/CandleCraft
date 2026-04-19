@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\LearningResourcesTable;
+use Cake\Core\Configure;
 use Cake\TestSuite\TestCase;
 
 class LearningResourcesTableTest extends TestCase
@@ -71,5 +72,22 @@ class LearningResourcesTableTest extends TestCase
         $this->assertNotEmpty($resource->resource_id);
         $this->assertGreaterThan(1, (int)$resource->resource_id);
         $this->assertNotEmpty($resource->uploaded_at);
+    }
+
+    public function testLegacyPublicUploadPathRemainsValidForExistingResources(): void
+    {
+        Configure::write('Uploads.resources_url_prefix', '/resources');
+
+        $resource = $this->LearningResources->newEntity([
+            'class_id' => 1,
+            'resource_name' => 'Legacy upload path',
+            'resource_type' => 'document',
+            'file_path' => 'uploads/resources/legacy-guide.pdf',
+            'resource_status' => 'active',
+        ]);
+
+        $this->assertEmpty($resource->getErrors()['file_path'] ?? []);
+
+        Configure::delete('Uploads.resources_url_prefix');
     }
 }

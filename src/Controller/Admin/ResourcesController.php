@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Service\ResourceUploadService;
+use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 use RuntimeException;
 
@@ -14,7 +15,7 @@ class ResourcesController extends AppController
         $resourcesTable = $this->fetchTable('LearningResources');
         $query = $resourcesTable->find()
             ->contain(['Classes' => ['Courses']])
-            ->order(['LearningResources.uploaded_at' => 'DESC']);
+            ->orderBy(['LearningResources.uploaded_at' => 'DESC']);
 
         $filter = $this->request->getQuery('class_id');
         if ($filter) {
@@ -26,7 +27,7 @@ class ResourcesController extends AppController
         $classesTable = $this->fetchTable('Classes');
         $classes = $classesTable->find()
             ->contain(['Courses'])
-            ->order(['Classes.class_code' => 'ASC'])
+            ->orderBy(['Classes.class_code' => 'ASC'])
             ->all();
 
         $this->set(compact('resources', 'classes', 'filter'));
@@ -41,7 +42,11 @@ class ResourcesController extends AppController
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
-            $resource = $resourcesTable->newEntity($this->buildAdminPayload($data));
+            $resource = $resourcesTable->newEntity($this->buildAdminPayload($data), [
+                'accessibleFields' => [
+                    'resource_status' => true,
+                ],
+            ]);
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -95,7 +100,11 @@ class ResourcesController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
             $oldFilePath = $resource->file_path;
-            $resource = $resourcesTable->patchEntity($resource, $this->buildAdminPayload($data));
+            $resource = $resourcesTable->patchEntity($resource, $this->buildAdminPayload($data), [
+                'accessibleFields' => [
+                    'resource_status' => true,
+                ],
+            ]);
 
             $file = $this->request->getUploadedFile('file_upload');
             $uploadedFilePath = null;
@@ -141,6 +150,28 @@ class ResourcesController extends AppController
         $this->set('title', 'Edit Resource');
 
         return null;
+    }
+
+    public function download(?int $resourceId = null): Response
+    {
+        $resource = $this->fetchTable('LearningResources')->get($resourceId);
+        if (!$resource->file_path) {
+            throw new NotFoundException('No uploaded file is available for this resource.');
+        }
+
+        $uploadService = new ResourceUploadService();
+        $absolutePath = $uploadService->resolveStoredFilePath($resource->file_path);
+        if ($absolutePath === null) {
+            throw new NotFoundException('The requested resource file could not be found.');
+        }
+
+        return $this->response
+            ->withType($uploadService->detectStoredFileMediaType($absolutePath))
+            ->withHeader('X-Content-Type-Options', 'nosniff')
+            ->withFile($absolutePath, [
+                'download' => true,
+                'name' => basename($absolutePath),
+            ]);
     }
 
     public function delete(?int $resourceId = null): ?Response

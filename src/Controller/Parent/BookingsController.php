@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Parent;
 
 use App\Service\BookingCancellationService;
+use Cake\I18n\DateTime;
+use Cake\Log\Log;
 use Cake\Http\Response;
 use RuntimeException;
 
@@ -51,16 +53,11 @@ class BookingsController extends AppController
                     'Payments',
                     'AttendanceRecords',
                 ])
-                ->order(['Bookings.booking_date' => 'DESC'])
+                ->orderBy(['Bookings.booking_date' => 'DESC'])
                 ->all();
         }
 
-        $weekStartParam = $this->request->getQuery('week_start');
-        if ($weekStartParam) {
-            $ref = new \Cake\I18n\DateTime($weekStartParam);
-        } else {
-            $ref = new \Cake\I18n\DateTime('now');
-        }
+        $ref = $this->resolveWeekReference($this->request->getQuery('week_start'));
         $dow = (int)$ref->format('w');
         $weekStart = $ref->modify("-{$dow} days")->startOfDay();
         $weekEnd = $weekStart->modify('+6 days');
@@ -214,8 +211,14 @@ class BookingsController extends AppController
                                 $className,
                                 $schedule,
                             );
-                        } catch (\Exception $e) {
-                            // Notification failure should not block booking
+                        } catch (\Throwable $exception) {
+                            Log::warning('Booking confirmation notification failed.', [
+                                'booking_id' => $booking->booking_id ?? null,
+                                'student_id' => $selectedStudentId,
+                                'parent_id' => $parent->parent_id,
+                                'portal' => 'parent',
+                                'error' => $exception->getMessage(),
+                            ]);
                         }
 
                         $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
@@ -262,5 +265,18 @@ class BookingsController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function resolveWeekReference(mixed $weekStartParam): DateTime
+    {
+        if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
+            return new DateTime('now');
+        }
+
+        try {
+            return new DateTime($weekStartParam);
+        } catch (\Throwable) {
+            return new DateTime('now');
+        }
     }
 }

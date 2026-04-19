@@ -48,4 +48,14 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertSame('paid', $payment->payment_status);
         $this->assertSame('confirmed', $booking->booking_status);
     }
+
+    public function testIndexIgnoresInvalidWeekStartValue(): void
+    {
+        $this->loginAsStudent();
+
+        $this->get('/consumer/bookings?week_start=not-a-date');
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('View Schedule & Attendance');
+    }
 }

@@ -425,8 +425,8 @@ return [
     ],
 
     'Uploads' => [
-        'resources_root' => env('UPLOAD_RESOURCES_ROOT', WWW_ROOT . 'uploads' . DS . 'resources'),
-        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', '/uploads/resources'),
+        'resources_root' => env('UPLOAD_RESOURCES_ROOT', ROOT . DS . 'storage' . DS . 'resources'),
+        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', '/resources'),
     ],
 
     /**

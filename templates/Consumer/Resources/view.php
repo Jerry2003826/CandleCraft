@@ -38,14 +38,14 @@ $this->assign('title', h($resource->resource_name));
 
         <div class="d-flex gap-3 flex-wrap">
             <?php if ($resource->resource_url): ?>
-                <a href="<?= h($resource->resource_url) ?>" target="_blank" class="z-billing-btn-primary">
+                <a href="<?= h($resource->resource_url) ?>" target="_blank" rel="noopener noreferrer" class="z-billing-btn-primary">
                     <i class="bi bi-box-arrow-up-right me-2"></i> Open External Link
                 </a>
             <?php endif; ?>
 
             <?php if ($resource->file_path): ?>
                 <?php if ($resource->resource_type !== 'video'): ?>
-                    <a href="<?= $this->Url->build('/' . $resource->file_path) ?>" target="_blank" class="z-billing-btn-primary" style="background-color: var(--admin-search-bg); color: var(--admin-text-primary); border: 1px solid var(--admin-card-border);">
+                    <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" class="z-billing-btn-primary" style="background-color: var(--admin-search-bg); color: var(--admin-text-primary); border: 1px solid var(--admin-card-border);">
                         <i class="bi bi-download me-2"></i> Download File
                     </a>
                 <?php endif; ?>
@@ -55,7 +55,7 @@ $this->assign('title', h($resource->resource_name));
         <?php if ($resource->file_path && $resource->resource_type === 'video'): ?>
             <div class="mt-5" style="border-radius: 16px; overflow: hidden; border: 1px solid var(--admin-card-border); background-color: #000;">
                 <video controls style="width: 100%; max-height: 600px; display: block;">
-                    <source src="<?= $this->Url->build('/' . $resource->file_path) ?>">
+                    <source src="<?= $this->Url->build(['action' => 'download', $resource->resource_id, '?' => ['inline' => '1']]) ?>">
                     Your browser does not support the video tag.
                 </video>
             </div>

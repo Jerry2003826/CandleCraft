@@ -50,9 +50,9 @@ $this->assign('title', 'Learning Center');
                                     </div>
                                     <div>
                                         <?php if ($resource->resource_type === 'link' && $resource->resource_url): ?>
-                                            <a href="<?= h($resource->resource_url) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Open</a>
+                                            <a href="<?= h($resource->resource_url) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Open</a>
                                         <?php elseif ($resource->file_path): ?>
-                                            <a href="<?= $this->Url->build('/' . $resource->file_path) ?>" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Download</a>
+                                            <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Download</a>
                                         <?php else: ?>
                                             <a href="<?= $this->Url->build(['action' => 'view', $resource->resource_id]) ?>" class="btn btn-sm btn-outline-primary">View</a>
                                         <?php endif; ?>

@@ -5,6 +5,7 @@ namespace App\Controller\Teacher;
 
 use App\Service\ResourceUploadService;
 use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 use RuntimeException;
 
@@ -24,7 +25,7 @@ class ResourcesController extends AppController
         $classes = $this->fetchTable('Classes')->find()
             ->contain(['Courses'])
             ->where(['Classes.teacher_id' => $teacherId])
-            ->order(['Classes.class_code' => 'ASC'])
+            ->orderBy(['Classes.class_code' => 'ASC'])
             ->all();
 
         $options = [];
@@ -51,7 +52,7 @@ class ResourcesController extends AppController
             $resources = $resourcesTable->find()
                 ->contain(['Classes' => ['Courses']])
                 ->where(['LearningResources.class_id IN' => $teacherClassIds])
-                ->order(['LearningResources.uploaded_at' => 'DESC'])
+                ->orderBy(['LearningResources.uploaded_at' => 'DESC'])
                 ->all();
         }
 
@@ -171,6 +172,35 @@ class ResourcesController extends AppController
         $this->set('title', 'Edit Resource');
 
         return null;
+    }
+
+    public function download(?int $resourceId = null): Response
+    {
+        $teacher = $this->getTeacher();
+        $resource = $this->fetchTable('LearningResources')->find()
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.uploaded_by_teacher_id' => $teacher->teacher_id,
+            ])
+            ->firstOrFail();
+
+        if (!$resource->file_path) {
+            throw new NotFoundException('No uploaded file is available for this resource.');
+        }
+
+        $uploadService = new ResourceUploadService();
+        $absolutePath = $uploadService->resolveStoredFilePath($resource->file_path);
+        if ($absolutePath === null) {
+            throw new NotFoundException('The requested resource file could not be found.');
+        }
+
+        return $this->response
+            ->withType($uploadService->detectStoredFileMediaType($absolutePath))
+            ->withHeader('X-Content-Type-Options', 'nosniff')
+            ->withFile($absolutePath, [
+                'download' => true,
+                'name' => basename($absolutePath),
+            ]);
     }
 
     public function delete(?int $resourceId = null): ?Response

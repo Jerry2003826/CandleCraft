@@ -83,10 +83,23 @@ class LearningResourcesTable extends Table
                         return true;
                     }
 
-                    $prefix = trim((string)Configure::read('Uploads.resources_url_prefix', '/uploads/resources'), '/');
-                    $pattern = '#^' . preg_quote($prefix, '#') . '/[A-Za-z0-9._-]+$#';
+                    $prefixes = array_values(array_unique([
+                        trim((string)Configure::read('Uploads.resources_url_prefix', '/resources'), '/'),
+                        'uploads/resources',
+                    ]));
+                    $patterns = array_map(
+                        fn(string $prefix) => '#^' . preg_quote($prefix, '#') . '/[A-Za-z0-9._-]+$#',
+                        $prefixes
+                    );
 
-                    return preg_match($pattern, ltrim((string)$value, '/')) === 1;
+                    $normalizedValue = ltrim((string)$value, '/');
+                    foreach ($patterns as $pattern) {
+                        if (preg_match($pattern, $normalizedValue) === 1) {
+                            return true;
+                        }
+                    }
+
+                    return false;
                 },
                 'message' => 'Uploaded files must stay within the configured resources directory.',
             ])
@@ -102,6 +115,7 @@ class LearningResourcesTable extends Table
     public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
     {
         $rules->add($rules->existsIn('class_id', 'Classes'), ['errorField' => 'class_id']);
+        $rules->add($rules->existsIn('uploaded_by_teacher_id', 'Teachers'), ['errorField' => 'uploaded_by_teacher_id']);
 
         return $rules;
     }

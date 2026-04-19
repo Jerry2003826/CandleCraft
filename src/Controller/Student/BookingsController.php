@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Student;
 
 use App\Service\BookingCancellationService;
+use Cake\I18n\DateTime;
+use Cake\Log\Log;
 use Cake\Http\Response;
 use RuntimeException;
 
@@ -26,15 +28,10 @@ class BookingsController extends AppController
                 'Payments',
                 'AttendanceRecords',
             ])
-            ->order(['Bookings.booking_date' => 'DESC'])
+            ->orderBy(['Bookings.booking_date' => 'DESC'])
             ->all();
 
-        $weekStartParam = $this->request->getQuery('week_start');
-        if ($weekStartParam) {
-            $ref = new \Cake\I18n\DateTime($weekStartParam);
-        } else {
-            $ref = new \Cake\I18n\DateTime('now');
-        }
+        $ref = $this->resolveWeekReference($this->request->getQuery('week_start'));
         $dow = (int)$ref->format('w');
         $weekStart = $ref->modify("-{$dow} days")->startOfDay();
         $weekEnd = $weekStart->modify('+6 days');
@@ -181,14 +178,23 @@ class BookingsController extends AppController
             $booking = $bookingsTable->newEntity($bookingData);
 
             if ($bookingsTable->save($booking)) {
-                $this->loadComponent('Notification');
-                $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
-                $className = $class->course?->course_name ?? $class->class_code;
-                $this->Notification->sendBookingConfirmation(
-                    $identity->get('user_id'),
-                    $className,
-                    $schedule,
-                );
+                try {
+                    $this->loadComponent('Notification');
+                    $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
+                    $className = $class->course?->course_name ?? $class->class_code;
+                    $this->Notification->sendBookingConfirmation(
+                        $identity->get('user_id'),
+                        $className,
+                        $schedule,
+                    );
+                } catch (\Throwable $exception) {
+                    Log::warning('Booking confirmation notification failed.', [
+                        'booking_id' => $booking->booking_id ?? null,
+                        'student_id' => $student->student_id,
+                        'portal' => 'student',
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
 
                 $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
 
@@ -236,5 +242,18 @@ class BookingsController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function resolveWeekReference(mixed $weekStartParam): DateTime
+    {
+        if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
+            return new DateTime('now');
+        }
+
+        try {
+            return new DateTime($weekStartParam);
+        } catch (\Throwable) {
+            return new DateTime('now');
+        }
     }
 }

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Consumer;
 
+use Cake\I18n\DateTime;
+
 class CoursesController extends AppController
 {
     public function index(): void
@@ -24,7 +26,7 @@ class CoursesController extends AppController
                     'Classes.class_status IN' => ['scheduled', 'ongoing'],
                 ])
                 ->contain(['Teachers'])
-                ->order(['Classes.start_datetime' => 'ASC'])
+                ->orderBy(['Classes.start_datetime' => 'ASC'])
                 ->all();
 
             $classList = [];
@@ -68,11 +70,8 @@ class CoursesController extends AppController
         }
 
         // Handle week navigation for calendar
-        $weekStartStr = $this->request->getQuery('week_start');
-        if ($weekStartStr) {
-            $weekStart = new \Cake\I18n\DateTime($weekStartStr);
-        } else {
-            $weekStart = new \Cake\I18n\DateTime('now');
+        $weekStart = $this->resolveWeekReference($this->request->getQuery('week_start'));
+        if ($this->request->getQuery('week_start') === null) {
             $weekStart = $weekStart->modify('-' . date('w') . ' days');
         }
         $weekEnd = clone $weekStart;
@@ -80,5 +79,18 @@ class CoursesController extends AppController
 
         $this->set(compact('courseData', 'calendarEvents', 'weekStart', 'weekEnd'));
         $this->set('title', 'Booking System');
+    }
+
+    private function resolveWeekReference(mixed $weekStartParam): DateTime
+    {
+        if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
+            return new DateTime('now');
+        }
+
+        try {
+            return new DateTime($weekStartParam);
+        } catch (\Throwable) {
+            return new DateTime('now');
+        }
     }
 }

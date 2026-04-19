@@ -35,19 +35,19 @@ $this->assign('title', h($resource->resource_name));
         <?php endif; ?>
 
         <?php if ($resource->resource_url): ?>
-            <a href="<?= h($resource->resource_url) ?>" target="_blank" class="btn btn-primary"><i class="bi bi-box-arrow-up-right me-1"></i> Open External Link</a>
+            <a href="<?= h($resource->resource_url) ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><i class="bi bi-box-arrow-up-right me-1"></i> Open External Link</a>
         <?php endif; ?>
 
         <?php if ($resource->file_path): ?>
             <?php if ($resource->resource_type === 'video'): ?>
                 <div class="mt-3">
                     <video controls class="w-100" style="max-width: 800px;">
-                        <source src="<?= $this->Url->build('/' . $resource->file_path) ?>">
+                        <source src="<?= $this->Url->build(['action' => 'download', $resource->resource_id, '?' => ['inline' => '1']]) ?>">
                         Your browser does not support the video tag.
                     </video>
                 </div>
             <?php else: ?>
-                <a href="<?= $this->Url->build('/' . $resource->file_path) ?>" target="_blank" class="btn btn-primary"><i class="bi bi-download me-1"></i> Download File</a>
+                <a href="<?= $this->Url->build(['action' => 'download', $resource->resource_id]) ?>" class="btn btn-primary"><i class="bi bi-download me-1"></i> Download File</a>
             <?php endif; ?>
         <?php endif; ?>
     </div>

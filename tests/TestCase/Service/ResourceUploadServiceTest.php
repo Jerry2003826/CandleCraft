@@ -59,23 +59,24 @@ class ResourceUploadServiceTest extends TestCase
 
     public function testDeleteStoredFileCannotEscapeUploadsRoot(): void
     {
-        $resourcesDir = WWW_ROOT . 'uploads' . DIRECTORY_SEPARATOR . 'resources';
-        $outsideDir = WWW_ROOT . 'uploads';
+        $resourcesDir = sys_get_temp_dir() . '/resource-upload-root-' . bin2hex(random_bytes(6));
+        $outsideDir = dirname($resourcesDir);
+        Configure::write('Uploads.resources_root', $resourcesDir);
+        Configure::write('Uploads.resources_url_prefix', '/resources');
+
         if (!is_dir($resourcesDir)) {
             mkdir($resourcesDir, 0755, true);
-        }
-        if (!is_dir($outsideDir)) {
-            mkdir($outsideDir, 0755, true);
         }
 
         $outsideFile = $outsideDir . DIRECTORY_SEPARATOR . 'escape.txt';
         file_put_contents($outsideFile, 'keep me');
 
         $service = new ResourceUploadService();
-        $service->deleteStoredFile('uploads/resources/../escape.txt');
+        $service->deleteStoredFile('resources/../escape.txt');
 
         $this->assertFileExists($outsideFile);
         unlink($outsideFile);
+        rmdir($resourcesDir);
     }
 
     public function testUsesConfiguredStorageRootAndUrlPrefix(): void
@@ -85,7 +86,7 @@ class ResourceUploadServiceTest extends TestCase
         Configure::write('Uploads.resources_url_prefix', '/dev/uploads/resources');
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'upload');
-        file_put_contents($tmpFile, 'pdf');
+        file_put_contents($tmpFile, "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n");
 
         $service = new ResourceUploadService();
         $storedPath = $service->storeUploadedFile(new UploadedFile(
@@ -102,5 +103,27 @@ class ResourceUploadServiceTest extends TestCase
 
         unlink($storageRoot . DIRECTORY_SEPARATOR . basename($storedPath));
         rmdir($storageRoot);
+    }
+
+    public function testClientMimeSpoofingIsRejectedByServerSideInspection(): void
+    {
+        $storageRoot = sys_get_temp_dir() . '/resource-upload-root-' . bin2hex(random_bytes(6));
+        Configure::write('Uploads.resources_root', $storageRoot);
+        Configure::write('Uploads.resources_url_prefix', '/resources');
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'upload');
+        file_put_contents($tmpFile, "<html><body>not really a pdf</body></html>");
+
+        $service = new ResourceUploadService();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported file media type.');
+        $service->storeUploadedFile(new UploadedFile(
+            $tmpFile,
+            filesize($tmpFile),
+            UPLOAD_ERR_OK,
+            'fake.pdf',
+            'application/pdf'
+        ));
     }
 }

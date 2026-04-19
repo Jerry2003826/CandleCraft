@@ -330,8 +330,8 @@ for ENV in dev production review; do
         SUBDIR="dev"
     fi
 
-    UPLOADS_ROOT="/home/${CPANEL_USER}/public_html/${SUBDIR}/uploads/resources"
-    UPLOADS_URL_PREFIX="/${SUBDIR}/uploads/resources"
+    UPLOADS_ROOT="/home/${CPANEL_USER}/${ENV}_app/storage/resources"
+    UPLOADS_URL_PREFIX="/resources"
 
     write_app_local "${ENV_DIR}/config/app_local.template.php" "$ENV" "$DEBUG_VAL" "${CPANEL_USER}_${ENV}" "$DB_PASSWORD" "${CPANEL_USER}_${ENV}_db" "$ENV_SALT" false "${UPLOADS_ROOT}" "${UPLOADS_URL_PREFIX}"
 
