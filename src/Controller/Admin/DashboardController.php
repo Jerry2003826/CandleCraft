@@ -62,7 +62,7 @@ class DashboardController extends AppController
             $studentUserIds = [];
             foreach ($users as $user) {
                 $existingUsersByEmail[(string)$user->email] = $user;
-                if ($user->user_role === 'student') {
+                if (in_array((string)$user->user_role, ['student', 'customer'], true)) {
                     $studentUserIds[] = (string)$user->user_id;
                 }
             }

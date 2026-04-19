@@ -185,6 +185,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                                         ]) ?>
                                         <span>I confirm that I am 18 years or older.</span>
                                     </label>
+                                    <?= $this->Form->error('self_declared_adult') ?>
                                 </div>
                             </div>
                         </div>

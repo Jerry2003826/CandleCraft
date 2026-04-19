@@ -72,6 +72,18 @@ class MessagesControllerTest extends AppIntegrationTestCase
         $this->assertSame('replied', $message['message_status']);
     }
 
+    public function testViewLinksExistingCustomerRoleToLegacyStudentProfile(): void
+    {
+        $this->setUserRole(4, 'customer');
+        $messageId = $this->createCustomerAccessMessage(false, 'student-one@candlecraft.com');
+
+        $this->loginAsAdmin();
+        $this->get('/admin/messages/view/' . $messageId);
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('View Customer Record');
+    }
+
     private function createCustomerAccessMessage(bool $selfDeclaredAdult, string $email = 'customer-request@example.com'): int
     {
         $messages = FactoryLocator::get('Table')->get('Messages');

@@ -42,7 +42,7 @@ class MessagesController extends AppController
                 ->where(['Users.email' => $message->sender_email])
                 ->first();
 
-            if ($existingUser && $existingUser->user_role === 'student') {
+            if ($existingUser && in_array((string)$existingUser->user_role, ['student', 'customer'], true)) {
                 $linkedStudent = $this->fetchTable('Students')->find()
                     ->where(['Students.user_id' => $existingUser->user_id])
                     ->first();
@@ -113,7 +113,7 @@ class MessagesController extends AppController
                 ->where(['Users.email' => $message->sender_email])
                 ->first();
 
-            if ($existingUser && $existingUser->user_role === 'student') {
+            if ($existingUser && in_array((string)$existingUser->user_role, ['student', 'customer'], true)) {
                 $linkedStudent = $this->fetchTable('Students')->find()
                     ->where(['Students.user_id' => $existingUser->user_id])
                     ->first();
@@ -122,6 +122,7 @@ class MessagesController extends AppController
 
         if ($this->request->is('post')) {
             $account = array_merge($account, $this->request->getData());
+            // Customer access requests are still provisioned through the legacy student profile flow.
             $account['user_role'] = 'student';
             $account['username'] = trim((string)($account['username'] ?? ''));
             $account['email'] = trim((string)($account['email'] ?? ''));
