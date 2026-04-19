@@ -31,6 +31,11 @@ foreach ($rawSchema as $tableName => $tableSchema) {
                 $column['type'] = 'integer';
             }
 
+            if ($tableName === 'payments' && $columnName === 'payment_date') {
+                $column['null'] = true;
+                $column['default'] = null;
+            }
+
             $table['columns'][$columnName] = $column;
         }
     }

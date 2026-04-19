@@ -115,6 +115,42 @@ class PortalAccessRedirectTest extends AppIntegrationTestCase
         $this->assertRedirectContains('/login');
     }
 
+    public function testDeletedAdminAccountIsRedirectedToLogin(): void
+    {
+        $this->session(['Auth' => [
+            'user_id' => 999,
+            'email' => 'admin@candlecraft.com',
+            'username' => 'admin',
+            'user_role' => 'admin',
+            'account_status' => 'active',
+            'age_verified_by_admin' => true,
+            'self_declared_adult' => true,
+        ]]);
+
+        $this->get('/admin/dashboard');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
+    public function testDeletedTeacherAccountIsRedirectedToLogin(): void
+    {
+        $this->session(['Auth' => [
+            'user_id' => 999,
+            'email' => 'teacher-one@candlecraft.com',
+            'username' => 'teacher1',
+            'user_role' => 'teacher',
+            'account_status' => 'active',
+            'age_verified_by_admin' => true,
+            'self_declared_adult' => true,
+        ]]);
+
+        $this->get('/teacher/resources');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
     public function testAuthenticatedParentOpeningLoginPageIsRedirectedToParentDashboard(): void
     {
         $this->loginAsParent();

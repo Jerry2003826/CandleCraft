@@ -99,6 +99,12 @@ class AppController extends Controller
         string $inactiveMessage = 'Your account is no longer active. Please contact an administrator.'
     ): ?object {
         if (!is_object($identity) || !method_exists($identity, 'get')) {
+            $this->Authentication->logout();
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+            );
+
             return null;
         }
 
