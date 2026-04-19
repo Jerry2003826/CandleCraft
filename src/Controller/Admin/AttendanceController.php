@@ -14,7 +14,7 @@ class AttendanceController extends AppController
             ->contain([
                 'Bookings' => ['Students', 'Classes' => ['Courses']],
             ])
-            ->order(['AttendanceRecords.attendance_id' => 'DESC']);
+            ->orderBy(['AttendanceRecords.attendance_id' => 'DESC']);
 
         $statusFilter = $this->request->getQuery('status');
         if ($statusFilter) {

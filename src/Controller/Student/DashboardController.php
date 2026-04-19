@@ -22,7 +22,7 @@ class DashboardController extends AppController
                 'Classes' => ['Courses', 'Teachers'],
                 'AttendanceRecords',
             ])
-            ->order(['Classes.start_datetime' => 'ASC'])
+            ->orderBy(['Classes.start_datetime' => 'ASC'])
             ->all();
 
         $bookingCount = $bookings->count();

@@ -16,7 +16,7 @@ class NotificationsController extends AppController
 
         $notifications = $notificationsTable->find()
             ->where(['Notifications.user_id IN' => $userIds])
-            ->order(['Notifications.created' => 'DESC'])
+            ->orderBy(['Notifications.created' => 'DESC'])
             ->limit(50)
             ->all();
 

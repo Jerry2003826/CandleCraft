@@ -9,7 +9,7 @@ $enquiryUrl = $this->Url->build(['controller' => 'Pages', 'action' => 'contact',
 
 <div class="section-heading" style="text-align: center; padding: 60px 20px 20px;">
     <p class="overline" style="font-family: var(--font-grown); color: var(--home-accent); letter-spacing: 0.3em; margin-bottom: 12px; font-size: 0.8rem;">
-        CLasses
+        Classes
     </p>
     <h1 style="font-family: var(--font-grown); font-size: clamp(2.5rem, 5vw, 4rem); color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0; line-height: 1;">
         <?= h($course->course_name) ?>

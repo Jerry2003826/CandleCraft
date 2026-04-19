@@ -10,7 +10,7 @@ class ClassesController extends AppController
         $classesTable = $this->fetchTable('Classes');
         $query = $classesTable->find()
             ->contain(['Courses', 'Teachers', 'Bookings'])
-            ->order(['Classes.start_datetime' => 'DESC']);
+            ->orderBy(['Classes.start_datetime' => 'DESC']);
 
         $search = $this->request->getQuery('search');
         if ($search) {
@@ -63,12 +63,12 @@ class ClassesController extends AppController
 
         $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
             ->where(['is_active' => true])
-            ->order(['course_name' => 'ASC'])
+            ->orderBy(['course_name' => 'ASC'])
             ->all();
 
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
-            ->order(['teacher_name' => 'ASC'])
+            ->orderBy(['teacher_name' => 'ASC'])
             ->all();
 
         $this->set(compact('class', 'courses', 'teachers'));
@@ -91,12 +91,12 @@ class ClassesController extends AppController
 
         $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
             ->where(['is_active' => true])
-            ->order(['course_name' => 'ASC'])
+            ->orderBy(['course_name' => 'ASC'])
             ->all();
 
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
-            ->order(['teacher_name' => 'ASC'])
+            ->orderBy(['teacher_name' => 'ASC'])
             ->all();
 
         $this->set(compact('class', 'courses', 'teachers'));
@@ -124,7 +124,7 @@ class ClassesController extends AppController
                 'Classes.start_datetime >=' => $startDate,
                 'Classes.start_datetime <=' => $endDate,
             ])
-            ->order(['Classes.start_datetime' => 'ASC'])
+            ->orderBy(['Classes.start_datetime' => 'ASC'])
             ->all();
 
         $classesByDay = [];
@@ -140,17 +140,17 @@ class ClassesController extends AppController
 
         $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
             ->where(['is_active' => true])
-            ->order(['course_name' => 'ASC'])
+            ->orderBy(['course_name' => 'ASC'])
             ->all();
 
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
-            ->order(['teacher_name' => 'ASC'])
+            ->orderBy(['teacher_name' => 'ASC'])
             ->all();
 
         $allCourses = $classesTable->Courses->find()
             ->where(['is_active' => true])
-            ->order(['course_name' => 'ASC'])
+            ->orderBy(['course_name' => 'ASC'])
             ->all();
 
         $scheduledCourseIds = [];
