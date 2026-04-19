@@ -16,22 +16,29 @@ use Throwable;
 class PaymentCheckoutService
 {
     private const SESSION_RECOVERY_ERROR = 'Unable to recover the current payment session. Please try again shortly.';
+    private const SESSION_PENDING_ERROR = 'Your payment is still processing with Stripe. Please wait a moment and try again shortly.';
 
     private object $bookingsTable;
     private object $paymentsTable;
     private StripeCheckoutGatewayInterface $gateway;
     private PaymentConfirmationServiceInterface $paymentConfirmationService;
+    private PendingPaymentDispositionService $pendingPaymentDispositionService;
 
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
         ?PaymentConfirmationServiceInterface $paymentConfirmationService = null,
+        ?PendingPaymentDispositionService $pendingPaymentDispositionService = null,
     ) {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->bookingsTable = $locator->get('Bookings');
         $this->paymentsTable = $locator->get('Payments');
         $this->gateway = $gateway ?? $this->buildGateway();
         $this->paymentConfirmationService = $paymentConfirmationService ?? new PaymentConfirmationService($locator);
+        $this->pendingPaymentDispositionService = $pendingPaymentDispositionService ?? new PendingPaymentDispositionService(
+            $locator,
+            $this->gateway
+        );
     }
 
     public function isStripeConfigured(): bool
@@ -105,8 +112,7 @@ class PaymentCheckoutService
                 ->all();
 
             foreach ($pendingPayments as $pendingPayment) {
-                $this->transitionPayment($pendingPayment, 'voided', [
-                    'payment_resolution' => 'zero_amount_override',
+                $this->pendingPaymentDispositionService->voidPendingPayment($pendingPayment, 'zero_amount_override', [
                     'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
                     'zero_amount_checkout' => true,
                 ]);
@@ -146,6 +152,11 @@ class PaymentCheckoutService
 
         return $connection->transactional(function () use ($bookingId, $context): array {
             $booking = $this->loadBookingForUpdate($bookingId);
+
+            if ($this->isZeroAmountBooking($booking)) {
+                throw new RuntimeException('Booking amount changed during checkout. Please retry.');
+            }
+
             $blockingPayment = $this->paymentsTable->find()
                 ->where([
                     'Payments.booking_id' => $bookingId,
@@ -215,6 +226,10 @@ class PaymentCheckoutService
                         'payment_resolution' => 'replaced_checkout',
                         'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
                     ]);
+                }
+
+                if (($inspection['kind'] ?? null) === 'awaiting_payment') {
+                    throw new RuntimeException(self::SESSION_PENDING_ERROR);
                 }
 
                 if (($inspection['kind'] ?? null) === 'inspection_failed') {
@@ -301,8 +316,7 @@ class PaymentCheckoutService
                 ->all();
 
             foreach ($pendingPayments as $pendingPayment) {
-                $this->transitionPayment($pendingPayment, 'voided', [
-                    'payment_resolution' => 'demo_payment_override',
+                $this->pendingPaymentDispositionService->voidPendingPayment($pendingPayment, 'demo_payment_override', [
                     'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
                 ]);
             }
@@ -352,9 +366,16 @@ class PaymentCheckoutService
 
         $paymentStatus = strtolower((string)($session->payment_status ?? ''));
         $sessionStatus = strtolower((string)($session->status ?? ''));
-        if ($paymentStatus === 'paid' || $sessionStatus === 'complete') {
+        if ($paymentStatus === 'paid') {
             return [
                 'kind' => 'already_completed',
+                'session' => $session,
+            ];
+        }
+
+        if ($sessionStatus === 'complete' && $paymentStatus !== 'paid') {
+            return [
+                'kind' => 'awaiting_payment',
                 'session' => $session,
             ];
         }

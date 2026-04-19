@@ -118,16 +118,90 @@ class PaymentConfirmationServiceTest extends TestCase
         }
     }
 
-    private function makeSession(string $id, int $bookingId, int $amountTotal): object
+    public function testLateWebhookForVoidedPaymentDoesNotMarkItPaid(): void
     {
-        return (object)[
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+
+        $payment = $payments->get(1);
+        $payment->payment_status = 'voided';
+        $payments->saveOrFail($payment);
+
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame(
+                'completed_after_local_payment_voided_or_expired',
+                $exception->getContext()['reason_code'] ?? null
+            );
+        }
+
+        $payment = $payments->get(1);
+        $booking = $bookings->get(1);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertSame('confirmed', $booking->booking_status);
+    }
+
+    public function testLateWebhookForExpiredPaymentDoesNotMarkItPaid(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+
+        $payment = $payments->get(1);
+        $payment->payment_status = 'expired';
+        $payments->saveOrFail($payment);
+
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame(
+                'completed_after_local_payment_voided_or_expired',
+                $exception->getContext()['reason_code'] ?? null
+            );
+        }
+
+        $payment = $payments->get(1);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+    }
+
+    public function testCompletedSessionWithUnpaidPaymentStatusDoesNotConfirmBooking(): void
+    {
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'complete',
+                'payment_status' => 'unpaid',
+            ]));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame('checkout_completed_without_paid_status', $exception->getContext()['reason_code'] ?? null);
+        }
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertSame('pending', $booking->booking_status);
+    }
+
+    private function makeSession(string $id, int $bookingId, int $amountTotal, array $overrides = []): object
+    {
+        return (object)array_merge([
             'id' => $id,
             'amount_total' => $amountTotal,
             'currency' => 'aud',
+            'status' => 'complete',
+            'payment_status' => 'paid',
             'payment_intent' => 'pi_' . $id,
             'metadata' => (object)[
                 'booking_id' => $bookingId,
             ],
-        ];
+        ], $overrides);
     }
 }

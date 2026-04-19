@@ -6,25 +6,28 @@ namespace App\Service;
 use Cake\Core\Configure;
 use Cake\Database\Driver\Mysql;
 use Cake\Datasource\FactoryLocator;
-use Cake\Log\Log;
 use Cake\ORM\Locator\LocatorInterface;
 use RuntimeException;
-use Throwable;
 
 class BookingCancellationService
 {
     private object $bookingsTable;
     private object $paymentsTable;
-    private StripeCheckoutGatewayInterface $gateway;
+    private PendingPaymentDispositionService $pendingPaymentDispositionService;
 
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
+        ?PendingPaymentDispositionService $pendingPaymentDispositionService = null,
     ) {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->bookingsTable = $locator->get('Bookings');
         $this->paymentsTable = $locator->get('Payments');
-        $this->gateway = $gateway ?? $this->buildGateway();
+        $resolvedGateway = $gateway ?? $this->buildGateway();
+        $this->pendingPaymentDispositionService = $pendingPaymentDispositionService ?? new PendingPaymentDispositionService(
+            $locator,
+            $resolvedGateway
+        );
     }
 
     public function cancelBooking(int $bookingId, array $context = []): void
@@ -49,15 +52,9 @@ class BookingCancellationService
                     continue;
                 }
 
-                $expirationResult = $this->expirePendingSession($payment, $context);
-                $payment->payment_status = 'voided';
-                $payment->notes = PaymentNotes::merge($payment->notes, [
-                    'payment_resolution' => 'booking_cancelled',
+                $this->pendingPaymentDispositionService->voidPendingPayment($payment, 'booking_cancelled', [
                     'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
-                    'checkout_session_expired' => $expirationResult['expired'],
-                    'checkout_session_expiration_skipped' => $expirationResult['skipped'],
                 ]);
-                $this->paymentsTable->saveOrFail($payment);
             }
 
             $booking->booking_status = 'cancelled';
@@ -79,62 +76,14 @@ class BookingCancellationService
                     continue;
                 }
 
-                $expirationResult = $this->expirePendingSession($payment, $context);
-                $payment->payment_status = 'voided';
-                $payment->notes = PaymentNotes::merge($payment->notes, [
-                    'payment_resolution' => 'checkout_cancelled',
+                $this->pendingPaymentDispositionService->voidPendingPayment($payment, 'checkout_cancelled', [
                     'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
-                    'checkout_session_expired' => $expirationResult['expired'],
-                    'checkout_session_expiration_skipped' => $expirationResult['skipped'],
                 ]);
-                $this->paymentsTable->saveOrFail($payment);
                 $voided++;
             }
 
             return $voided;
         });
-    }
-
-    private function expirePendingSession(object $payment, array $context): array
-    {
-        $transactionReference = (string)($payment->transaction_reference ?? '');
-        if ($transactionReference === '') {
-            return ['expired' => false, 'skipped' => true];
-        }
-
-        if (!$this->isStripeConfigured()) {
-            return ['expired' => false, 'skipped' => true];
-        }
-
-        try {
-            $session = $this->gateway->retrieveCheckoutSession($transactionReference);
-            $paymentStatus = strtolower((string)($session->payment_status ?? ''));
-            $sessionStatus = strtolower((string)($session->status ?? ''));
-
-            if ($paymentStatus === 'paid' || $sessionStatus === 'complete') {
-                throw new RuntimeException('This booking has already been paid and requires manual review.');
-            }
-
-            if ($sessionStatus === 'expired') {
-                return ['expired' => false, 'skipped' => false];
-            }
-
-            $this->gateway->expireCheckoutSession($transactionReference);
-
-            return ['expired' => true, 'skipped' => false];
-        } catch (RuntimeException $exception) {
-            throw $exception;
-        } catch (Throwable $exception) {
-            Log::error('Failed to expire Stripe checkout session during cancellation: ' . json_encode([
-                'payment_id' => (int)$payment->payment_id,
-                'booking_id' => (int)$payment->booking_id,
-                'portal_source' => $context['portal_source'] ?? 'unknown',
-                'transaction_reference' => $transactionReference,
-                'error' => $exception->getMessage(),
-            ]));
-
-            throw new RuntimeException('The checkout session could not be cancelled right now. Please try again.');
-        }
     }
 
     private function findBookingPayments(int $bookingId)
@@ -160,13 +109,6 @@ class BookingCancellationService
     private function supportsRowLocking(): bool
     {
         return $this->paymentsTable->getConnection()->getDriver() instanceof Mysql;
-    }
-
-    private function isStripeConfigured(): bool
-    {
-        $key = (string)Configure::read('Stripe.secret_key');
-
-        return $key !== '' && $key !== 'sk_test_placeholder';
     }
 
     private function buildGateway(): StripeCheckoutGatewayInterface

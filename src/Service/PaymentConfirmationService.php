@@ -55,6 +55,92 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 'payment_id' => (int)$payment->payment_id,
                 'booking_id' => (int)$payment->booking_id,
             ];
+            $localPaymentStatus = (string)$payment->payment_status;
+            $sessionPaymentStatus = strtolower((string)($session->payment_status ?? ''));
+
+            if (in_array($localPaymentStatus, ['voided', 'expired'], true)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'completed_after_local_payment_voided_or_expired',
+                    null,
+                    [
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+
+                return new ManualReviewWebhookException(
+                    'A completed Stripe session arrived for a locally voided or expired payment.',
+                    $context + [
+                        'reason_code' => 'completed_after_local_payment_voided_or_expired',
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+            }
+
+            if (in_array($localPaymentStatus, ['refund_required', 'refunded', 'partially_refunded'], true)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'completed_after_refund_or_review_state',
+                    null,
+                    [
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+
+                return new ManualReviewWebhookException(
+                    'A completed Stripe session arrived for a payment already in refund/manual-review state.',
+                    $context + [
+                        'reason_code' => 'completed_after_refund_or_review_state',
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+            }
+
+            if (!in_array($localPaymentStatus, ['pending', 'paid'], true)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'unexpected_local_payment_status',
+                    null,
+                    [
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+
+                return new ManualReviewWebhookException(
+                    'Payment status is incompatible with automatic webhook confirmation.',
+                    $context + [
+                        'reason_code' => 'unexpected_local_payment_status',
+                        'local_payment_status' => $localPaymentStatus,
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+            }
+
+            if ($sessionPaymentStatus !== 'paid') {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'checkout_completed_without_paid_status',
+                    null,
+                    ['stripe_payment_status' => $sessionPaymentStatus]
+                );
+
+                return new ManualReviewWebhookException(
+                    'Checkout session completed but payment_status is not paid.',
+                    $context + [
+                        'reason_code' => 'checkout_completed_without_paid_status',
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                    ]
+                );
+            }
 
             $metadataBookingId = $session->metadata->booking_id ?? null;
             if ($metadataBookingId === null || $metadataBookingId === '') {
@@ -198,13 +284,14 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         object $session,
         string $reasonCode,
         ?string $bookingStatus = null,
+        array $extraNotes = [],
     ): void {
         if (!in_array($payment->payment_status, ['refund_required', 'refunded', 'partially_refunded'], true)) {
             $payment->payment_status = 'refund_required';
         }
 
         $payment->payment_date = $payment->payment_date ?: DateTime::now();
-        $payment->notes = PaymentNotes::merge($payment->notes, array_filter([
+        $payment->notes = PaymentNotes::merge($payment->notes, array_filter(array_merge([
             'stripe_checkout' => true,
             'payment_intent' => (string)($session->payment_intent ?? ''),
             'confirmation_source' => 'stripe_webhook',
@@ -213,7 +300,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             'manual_review_required' => true,
             'reason_code' => $reasonCode,
             'booking_status_at_confirmation' => $bookingStatus,
-        ], static fn ($value) => $value !== null));
+        ], $extraNotes), static fn ($value) => $value !== null && $value !== ''));
 
         $this->savePayment($payment, [
             'session_id' => (string)($session->id ?? ''),
