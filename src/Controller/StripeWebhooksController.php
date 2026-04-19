@@ -43,8 +43,12 @@ class StripeWebhooksController extends Controller
         $sessionId = (string)($session->id ?? '');
         $ledger = new StripeWebhookEventLedger();
 
-        if (!$ledger->beginProcessing($eventId, $eventType, $sessionId, $payload)) {
+        $claimResult = $ledger->beginProcessing($eventId, $eventType, $sessionId, $payload);
+        if ($claimResult === StripeWebhookEventLedger::RESULT_DUPLICATE) {
             return $this->jsonResponse(200, ['received' => true, 'duplicate' => true]);
+        }
+        if ($claimResult === StripeWebhookEventLedger::RESULT_IN_PROGRESS) {
+            return $this->jsonResponse(500, ['error' => 'Webhook event is already being processed.']);
         }
 
         try {

@@ -86,6 +86,40 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertResponseCode(500);
     }
 
+    public function testInProgressWebhookEventReturnsRetriableFailureInsteadOfDuplicateAck(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $events = FactoryLocator::get('Table')->get('StripeWebhookEvents');
+        $events->saveOrFail($events->newEntity([
+            'event_id' => 'evt_test_cs_in_progress',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_in_progress',
+            'business_event_key' => 'checkout.session.completed:cs_in_progress',
+            'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_in_progress')),
+            'processing_status' => 'processing',
+            'first_seen_at' => '2026-04-20 12:00:00',
+            'processing_started_at' => '2026-04-20 12:00:00',
+            'last_seen_at' => '2026-04-20 12:05:00',
+        ]));
+
+        $payload = $this->completedSessionPayload('cs_in_progress');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(500);
+        $this->assertResponseNotContains('"duplicate":true');
+        $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
+    }
+
     public function testAsyncPaymentSucceededUsesConfirmationService(): void
     {
         $secret = 'whsec_test';
@@ -342,9 +376,11 @@ class StripeWebhooksControllerTest extends TestCase
             'event_id' => 'evt_test_cs_resolved_duplicate',
             'event_type' => 'checkout.session.completed',
             'session_id' => 'cs_resolved_duplicate',
+            'business_event_key' => 'checkout.session.completed:cs_resolved_duplicate',
             'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_resolved_duplicate')),
             'processing_status' => 'processed',
             'first_seen_at' => '2026-04-20 12:00:00',
+            'processing_started_at' => '2026-04-20 12:00:00',
             'last_seen_at' => '2026-04-20 12:00:00',
         ]));
 

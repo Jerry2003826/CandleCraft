@@ -11,9 +11,11 @@ class StripeWebhookEvent extends Entity
         'event_id' => true,
         'event_type' => true,
         'session_id' => true,
+        'business_event_key' => true,
         'payload_hash' => true,
         'processing_status' => true,
         'first_seen_at' => true,
+        'processing_started_at' => true,
         'last_seen_at' => true,
     ];
 }

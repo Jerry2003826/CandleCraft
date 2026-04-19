@@ -226,6 +226,12 @@ if (!isset($schema['stripe_webhook_events'])) {
                 'null' => true,
                 'default' => null,
             ],
+            'business_event_key' => [
+                'type' => 'string',
+                'length' => 255,
+                'null' => true,
+                'default' => null,
+            ],
             'payload_hash' => [
                 'type' => 'string',
                 'length' => 64,
@@ -239,6 +245,11 @@ if (!isset($schema['stripe_webhook_events'])) {
                 'default' => 'processing',
             ],
             'first_seen_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+            'processing_started_at' => [
                 'type' => 'datetime',
                 'null' => false,
                 'default' => null,
@@ -263,6 +274,10 @@ if (!isset($schema['stripe_webhook_events'])) {
             'stripe_webhook_events_event_id_uk' => [
                 'type' => 'unique',
                 'columns' => ['event_id'],
+            ],
+            'stripe_webhook_events_business_event_key_uk' => [
+                'type' => 'unique',
+                'columns' => ['business_event_key'],
             ],
         ],
     ];

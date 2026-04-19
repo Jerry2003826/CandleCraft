@@ -57,6 +57,10 @@ class PaymentWebhookIncidentRecorder
             $incident = $this->incidentsTable->newEmptyEntity();
         }
 
+        if (!$incident->isNew() && (string)$incident->status !== 'open') {
+            return;
+        }
+
         $incident = $this->incidentsTable->patchEntity($incident, [
             'event_type' => $eventType,
             'session_id' => $sessionId,
