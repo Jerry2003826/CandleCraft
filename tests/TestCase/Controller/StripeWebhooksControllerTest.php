@@ -61,7 +61,11 @@ class StripeWebhooksControllerTest extends TestCase
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
-        FakePaymentConfirmationService::$handler = static function (object $session, string $eventType): string {
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
             throw new RetriableWebhookException('Temporary database issue.', [
                 'session_id' => 'cs_retry',
                 'reason_code' => 'temporary_db_failure',
@@ -127,13 +131,38 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertSame('cs_async_failed', FakePaymentConfirmationService::$failedSessions[0]->id);
     }
 
+    public function testExpiredPaymentUsesExpirationHandler(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $payload = $this->sessionPayload('checkout.session.expired', 'cs_expired');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(200);
+        $this->assertCount(1, FakePaymentConfirmationService::$expiredSessions);
+        $this->assertSame('cs_expired', FakePaymentConfirmationService::$expiredSessions[0]->id);
+    }
+
     public function testWebhookReturns200ForManualReviewFailure(): void
     {
         $secret = 'whsec_test';
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
-        FakePaymentConfirmationService::$handler = static function (object $session, string $eventType): string {
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
             throw new ManualReviewWebhookException('Cancelled booking paid late.', [
                 'session_id' => 'cs_manual_review',
                 'reason_code' => 'cancelled_booking_paid_late',
@@ -168,7 +197,11 @@ class StripeWebhooksControllerTest extends TestCase
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
-        FakePaymentConfirmationService::$handler = static function (object $session, string $eventType): string {
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
             throw new NonRetriableWebhookException('Stripe amount mismatch.', [
                 'session_id' => 'cs_non_retriable',
                 'payment_id' => 1,
@@ -204,7 +237,11 @@ class StripeWebhooksControllerTest extends TestCase
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
-        FakePaymentConfirmationService::$handler = static function (object $session, string $eventType): string {
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
             throw new ManualReviewWebhookException('Cancelled booking paid late.', [
                 'session_id' => 'cs_duplicate_event',
                 'reason_code' => 'cancelled_booking_paid_late',
@@ -241,7 +278,11 @@ class StripeWebhooksControllerTest extends TestCase
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
-        FakePaymentConfirmationService::$handler = static function (object $session, string $eventType): string {
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
             throw new RetriableWebhookException('Temporary database issue.', [
                 'session_id' => 'cs_retry_again',
                 'reason_code' => 'temporary_db_failure',

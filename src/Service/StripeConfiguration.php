@@ -19,7 +19,10 @@ final class StripeConfiguration
 
     public static function hasUsableSecretKey(?string $value = null): bool
     {
-        return self::isUsableValue($value ?? (string)Configure::read('Stripe.secret_key'), ['sk_', 'rk_']);
+        return self::isUsableValue(
+            $value ?? (string)Configure::read('Stripe.secret_key'),
+            ['sk_test_', 'sk_live_', 'rk_test_', 'rk_live_']
+        );
     }
 
     public static function hasUsableWebhookSecret(?string $value = null): bool

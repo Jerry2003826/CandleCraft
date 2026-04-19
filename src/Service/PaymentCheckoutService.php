@@ -198,7 +198,11 @@ class PaymentCheckoutService
 
                 if (($inspection['kind'] ?? null) === 'already_completed') {
                     try {
-                        $result = $this->paymentConfirmationService->confirmCheckoutSession($inspection['session']);
+                        $result = $this->paymentConfirmationService->confirmCheckoutSession(
+                            $inspection['session'],
+                            'checkout.session.recovered_from_checkout_scan',
+                            'checkout_recovery'
+                        );
                     } catch (PaymentWebhookException $exception) {
                         $this->logCheckoutFailure(
                             'Completed Stripe session could not be synchronized locally',

@@ -25,8 +25,12 @@ final class StripeCheckoutSessionClassifier
             return $this->result(self::STATE_AWAITING_PAYMENT, $sessionStatus, $paymentStatus);
         }
 
-        if ($sessionStatus === 'open' && $paymentStatus !== 'paid') {
+        if ($sessionStatus === 'open' && in_array($paymentStatus, ['unpaid', 'no_payment_required'], true)) {
             return $this->result(self::STATE_OPEN_NON_PAID, $sessionStatus, $paymentStatus);
+        }
+
+        if ($sessionStatus === 'open') {
+            return $this->result(self::STATE_STALE, $sessionStatus, $paymentStatus);
         }
 
         if ($sessionStatus === 'expired') {

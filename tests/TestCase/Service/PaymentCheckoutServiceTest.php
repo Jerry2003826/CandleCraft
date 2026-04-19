@@ -74,6 +74,11 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertCount(1, $payments);
         $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
         $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+        $this->assertStringContainsString('"confirmation_source":"checkout_recovery"', (string)$payment->notes);
+        $this->assertStringContainsString(
+            '"event_type":"checkout.session.recovered_from_checkout_scan"',
+            (string)$payment->notes
+        );
     }
 
     public function testZeroAmountBookingConfirmsWithoutStripeSession(): void

@@ -29,6 +29,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
     public function confirmCheckoutSession(
         object $session,
         string $eventType = 'checkout.session.completed',
+        string $confirmationSource = 'stripe_webhook',
     ): string
     {
         $transactionReference = (string)($session->id ?? '');
@@ -40,7 +41,12 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         }
 
         $connection = $this->paymentsTable->getConnection();
-        $result = $connection->transactional(function () use ($session, $transactionReference, $eventType): string|PaymentWebhookException {
+        $result = $connection->transactional(function () use (
+            $session,
+            $transactionReference,
+            $eventType,
+            $confirmationSource
+        ): string|PaymentWebhookException {
             $paymentPreview = $this->paymentsTable->find()
                 ->select(['payment_id', 'booking_id'])
                 ->where(['Payments.transaction_reference' => $transactionReference])
@@ -83,23 +89,51 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             ];
             $localPaymentStatus = (string)$payment->payment_status;
             $sessionPaymentStatus = strtolower((string)($session->payment_status ?? ''));
+            $eventContext = $this->withEventContext([], $eventType, $confirmationSource);
 
             if (in_array($localPaymentStatus, ['voided', 'expired'], true)) {
-                $this->markPaymentForReview(
+                if ($sessionPaymentStatus === 'paid') {
+                    $this->markPaymentForReview(
+                        $payment,
+                        $session,
+                        'completed_after_local_payment_voided_or_expired',
+                        null,
+                        $this->withEventContext([
+                            'local_payment_status' => $localPaymentStatus,
+                            'stripe_payment_status' => $sessionPaymentStatus,
+                            'funds_captured' => true,
+                            'refund_required' => true,
+                        ], $eventType, $confirmationSource)
+                    );
+
+                    return new ManualReviewWebhookException(
+                        'A completed Stripe session arrived for a locally voided or expired payment.',
+                        $context + [
+                            'reason_code' => 'completed_after_local_payment_voided_or_expired',
+                            'local_payment_status' => $localPaymentStatus,
+                            'stripe_payment_status' => $sessionPaymentStatus,
+                        ]
+                    );
+                }
+
+                $this->markPaymentForReviewWithoutRefundRequirement(
                     $payment,
                     $session,
-                    'completed_after_local_payment_voided_or_expired',
+                    'completed_after_local_payment_voided_or_expired_without_paid_status',
                     null,
-                    $this->withEventType([
+                    $this->withEventContext([
                         'local_payment_status' => $localPaymentStatus,
                         'stripe_payment_status' => $sessionPaymentStatus,
-                    ], $eventType)
+                        'funds_captured' => false,
+                        'refund_required' => false,
+                        'review_state' => 'awaiting_payment_terminal_event',
+                    ], $eventType, $confirmationSource)
                 );
 
                 return new ManualReviewWebhookException(
-                    'A completed Stripe session arrived for a locally voided or expired payment.',
+                    'A completed Stripe session arrived for a locally voided or expired payment without a paid terminal state.',
                     $context + [
-                        'reason_code' => 'completed_after_local_payment_voided_or_expired',
+                        'reason_code' => 'completed_after_local_payment_voided_or_expired_without_paid_status',
                         'local_payment_status' => $localPaymentStatus,
                         'stripe_payment_status' => $sessionPaymentStatus,
                     ]
@@ -112,10 +146,10 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'completed_after_refund_or_review_state',
                     null,
-                    $this->withEventType([
+                    $this->withEventContext([
                         'local_payment_status' => $localPaymentStatus,
                         'stripe_payment_status' => $sessionPaymentStatus,
-                    ], $eventType)
+                    ], $eventType, $confirmationSource)
                 );
 
                 return new ManualReviewWebhookException(
@@ -134,10 +168,10 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'unexpected_local_payment_status',
                     null,
-                    $this->withEventType([
+                    $this->withEventContext([
                         'local_payment_status' => $localPaymentStatus,
                         'stripe_payment_status' => $sessionPaymentStatus,
-                    ], $eventType)
+                    ], $eventType, $confirmationSource)
                 );
 
                 return new ManualReviewWebhookException(
@@ -156,12 +190,12 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'checkout_completed_without_paid_status',
                     null,
-                    $this->withEventType([
+                    $this->withEventContext([
                         'stripe_payment_status' => $sessionPaymentStatus,
                         'funds_captured' => false,
                         'refund_required' => false,
                         'review_state' => 'awaiting_payment_confirmation',
-                    ], $eventType)
+                    ], $eventType, $confirmationSource)
                 );
 
                 return new ManualReviewWebhookException(
@@ -173,18 +207,32 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 );
             }
 
-            $metadataBookingId = $session->metadata->booking_id ?? null;
-            if ($metadataBookingId === null || $metadataBookingId === '') {
+            $metadataBookingId = (string)($session->metadata->booking_id ?? '');
+            if ($metadataBookingId === '') {
                 $this->markPaymentForReview(
                     $payment,
                     $session,
                     'missing_booking_metadata',
                     null,
-                    $this->withEventType([], $eventType)
+                    $eventContext
                 );
 
                 return new NonRetriableWebhookException('Stripe booking metadata is missing.', $context + [
                     'reason_code' => 'missing_booking_metadata',
+                ]);
+            }
+
+            if (!ctype_digit($metadataBookingId)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'invalid_booking_metadata',
+                    null,
+                    $eventContext
+                );
+
+                return new NonRetriableWebhookException('Stripe booking metadata is invalid.', $context + [
+                    'reason_code' => 'invalid_booking_metadata',
                 ]);
             }
 
@@ -194,7 +242,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'booking_metadata_mismatch',
                     null,
-                    $this->withEventType([], $eventType)
+                    $eventContext
                 );
 
                 return new NonRetriableWebhookException('Stripe booking metadata does not match the local payment.', $context + [
@@ -209,7 +257,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'amount_mismatch',
                     null,
-                    $this->withEventType([], $eventType)
+                    $eventContext
                 );
 
                 return new NonRetriableWebhookException('Stripe amount does not match the local payment.', $context + [
@@ -224,7 +272,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'unsupported_currency',
                     null,
-                    $this->withEventType([], $eventType)
+                    $eventContext
                 );
 
                 return new NonRetriableWebhookException('Unsupported Stripe currency.', $context + [
@@ -235,16 +283,15 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             $paymentMetadata = [
                 'stripe_checkout' => true,
                 'payment_intent' => (string)($session->payment_intent ?? ''),
-                'confirmation_source' => 'stripe_webhook',
+                'confirmation_source' => $confirmationSource,
                 'session_id' => $transactionReference,
-                'event_type' => $eventType,
                 'manual_review_required' => false,
                 'review_state' => 'resolved_by_payment_confirmation',
                 'review_resolved_at' => DateTime::now()->i18nFormat(DateTime::ATOM),
                 'reason_code' => 'payment_confirmed',
                 'funds_captured' => true,
                 'refund_required' => false,
-            ];
+            ] + $this->buildConfirmationEventAudit((string)$payment->notes, $eventType);
 
             switch ((string)$booking->booking_status) {
                 case 'pending':
@@ -262,7 +309,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 case 'completed':
                     if (
                         $payment->payment_status !== 'paid' ||
-                        $this->paymentNotesNeedResolution((string)$payment->notes, $eventType)
+                        $this->paymentNotesNeedResolution((string)$payment->notes)
                     ) {
                         $payment->payment_status = 'paid';
                         $payment->payment_date = $payment->payment_date ?: DateTime::now();
@@ -278,7 +325,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                         $session,
                         'cancelled_booking_paid_late',
                         'cancelled',
-                        $this->withEventType([], $eventType)
+                        $eventContext
                     );
 
                     return new ManualReviewWebhookException(
@@ -292,7 +339,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                         $session,
                         'unexpected_booking_status',
                         (string)$booking->booking_status,
-                        $this->withEventType([], $eventType)
+                        $eventContext
                     );
 
                     return new ManualReviewWebhookException(
@@ -433,6 +480,133 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         return $result;
     }
 
+    public function markCheckoutSessionExpired(object $session): string
+    {
+        $transactionReference = (string)($session->id ?? '');
+        if ($transactionReference === '') {
+            throw new NonRetriableWebhookException('Stripe session id is missing.', [
+                'session_id' => '',
+                'reason_code' => 'missing_session_id',
+            ]);
+        }
+
+        $connection = $this->paymentsTable->getConnection();
+        $result = $connection->transactional(function () use ($session, $transactionReference): string|PaymentWebhookException {
+            $paymentPreview = $this->paymentsTable->find()
+                ->select(['payment_id', 'booking_id'])
+                ->where(['Payments.transaction_reference' => $transactionReference])
+                ->first();
+
+            if ($paymentPreview === null) {
+                return new ManualReviewWebhookException('Payment record not found.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => null,
+                    'booking_id' => null,
+                    'reason_code' => 'payment_not_found',
+                ]);
+            }
+
+            try {
+                $booking = $this->loadBookingForUpdate((int)$paymentPreview->booking_id);
+            } catch (RecordNotFoundException $exception) {
+                return new ManualReviewWebhookException('Booking record not found for payment.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'booking_not_found',
+                ], previous: $exception);
+            }
+
+            $payment = $this->loadPaymentForUpdate($transactionReference, (int)$paymentPreview->payment_id);
+            if ($payment === null) {
+                return new ManualReviewWebhookException('Payment record not found.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'payment_not_found_after_lock',
+                ]);
+            }
+
+            $context = [
+                'session_id' => $transactionReference,
+                'payment_id' => (int)$payment->payment_id,
+                'booking_id' => (int)$payment->booking_id,
+            ];
+            $localPaymentStatus = (string)$payment->payment_status;
+
+            if (in_array($localPaymentStatus, ['expired', 'voided', 'failed'], true)) {
+                return 'idempotent';
+            }
+
+            if (in_array($localPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'checkout_session_expired_after_processed_payment',
+                    (string)$booking->booking_status,
+                    $this->withEventContext([
+                        'local_payment_status' => $localPaymentStatus,
+                        'funds_captured' => in_array($localPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true),
+                        'refund_required' => in_array($localPaymentStatus, ['paid', 'refund_required'], true),
+                    ], 'checkout.session.expired', 'stripe_webhook')
+                );
+
+                return new ManualReviewWebhookException(
+                    'Stripe reported session expiration for a payment already processed locally.',
+                    $context + [
+                        'reason_code' => 'checkout_session_expired_after_processed_payment',
+                        'local_payment_status' => $localPaymentStatus,
+                    ]
+                );
+            }
+
+            if ($localPaymentStatus !== 'pending') {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'unexpected_local_payment_status',
+                    (string)$booking->booking_status,
+                    $this->withEventContext([
+                        'local_payment_status' => $localPaymentStatus,
+                    ], 'checkout.session.expired', 'stripe_webhook')
+                );
+
+                return new ManualReviewWebhookException(
+                    'Payment status is incompatible with automatic expiration handling.',
+                    $context + [
+                        'reason_code' => 'unexpected_local_payment_status',
+                        'local_payment_status' => $localPaymentStatus,
+                    ]
+                );
+            }
+
+            $payment->payment_status = 'expired';
+            $payment->payment_date = $payment->payment_date ?: DateTime::now();
+            $payment->notes = PaymentNotes::merge($payment->notes, [
+                'stripe_checkout' => true,
+                'confirmation_source' => 'stripe_webhook',
+                'event_type' => 'checkout.session.expired',
+                'session_id' => $transactionReference,
+                'payment_resolution' => 'stripe_checkout_session_expired',
+                'manual_review_required' => false,
+                'review_state' => 'resolved_by_session_expiration',
+                'review_resolved_at' => DateTime::now()->i18nFormat(DateTime::ATOM),
+                'reason_code' => 'stripe_checkout_session_expired',
+                'funds_captured' => false,
+                'refund_required' => false,
+            ]);
+            $this->savePayment($payment, $context + ['reason_code' => 'payment_marked_expired']);
+
+            return 'expired';
+        });
+
+        if ($result instanceof PaymentWebhookException) {
+            throw $result;
+        }
+
+        return $result;
+    }
+
     protected function savePayment(object $payment, array $context): void
     {
         try {
@@ -538,12 +712,15 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         );
     }
 
-    private function withEventType(array $notes, string $eventType): array
+    private function withEventContext(array $notes, string $eventType, string $confirmationSource): array
     {
-        return ['event_type' => $eventType] + $notes;
+        return [
+            'event_type' => $eventType,
+            'confirmation_source' => $confirmationSource,
+        ] + $notes;
     }
 
-    private function paymentNotesNeedResolution(string $existingNotes, string $eventType): bool
+    private function paymentNotesNeedResolution(string $existingNotes): bool
     {
         if ($existingNotes === '') {
             return true;
@@ -562,11 +739,38 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             return true;
         }
 
-        if (($decoded['event_type'] ?? null) !== $eventType) {
-            return true;
+        return ($decoded['review_state'] ?? null) !== 'resolved_by_payment_confirmation';
+    }
+
+    private function buildConfirmationEventAudit(string $existingNotes, string $eventType): array
+    {
+        $events = [];
+        $decoded = json_decode($existingNotes, true);
+        if (is_array($decoded)) {
+            foreach (['event_type', 'last_stripe_event_type'] as $key) {
+                $value = $decoded[$key] ?? null;
+                if (is_string($value) && $value !== '') {
+                    $events[] = $value;
+                }
+            }
+
+            $confirmationEvents = $decoded['confirmation_events'] ?? [];
+            if (is_array($confirmationEvents)) {
+                foreach ($confirmationEvents as $value) {
+                    if (is_string($value) && $value !== '') {
+                        $events[] = $value;
+                    }
+                }
+            }
         }
 
-        return ($decoded['review_state'] ?? null) !== 'resolved_by_payment_confirmation';
+        $events[] = $eventType;
+
+        return [
+            'event_type' => $eventType,
+            'last_stripe_event_type' => $eventType,
+            'confirmation_events' => array_values(array_unique($events)),
+        ];
     }
 
     protected function persistPayment(object $payment): void

@@ -21,6 +21,8 @@ class StripeConfigurationTest extends TestCase
         $this->assertFalse(StripeConfiguration::hasUsableSecretKey(''));
         $this->assertFalse(StripeConfiguration::hasUsableSecretKey('   '));
         $this->assertFalse(StripeConfiguration::hasUsableSecretKey('pk_test_123'));
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_not_real'));
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('rk_not_real'));
         $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_test_placeholder'));
     }
 

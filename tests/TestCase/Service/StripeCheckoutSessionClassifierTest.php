@@ -37,6 +37,13 @@ class StripeCheckoutSessionClassifierTest extends TestCase
         $this->assertSame(StripeCheckoutSessionClassifier::STATE_OPEN_NON_PAID, $result['state']);
     }
 
+    public function testOpenSessionWithUnknownPaymentStatusFallsBackToStale(): void
+    {
+        $result = $this->classifier->classify($this->makeSession('open', 'processing'));
+
+        $this->assertSame(StripeCheckoutSessionClassifier::STATE_STALE, $result['state']);
+    }
+
     public function testExpiredSessionIsExpired(): void
     {
         $result = $this->classifier->classify($this->makeSession('expired', 'unpaid'));
