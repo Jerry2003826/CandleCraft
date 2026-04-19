@@ -59,4 +59,31 @@ class PagesControllerCaptchaTest extends AppIntegrationTestCase
         $this->assertSame($before, $after);
         $this->assertResponseContains('Your age and 18+ declaration do not match.');
     }
+
+    public function testCustomerAccessRequestRequiresAdultConfirmationForAdultAge(): void
+    {
+        Configure::write('Recaptcha.secret_key', '');
+        $messagesTable = FactoryLocator::get('Table')->get('Messages');
+        $before = $messagesTable->find()->count();
+
+        $this->enableCsrfToken();
+        $this->post('/contact', [
+            'sender_name' => 'Adult Customer',
+            'sender_email' => 'adult@example.com',
+            'sender_phone' => '0400000000',
+            'subject' => 'General enquiry',
+            'message_text' => 'Please create a portal account for me.',
+            'source_page' => 'contact',
+            'request_account' => '1',
+            'declared_age' => '19',
+            'g-recaptcha-response' => 'invalid-token',
+            'website' => '',
+        ]);
+
+        $after = $messagesTable->find()->count();
+
+        $this->assertResponseOk();
+        $this->assertSame($before, $after);
+        $this->assertResponseContains('Please confirm whether you are 18 or older.');
+    }
 }

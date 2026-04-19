@@ -98,6 +98,10 @@ class PagesController extends AppController
                 $enquiry->setError('self_declared_adult', ['Your age and 18+ declaration do not match.']);
             }
 
+            if ($requestAccount && !$selfDeclaredAdult && $declaredAge !== null && $declaredAge >= 18) {
+                $enquiry->setError('self_declared_adult', ['Please confirm whether you are 18 or older.']);
+            }
+
             $honeypot = trim((string)$this->request->getData('website'));
             if ($honeypot !== '') {
                 $this->Flash->success(
