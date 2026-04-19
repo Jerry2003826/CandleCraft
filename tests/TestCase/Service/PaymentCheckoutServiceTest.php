@@ -81,6 +81,52 @@ class PaymentCheckoutServiceTest extends TestCase
         );
     }
 
+    public function testCheckoutSessionCarriesClientReferenceAndPaymentIntentMetadata(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
+
+        $bookingId = $this->insertBooking([
+            'class_id' => 2,
+            'student_id' => 1,
+            'parent_id' => null,
+            'booking_status' => 'pending',
+            'price_at_booking' => 65.00,
+            'booking_date' => '2026-04-10 12:00:00',
+            'created_at' => '2026-04-10 12:00:00',
+            'updated_at' => '2026-04-10 12:00:00',
+        ]);
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->where(['Bookings.booking_id' => $bookingId])
+            ->firstOrFail();
+
+        $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
+
+        $result = $service->startCheckout($booking, [
+            'success_url' => 'http://localhost/success',
+            'cancel_url' => 'http://localhost/cancel',
+            'portal_source' => 'service_test',
+            'payer_id' => 4,
+        ]);
+
+        $payload = FakeStripeCheckoutGateway::$createdPayloads[0] ?? [];
+
+        $this->assertSame('redirect', $result['kind']);
+        $this->assertSame((string)$bookingId, $payload['client_reference_id'] ?? null);
+        $this->assertSame([
+            'booking_id' => (string)$bookingId,
+            'student_id' => '1',
+            'portal_source' => 'service_test',
+        ], $payload['metadata'] ?? null);
+        $this->assertSame($payload['metadata'] ?? null, $payload['payment_intent_data']['metadata'] ?? null);
+        $this->assertStringContainsString(
+            'Booking #' . $bookingId,
+            (string)($payload['payment_intent_data']['description'] ?? '')
+        );
+    }
+
     public function testZeroAmountBookingConfirmsWithoutStripeSession(): void
     {
         Configure::write('Stripe.secret_key', null);

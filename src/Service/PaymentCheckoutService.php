@@ -401,10 +401,16 @@ class PaymentCheckoutService
         $courseName = $booking->class_entity?->course?->course_name ?? 'Class Booking';
         $studentName = $booking->student?->student_name ?? 'Student';
         $amountInCents = (int)round((float)$booking->price_at_booking * 100);
+        $sessionMetadata = [
+            'booking_id' => (string)$booking->booking_id,
+            'student_id' => (string)$booking->student_id,
+            'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+        ];
 
         try {
             $session = $this->gateway->createCheckoutSession([
                 'payment_method_types' => ['card'],
+                'client_reference_id' => (string)$booking->booking_id,
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'aud',
@@ -419,9 +425,14 @@ class PaymentCheckoutService
                 'mode' => 'payment',
                 'success_url' => (string)$context['success_url'],
                 'cancel_url' => (string)$context['cancel_url'],
-                'metadata' => [
-                    'booking_id' => (int)$booking->booking_id,
-                    'student_id' => (int)$booking->student_id,
+                'metadata' => $sessionMetadata,
+                'payment_intent_data' => [
+                    'description' => sprintf(
+                        'Booking #%d for %s',
+                        (int)$booking->booking_id,
+                        $studentName
+                    ),
+                    'metadata' => $sessionMetadata,
                 ],
             ]);
         } catch (Throwable $exception) {
