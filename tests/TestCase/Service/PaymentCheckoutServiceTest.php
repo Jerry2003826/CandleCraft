@@ -135,6 +135,7 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertSame('Booking #' . $bookingId, (string)($payload['payment_intent_data']['description'] ?? ''));
         $this->assertSame($metadata['checkout_attempt_id'] ?? null, $paymentNotes['checkout_attempt_id'] ?? null);
         $this->assertSame($clientReferenceId, $paymentNotes['stripe_client_reference_id'] ?? null);
+        $this->assertNull($payment->payment_date);
     }
 
     public function testCheckoutSessionNormalizesPortalSourceForStripeMetadata(): void
@@ -213,6 +214,7 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertCount(1, $payments);
         $this->assertSame('paid', $payments[0]->payment_status);
         $this->assertSame(0.0, (float)$payments[0]->amount);
+        $this->assertNotNull($payments[0]->payment_date);
         $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
         $this->assertSame([], FakeStripeCheckoutGateway::$retrievedSessionIds);
     }
@@ -633,6 +635,7 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertSame('voided', $voidedPayment->payment_status);
         $this->assertCount(2, $payments);
         $this->assertSame('paid', $payments[1]->payment_status);
+        $this->assertNotNull($payments[1]->payment_date);
     }
 
     private function insertBooking(array $values): int

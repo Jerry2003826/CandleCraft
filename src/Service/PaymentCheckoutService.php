@@ -256,7 +256,6 @@ class PaymentCheckoutService
                 'booking_id' => $bookingId,
                 'amount' => $booking->price_at_booking,
                 'currency_code' => 'AUD',
-                'payment_date' => DateTime::now(),
                 'payment_method' => 'online',
                 'payment_status' => 'pending',
                 'transaction_reference' => (string)$session->id,
