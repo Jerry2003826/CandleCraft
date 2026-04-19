@@ -117,7 +117,7 @@ class StripeWebhooksControllerTest extends TestCase
 
         $this->post('/stripe/webhook', $payload);
 
-        $this->assertResponseCode(500);
+        $this->assertResponseCode(503);
         $this->assertResponseNotContains('"duplicate":true');
         $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
     }

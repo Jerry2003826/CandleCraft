@@ -27,6 +27,8 @@ class StripeWebhookEventsFixture extends TestFixture
         'last_seen_at' => ['type' => 'datetime', 'null' => false],
         '_indexes' => [
             'stripe_webhook_events_processing_status_idx' => ['type' => 'index', 'columns' => ['processing_status']],
+            'idx_stripe_webhook_events_suspicious_audit' => ['type' => 'index', 'columns' => ['suspicious_state', 'suspicious_seen_at']],
+            'idx_stripe_webhook_events_suspicious_reason' => ['type' => 'index', 'columns' => ['suspicious_reason_code', 'suspicious_seen_at']],
         ],
         '_constraints' => [
             'primary' => ['type' => 'primary', 'columns' => ['webhook_event_id']],

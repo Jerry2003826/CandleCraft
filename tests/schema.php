@@ -307,6 +307,14 @@ if (!isset($schema['stripe_webhook_events'])) {
                 'type' => 'index',
                 'columns' => ['processing_status'],
             ],
+            'idx_stripe_webhook_events_suspicious_audit' => [
+                'type' => 'index',
+                'columns' => ['suspicious_state', 'suspicious_seen_at'],
+            ],
+            'idx_stripe_webhook_events_suspicious_reason' => [
+                'type' => 'index',
+                'columns' => ['suspicious_reason_code', 'suspicious_seen_at'],
+            ],
         ],
         'constraints' => [
             'primary' => [

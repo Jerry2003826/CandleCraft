@@ -51,7 +51,7 @@ class StripeWebhooksController extends Controller
             return $this->jsonResponse(200, ['received' => true, 'suspicious' => true]);
         }
         if ($claimResult === StripeWebhookEventLedger::RESULT_IN_PROGRESS) {
-            return $this->jsonResponse(500, ['error' => 'Webhook event is already being processed.']);
+            return $this->jsonResponse(503, ['error' => 'Webhook event is already being processed.']);
         }
 
         try {

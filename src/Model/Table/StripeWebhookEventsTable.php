@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\Database\Schema\TableSchemaInterface;
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use Throwable;
@@ -67,7 +68,7 @@ class StripeWebhookEventsTable extends Table
 
         $validator
             ->inList('suspicious_state', ['clean', 'suspicious'])
-            ->allowEmptyString('suspicious_state');
+            ->notEmptyString('suspicious_state');
 
         $validator
             ->scalar('suspicious_reason_code')
@@ -113,6 +114,27 @@ class StripeWebhookEventsTable extends Table
             ->notEmptyDateTime('last_seen_at');
 
         return $validator;
+    }
+
+    public function findOperationalProcessing(SelectQuery $query): SelectQuery
+    {
+        return $query->where([
+            'StripeWebhookEvents.processing_status' => 'processing',
+            'StripeWebhookEvents.suspicious_state' => 'clean',
+        ]);
+    }
+
+    public function findSuspiciousAudit(SelectQuery $query): SelectQuery
+    {
+        return $query
+            ->where([
+                'OR' => [
+                    ['StripeWebhookEvents.suspicious_state' => 'suspicious'],
+                    ['StripeWebhookEvents.processing_status' => 'suspicious'],
+                ],
+            ])
+            ->orderByDesc('StripeWebhookEvents.suspicious_seen_at')
+            ->orderByDesc('StripeWebhookEvents.last_seen_at');
     }
 
     private function resolvePrimaryKey(TableSchemaInterface $schema): string
