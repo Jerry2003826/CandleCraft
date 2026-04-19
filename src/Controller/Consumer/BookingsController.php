@@ -55,7 +55,7 @@ class BookingsController extends AppController
             ->contain(['Courses', 'Teachers'])
             ->where([
                 'Classes.class_id' => $classId,
-                'Classes.class_status' => 'scheduled',
+                'Classes.class_status IN' => BookingService::DEFAULT_ALLOWED_CLASS_STATUSES,
             ])
             ->firstOrFail();
 

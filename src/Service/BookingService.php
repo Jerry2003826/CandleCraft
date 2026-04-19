@@ -11,6 +11,11 @@ use RuntimeException;
 
 class BookingService
 {
+    public const DEFAULT_ALLOWED_CLASS_STATUSES = ['scheduled'];
+    public const PARENT_ALLOWED_CLASS_STATUSES = ['scheduled', 'ongoing'];
+
+    private const BOOKABLE_CLASS_STATUSES = ['scheduled', 'ongoing'];
+
     private object $bookingsTable;
     private object $classesTable;
 
@@ -24,7 +29,13 @@ class BookingService
     public function createBookingForStudent(int $classId, int $studentId, ?int $parentId = null, array $options = []): array
     {
         $connection = $this->bookingsTable->getConnection();
-        $allowedClassStatuses = $options['allowedClassStatuses'] ?? ['scheduled'];
+        $allowedClassStatuses = array_values(array_intersect(
+            array_map('strval', (array)($options['allowedClassStatuses'] ?? self::DEFAULT_ALLOWED_CLASS_STATUSES)),
+            self::BOOKABLE_CLASS_STATUSES
+        ));
+        if ($allowedClassStatuses === []) {
+            $allowedClassStatuses = self::DEFAULT_ALLOWED_CLASS_STATUSES;
+        }
 
         return $connection->transactional(function () use ($classId, $studentId, $parentId, $allowedClassStatuses): array {
             $classQuery = $this->classesTable->find()
@@ -40,17 +51,6 @@ class BookingService
                 throw new RuntimeException('This class is not open for booking.');
             }
 
-            $activeCount = $this->bookingsTable->find()
-                ->where([
-                    'Bookings.class_id' => $classId,
-                    'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                ])
-                ->count();
-
-            if ($activeCount >= (int)$class->capacity) {
-                throw new RuntimeException('This class is fully booked.');
-            }
-
             $existingBooking = $this->bookingsTable->find()
                 ->where([
                     'Bookings.student_id' => $studentId,
@@ -60,6 +60,17 @@ class BookingService
 
             if ($existingBooking && in_array($existingBooking->booking_status, ['pending', 'confirmed'], true)) {
                 throw new RuntimeException('This student is already booked for this class.');
+            }
+
+            $activeCount = $this->bookingsTable->find()
+                ->where([
+                    'Bookings.class_id' => $classId,
+                    'Bookings.booking_status IN' => ['pending', 'confirmed'],
+                ])
+                ->count();
+
+            if ($activeCount >= (int)$class->capacity) {
+                throw new RuntimeException('This class is fully booked.');
             }
 
             if ($existingBooking && $existingBooking->booking_status === 'cancelled') {

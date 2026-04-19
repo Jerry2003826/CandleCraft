@@ -129,7 +129,7 @@ class BookingsController extends AppController
             ->contain(['Courses', 'Teachers'])
             ->where([
                 'Classes.class_id' => $classId,
-                'Classes.class_status IN' => ['scheduled', 'ongoing'],
+                'Classes.class_status IN' => BookingService::PARENT_ALLOWED_CLASS_STATUSES,
             ])
             ->firstOrFail();
 
@@ -175,7 +175,7 @@ class BookingsController extends AppController
                 $classId,
                 $studentId,
                 $parentId,
-                ['allowedClassStatuses' => ['scheduled', 'ongoing']]
+                ['allowedClassStatuses' => BookingService::PARENT_ALLOWED_CLASS_STATUSES]
             );
             $booking = $result['booking'];
             $class = $result['class'];

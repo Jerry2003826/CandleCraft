@@ -20,6 +20,8 @@ foreach ($rawSchema as $tableName => $tableSchema) {
     foreach ($tableSchema->columns() as $columnName) {
         $column = $tableSchema->getColumn($columnName);
         if ($column !== null) {
+            // SQLite only auto-increments INTEGER PRIMARY KEY columns correctly.
+            // Keep these aligned with production BIGINT AUTO_INCREMENT ids.
             if (
                 in_array($tableName, ['bookings', 'payments', 'learning_resources'], true) &&
                 in_array($columnName, ['booking_id', 'payment_id', 'resource_id'], true) &&

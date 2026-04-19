@@ -56,6 +56,20 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertResponseCode(404);
     }
 
+    public function testConsumerCannotOpenBookingFormForOngoingClass(): void
+    {
+        $classes = FactoryLocator::get('Table')->get('Classes');
+        $class = $classes->get(2);
+        $class->class_status = 'ongoing';
+        $classes->saveOrFail($class);
+
+        $this->loginAsStudent();
+
+        $this->get('/consumer/bookings/add/2');
+
+        $this->assertResponseCode(404);
+    }
+
     public function testUnderageStudentCannotCancelBooking(): void
     {
         $this->setUserAgeVerifiedByAdmin(4, false);

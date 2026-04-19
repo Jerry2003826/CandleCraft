@@ -81,6 +81,48 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertSame('pending', $booking->booking_status);
     }
 
+    public function testParentCanReactivateCancelledBookingAndClaimParentOwnership(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'cancelled';
+        $booking->parent_id = null;
+        $bookings->saveOrFail($booking);
+
+        $this->loginAsParent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/parent/bookings/add/1/1', [
+            'student_id' => 1,
+        ]);
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/parent/payments/process/1');
+
+        $booking = $bookings->get(1);
+        $this->assertSame('pending', $booking->booking_status);
+        $this->assertSame(1, $booking->parent_id);
+    }
+
+    public function testParentCannotCreateBookingForCompletedClassViaDirectPost(): void
+    {
+        $classes = FactoryLocator::get('Table')->get('Classes');
+        $class = $classes->get(2);
+        $class->class_status = 'completed';
+        $classes->saveOrFail($class);
+
+        $this->loginAsParent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/parent/bookings/add/2/1', [
+            'student_id' => 1,
+        ]);
+
+        $this->assertResponseCode(404);
+    }
+
     public function testParentCannotOpenBookingFormForCancelledClass(): void
     {
         $classes = FactoryLocator::get('Table')->get('Classes');
