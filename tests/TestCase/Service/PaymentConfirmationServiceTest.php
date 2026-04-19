@@ -455,6 +455,30 @@ class PaymentConfirmationServiceTest extends TestCase
         }
     }
 
+    public function testInvalidClientReferenceIdIsRejected(): void
+    {
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000, [
+                'client_reference_id' => 'booking:abc:attempt:not-valid',
+            ]));
+            $this->fail('Expected non-retriable exception was not thrown.');
+        } catch (NonRetriableWebhookException $exception) {
+            $this->assertSame('invalid_client_reference_id', $exception->getContext()['reason_code'] ?? null);
+        }
+    }
+
+    public function testClientReferenceIdMismatchIsRejected(): void
+    {
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000, [
+                'client_reference_id' => 'booking:999:attempt:abcdef1234567890',
+            ]));
+            $this->fail('Expected non-retriable exception was not thrown.');
+        } catch (NonRetriableWebhookException $exception) {
+            $this->assertSame('client_reference_id_mismatch', $exception->getContext()['reason_code'] ?? null);
+        }
+    }
+
     public function testExpiredWebhookMarksPendingPaymentExpired(): void
     {
         $result = $this->service->markCheckoutSessionExpired($this->makeSession('cs_owned', 1, 5000, [
@@ -631,6 +655,7 @@ class PaymentConfirmationServiceTest extends TestCase
             'status' => 'complete',
             'payment_status' => 'paid',
             'payment_intent' => 'pi_' . $id,
+            'client_reference_id' => (string)$bookingId,
             'metadata' => (object)[
                 'booking_id' => $bookingId,
             ],

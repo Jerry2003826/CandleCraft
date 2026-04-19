@@ -246,7 +246,11 @@ class PaymentCheckoutService
                 }
             }
 
-            $session = $this->createStripeSession($booking, $context);
+            $portalSource = $this->normalizePortalSource($context['portal_source'] ?? null);
+            $checkoutAttemptId = $this->buildCheckoutAttemptId();
+            $clientReferenceId = $this->buildClientReferenceId((int)$booking->booking_id, $checkoutAttemptId);
+            $sessionMetadata = $this->buildStripeSessionMetadata($booking, $portalSource, $checkoutAttemptId);
+            $session = $this->createStripeSession($booking, $context, $clientReferenceId, $sessionMetadata);
 
             $payment = $this->paymentsTable->newEntity([
                 'booking_id' => $bookingId,
@@ -258,7 +262,9 @@ class PaymentCheckoutService
                 'transaction_reference' => (string)$session->id,
                 'notes' => PaymentNotes::merge(null, [
                     'stripe_checkout' => true,
-                    'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+                    'portal_source' => $portalSource,
+                    'checkout_attempt_id' => $checkoutAttemptId,
+                    'stripe_client_reference_id' => $clientReferenceId,
                 ]),
             ]);
 
@@ -396,27 +402,26 @@ class PaymentCheckoutService
         return ['kind' => 'stale'];
     }
 
-    private function createStripeSession(object $booking, array $context): object
+    private function createStripeSession(
+        object $booking,
+        array $context,
+        string $clientReferenceId,
+        array $sessionMetadata,
+    ): object
     {
         $courseName = $booking->class_entity?->course?->course_name ?? 'Class Booking';
-        $studentName = $booking->student?->student_name ?? 'Student';
         $amountInCents = (int)round((float)$booking->price_at_booking * 100);
-        $sessionMetadata = [
-            'booking_id' => (string)$booking->booking_id,
-            'student_id' => (string)$booking->student_id,
-            'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
-        ];
 
         try {
             $session = $this->gateway->createCheckoutSession([
                 'payment_method_types' => ['card'],
-                'client_reference_id' => (string)$booking->booking_id,
+                'client_reference_id' => $clientReferenceId,
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'aud',
                         'product_data' => [
                             'name' => $courseName . ' - ' . ($booking->class_entity?->class_code ?? ''),
-                            'description' => 'Booking for ' . $studentName,
+                            'description' => 'Class booking',
                         ],
                         'unit_amount' => $amountInCents,
                     ],
@@ -428,9 +433,8 @@ class PaymentCheckoutService
                 'metadata' => $sessionMetadata,
                 'payment_intent_data' => [
                     'description' => sprintf(
-                        'Booking #%d for %s',
-                        (int)$booking->booking_id,
-                        $studentName
+                        'Booking #%d',
+                        (int)$booking->booking_id
                     ),
                     'metadata' => $sessionMetadata,
                 ],
@@ -501,6 +505,40 @@ class PaymentCheckoutService
     private function supportsRowLocking(): bool
     {
         return $this->paymentsTable->getConnection()->getDriver() instanceof Mysql;
+    }
+
+    private function buildCheckoutAttemptId(): string
+    {
+        return bin2hex(random_bytes(8));
+    }
+
+    private function buildClientReferenceId(int $bookingId, string $checkoutAttemptId): string
+    {
+        return sprintf('booking:%d:attempt:%s', $bookingId, $checkoutAttemptId);
+    }
+
+    private function buildStripeSessionMetadata(object $booking, string $portalSource, string $checkoutAttemptId): array
+    {
+        return [
+            'booking_id' => (string)$booking->booking_id,
+            'student_id' => (string)$booking->student_id,
+            'portal_source' => $portalSource,
+            'checkout_attempt_id' => $checkoutAttemptId,
+        ];
+    }
+
+    private function normalizePortalSource(mixed $value): string
+    {
+        $source = strtolower(trim((string)$value));
+
+        return in_array($source, [
+            'consumer_portal',
+            'parent_portal',
+            'student_portal',
+            'admin_portal',
+            'service_test',
+            'unknown',
+        ], true) ? $source : 'unknown';
     }
 
     private function buildGateway(): StripeCheckoutGatewayInterface

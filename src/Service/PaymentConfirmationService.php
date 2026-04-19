@@ -281,6 +281,46 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 ]);
             }
 
+            $clientReferenceId = trim((string)($session->client_reference_id ?? ''));
+            if ($clientReferenceId !== '') {
+                $clientReferenceBookingId = $this->extractBookingIdFromClientReferenceId($clientReferenceId);
+                if ($clientReferenceBookingId === null) {
+                    $this->markPaymentForRefundReview(
+                        $payment,
+                        $session,
+                        'invalid_client_reference_id',
+                        null,
+                        $eventContext + [
+                            'funds_captured' => true,
+                            'client_reference_id' => $clientReferenceId,
+                        ]
+                    );
+
+                    return new NonRetriableWebhookException('Stripe client reference is invalid.', $context + [
+                        'reason_code' => 'invalid_client_reference_id',
+                        'client_reference_id' => $clientReferenceId,
+                    ]);
+                }
+
+                if ($clientReferenceBookingId !== (int)$payment->booking_id) {
+                    $this->markPaymentForRefundReview(
+                        $payment,
+                        $session,
+                        'client_reference_id_mismatch',
+                        null,
+                        $eventContext + [
+                            'funds_captured' => true,
+                            'client_reference_id' => $clientReferenceId,
+                        ]
+                    );
+
+                    return new NonRetriableWebhookException('Stripe client reference does not match the local payment.', $context + [
+                        'reason_code' => 'client_reference_id_mismatch',
+                        'client_reference_id' => $clientReferenceId,
+                    ]);
+                }
+            }
+
             $expectedAmount = (int)round((float)$payment->amount * 100);
             if (isset($session->amount_total) && (int)$session->amount_total !== $expectedAmount) {
                 $this->markPaymentForRefundReview(
@@ -960,6 +1000,24 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             'last_stripe_event_type' => $eventType,
             'confirmation_events' => array_values(array_unique($events)),
         ];
+    }
+
+    private function extractBookingIdFromClientReferenceId(string $clientReferenceId): ?int
+    {
+        $normalized = trim($clientReferenceId);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (ctype_digit($normalized)) {
+            return (int)$normalized;
+        }
+
+        if (preg_match('/^booking:(\d+):attempt:[a-f0-9]{16}$/', strtolower($normalized), $matches) === 1) {
+            return (int)$matches[1];
+        }
+
+        return null;
     }
 
     protected function persistPayment(object $payment): void
