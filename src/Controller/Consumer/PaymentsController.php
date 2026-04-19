@@ -385,7 +385,7 @@ class PaymentsController extends AppController
                         'PaymentProfiles.user_id' => $identity->get('user_id'),
                         'PaymentProfiles.profile_status' => 'active',
                     ])
-                    ->order(['PaymentProfiles.updated_at' => 'DESC'])
+                    ->orderBy(['PaymentProfiles.updated_at' => 'DESC'])
                     ->first();
 
                 if ($replacement) {

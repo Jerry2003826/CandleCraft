@@ -36,7 +36,12 @@ final class CustomerAccessPolicy
 
     public function canBook(mixed $identity, mixed $currentUser = null): bool
     {
-        return $this->isCustomerIdentity($identity) && $this->isAdultConfirmed($identity, $currentUser);
+        $roleSource = $this->hasField($currentUser, 'user_role')
+            ? $currentUser
+            : $identity;
+
+        return $this->isCustomerIdentity($roleSource)
+            && $this->isAdultConfirmed($identity, $currentUser);
     }
 
     public function canPay(mixed $identity, mixed $currentUser = null): bool

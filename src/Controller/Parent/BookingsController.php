@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Parent;
 
 use App\Service\BookingCancellationService;
+use App\Service\BookingService;
 use Cake\I18n\DateTime;
 use Cake\Log\Log;
 use Cake\Http\Response;
@@ -154,92 +155,65 @@ class BookingsController extends AppController
             if (!array_key_exists($selectedStudentId, $children)) {
                 $this->Flash->error(__('Selected student is not linked to your account.'));
             } else {
-                $existingBooking = $bookingsTable->find()
-                    ->where([
-                        'Bookings.student_id' => $selectedStudentId,
-                        'Bookings.class_id' => $classId,
-                        'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                    ])
-                    ->first();
-
-                if ($existingBooking) {
-                    $this->Flash->error(__('This child is already booked for this class.'));
-                } else {
-                    $existingAnyStatusBooking = $bookingsTable->find()
-                        ->where([
-                            'Bookings.student_id' => $selectedStudentId,
-                            'Bookings.class_id' => $classId,
-                        ])
-                        ->first();
-
-                    if ($existingAnyStatusBooking) {
-                        if ($existingAnyStatusBooking->booking_status === 'cancelled') {
-                            $existingAnyStatusBooking->booking_status = 'pending';
-                            $existingAnyStatusBooking->parent_id = $parent->parent_id;
-                            $existingAnyStatusBooking->price_at_booking = $class->course?->course_price ?? 0;
-                            $existingAnyStatusBooking->booking_date = new \Cake\I18n\DateTime();
-
-                            if ($bookingsTable->save($existingAnyStatusBooking)) {
-                                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
-
-                                return $this->redirect([
-                                    'prefix' => 'Parent',
-                                    'controller' => 'Payments',
-                                    'action' => 'process',
-                                    $existingAnyStatusBooking->booking_id,
-                                ]);
-                            }
-                        }
-
-                        $this->Flash->error(__('A booking record for this class already exists and cannot be duplicated.'));
-
-                        return $this->redirect(['action' => 'index']);
-                    }
-
-                    $booking = $bookingsTable->newEntity([
-                        'class_id' => $classId,
-                        'student_id' => $selectedStudentId,
-                        'parent_id' => $parent->parent_id,
-                        'booking_status' => 'pending',
-                        'price_at_booking' => $class->course?->course_price ?? 0,
-                    ]);
-
-                    if ($bookingsTable->save($booking)) {
-                        try {
-                            $this->loadComponent('Notification');
-                            $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
-                            $className = $class->course?->course_name ?? $class->class_code;
-                            $this->Notification->sendBookingConfirmation(
-                                $this->Authentication->getIdentity()->get('user_id'),
-                                $className,
-                                $schedule,
-                            );
-                        } catch (\Throwable $exception) {
-                            Log::warning('Booking confirmation notification failed.', [
-                                'booking_id' => $booking->booking_id ?? null,
-                                'student_id' => $selectedStudentId,
-                                'parent_id' => $parent->parent_id,
-                                'portal' => 'parent',
-                                'error' => $exception->getMessage(),
-                            ]);
-                        }
-
-                        $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
-
-                        return $this->redirect([
-                            'prefix' => 'Parent',
-                            'controller' => 'Payments',
-                            'action' => 'process',
-                            $booking->booking_id,
-                        ]);
-                    }
-                    $this->Flash->error(__('Could not create booking. Please try again.'));
+                $result = $this->processParentBooking((int)$classId, $selectedStudentId, (int)$parent->parent_id);
+                if ($result !== null) {
+                    return $result;
                 }
             }
         }
 
         $this->set(compact('class', 'availableSlots', 'studentOptions', 'selectedStudentId'));
         $this->set('title', 'Book Class');
+
+        return null;
+    }
+
+    private function processParentBooking(int $classId, int $studentId, int $parentId): ?Response
+    {
+        try {
+            $result = (new BookingService())->createBookingForStudent(
+                $classId,
+                $studentId,
+                $parentId,
+                ['allowedClassStatuses' => ['scheduled', 'ongoing']]
+            );
+            $booking = $result['booking'];
+            $class = $result['class'];
+
+            try {
+                $this->loadComponent('Notification');
+                $schedule = $class->start_datetime ? $class->start_datetime->format('D j M Y, g:ia') : 'TBA';
+                $className = $class->course?->course_name ?? $class->class_code;
+                $this->Notification->sendBookingConfirmation(
+                    $this->Authentication->getIdentity()->get('user_id'),
+                    $className,
+                    $schedule,
+                );
+            } catch (\Throwable $exception) {
+                Log::warning('Booking confirmation notification failed.', [
+                    'booking_id' => $booking->booking_id ?? null,
+                    'student_id' => $studentId,
+                    'parent_id' => $parentId,
+                    'portal' => 'parent',
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+
+            if (!empty($result['reactivated'])) {
+                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+            } else {
+                $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+            }
+
+            return $this->redirect([
+                'prefix' => 'Parent',
+                'controller' => 'Payments',
+                'action' => 'process',
+                $booking->booking_id,
+            ]);
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__($exception->getMessage()));
+        }
 
         return null;
     }

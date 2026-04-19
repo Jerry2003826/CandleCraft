@@ -21,11 +21,12 @@ class BookingService
         $this->classesTable = $locator->get('Classes');
     }
 
-    public function createBookingForStudent(int $classId, int $studentId, ?int $parentId = null): array
+    public function createBookingForStudent(int $classId, int $studentId, ?int $parentId = null, array $options = []): array
     {
         $connection = $this->bookingsTable->getConnection();
+        $allowedClassStatuses = $options['allowedClassStatuses'] ?? ['scheduled'];
 
-        return $connection->transactional(function () use ($classId, $studentId, $parentId): array {
+        return $connection->transactional(function () use ($classId, $studentId, $parentId, $allowedClassStatuses): array {
             $classQuery = $this->classesTable->find()
                 ->contain(['Courses', 'Teachers'])
                 ->where(['Classes.class_id' => $classId]);
@@ -35,7 +36,7 @@ class BookingService
             }
 
             $class = $classQuery->firstOrFail();
-            if ($class->class_status !== 'scheduled') {
+            if (!in_array((string)$class->class_status, $allowedClassStatuses, true)) {
                 throw new RuntimeException('This class is not open for booking.');
             }
 
@@ -62,10 +63,12 @@ class BookingService
             }
 
             if ($existingBooking && $existingBooking->booking_status === 'cancelled') {
+                $now = DateTime::now();
                 $existingBooking->booking_status = 'pending';
                 $existingBooking->parent_id = $parentId ?? $existingBooking->parent_id;
                 $existingBooking->price_at_booking = $class->course?->course_price ?? 0;
-                $existingBooking->booking_date = DateTime::now();
+                $existingBooking->booking_date = $now;
+                $existingBooking->updated_at = $now;
                 $this->bookingsTable->saveOrFail($existingBooking);
 
                 return [
@@ -79,12 +82,16 @@ class BookingService
                 throw new RuntimeException('A booking record for this class already exists and cannot be duplicated.');
             }
 
+            $now = DateTime::now();
             $booking = $this->bookingsTable->newEntity([
                 'class_id' => $classId,
                 'student_id' => $studentId,
                 'parent_id' => $parentId,
                 'booking_status' => 'pending',
                 'price_at_booking' => $class->course?->course_price ?? 0,
+                'booking_date' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
             $this->bookingsTable->saveOrFail($booking);
 

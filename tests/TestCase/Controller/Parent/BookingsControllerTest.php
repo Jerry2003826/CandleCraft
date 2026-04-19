@@ -52,6 +52,35 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertResponseContains('Book Class');
     }
 
+    public function testParentCanCreateBookingForOngoingClassViaSharedBookingService(): void
+    {
+        $classes = FactoryLocator::get('Table')->get('Classes');
+        $class = $classes->get(2);
+        $class->class_status = 'ongoing';
+        $classes->saveOrFail($class);
+
+        $this->loginAsParent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/parent/bookings/add/2/1', [
+            'student_id' => 1,
+        ]);
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/parent/payments/process/');
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->where([
+                'Bookings.class_id' => 2,
+                'Bookings.student_id' => 1,
+                'Bookings.parent_id' => 1,
+            ])
+            ->firstOrFail();
+
+        $this->assertSame('pending', $booking->booking_status);
+    }
+
     public function testParentCannotOpenBookingFormForCancelledClass(): void
     {
         $classes = FactoryLocator::get('Table')->get('Classes');
