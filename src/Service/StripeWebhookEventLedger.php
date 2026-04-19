@@ -158,6 +158,17 @@ class StripeWebhookEventLedger
             $matchedByEventId = true;
         }
 
+        if ($matchedByEventId && $this->hasMismatchedBusinessKey($event, $businessEventKey)) {
+            Log::warning('Stripe webhook status update attempted to rewrite an existing business event key.', [
+                'event_id' => $eventId,
+                'existing_business_event_key' => (string)($event->business_event_key ?? ''),
+                'incoming_business_event_key' => $businessEventKey,
+                'target_status' => $status,
+            ]);
+
+            return;
+        }
+
         $event->event_type = $eventType;
         $event->session_id = $sessionId;
         $event->business_event_key = $businessEventKey;
@@ -402,6 +413,10 @@ class StripeWebhookEventLedger
             return null;
         }
 
+        if (!$this->isDetachedLegacyEvent($event)) {
+            return null;
+        }
+
         $businessEvent = $this->findByBusinessEventKey($businessEventKey);
         if ($businessEvent === null) {
             return null;
@@ -412,6 +427,22 @@ class StripeWebhookEventLedger
         }
 
         return $businessEvent;
+    }
+
+    private function isDetachedLegacyEvent(object $event): bool
+    {
+        return (string)($event->business_event_key ?? '') === '';
+    }
+
+    private function hasMismatchedBusinessKey(object $event, ?string $businessEventKey): bool
+    {
+        if ($businessEventKey === null) {
+            return false;
+        }
+
+        $existingBusinessKey = (string)($event->business_event_key ?? '');
+
+        return $existingBusinessKey !== '' && $existingBusinessKey !== $businessEventKey;
     }
 
     private function buildBusinessEventKey(string $eventType, string $sessionId): ?string

@@ -190,6 +190,53 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
     }
 
+    public function testExistingNonDetachedEventDoesNotRedirectToAnotherBusinessEventRow(): void
+    {
+        $eventTime = DateTime::now()->subMinutes(5);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_original_key',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_original_key',
+            'payload_hash' => hash('sha256', '{"id":"evt_original_key"}'),
+            'processing_status' => 'processing',
+            'first_seen_at' => $eventTime,
+            'processing_started_at' => $eventTime,
+            'last_seen_at' => $eventTime,
+        ]);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_other_key',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_other_key',
+            'payload_hash' => hash('sha256', '{"id":"evt_other_key"}'),
+            'processing_status' => 'failed',
+            'first_seen_at' => $eventTime,
+            'processing_started_at' => $eventTime,
+            'last_seen_at' => $eventTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_original_key',
+            'checkout.session.completed',
+            'cs_other_key',
+            '{"id":"evt_original_key"}'
+        );
+
+        $original = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_original_key'])
+            ->firstOrFail();
+        $other = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_other_key'])
+            ->firstOrFail();
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
+        $this->assertSame('checkout.session.completed:cs_original_key', $original->business_event_key);
+        $this->assertSame('processing', $original->processing_status);
+        $this->assertSame('checkout.session.completed:cs_other_key', $other->business_event_key);
+        $this->assertSame('failed', $other->processing_status);
+    }
+
     public function testBusinessRetryClaimPreservesCanonicalEventIdAndPayloadHash(): void
     {
         $failedTime = DateTime::now()->subMinutes(15);
@@ -347,6 +394,36 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('processed', $canonical->processing_status);
         $this->assertSame('processing', $detached->processing_status);
         $this->assertNull($detached->business_event_key);
+    }
+
+    public function testStatusUpdateDoesNotRewriteExistingBusinessEventKey(): void
+    {
+        $eventTime = DateTime::now()->subMinutes(5);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_status_guard',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_status_guard',
+            'payload_hash' => hash('sha256', '{"id":"evt_status_guard"}'),
+            'processing_status' => 'failed',
+            'first_seen_at' => $eventTime,
+            'processing_started_at' => $eventTime,
+            'last_seen_at' => $eventTime,
+        ]);
+
+        $this->ledger->markProcessed(
+            'evt_status_guard',
+            'checkout.session.completed',
+            'cs_other_status_guard',
+            '{"id":"evt_status_guard"}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_status_guard'])
+            ->firstOrFail();
+
+        $this->assertSame('failed', $event->processing_status);
+        $this->assertSame('checkout.session.completed:cs_status_guard', $event->business_event_key);
     }
 
     private function saveWebhookEvent(array $data): void

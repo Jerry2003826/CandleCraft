@@ -34,9 +34,14 @@ class RepairStripeWebhookEventLedgerBusinessKeys extends BaseMigration
 
         $table->update();
 
-        $this->backfillBusinessEventKeys();
+        $hasBusinessKeyIndex = $table->hasIndex(['business_event_key']);
+        if (!$hasBusinessKeyIndex) {
+            $this->backfillBusinessEventKeys();
+        }
         $this->backfillProcessingStartedAt();
-        $this->detachDuplicateBusinessEventKeys();
+        if (!$hasBusinessKeyIndex) {
+            $this->detachDuplicateBusinessEventKeys();
+        }
 
         $table = $this->table('stripe_webhook_events');
         if ($table->hasColumn('processing_started_at')) {
