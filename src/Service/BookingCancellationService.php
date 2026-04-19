@@ -40,7 +40,7 @@ class BookingCancellationService
                 return;
             }
 
-            $payments = $this->findBookingPayments($bookingId);
+            $payments = $this->findBookingPaymentsForUpdate($bookingId);
             foreach ($payments as $payment) {
                 if (in_array($payment->payment_status, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true)) {
                     throw new RuntimeException('Paid bookings require a refund or manual review before they can be cancelled.');
@@ -68,7 +68,7 @@ class BookingCancellationService
 
         return $connection->transactional(function () use ($bookingId, $context): int {
             $this->loadBookingForUpdate($bookingId);
-            $payments = $this->findBookingPayments($bookingId);
+            $payments = $this->findBookingPaymentsForUpdate($bookingId);
             $voided = 0;
 
             foreach ($payments as $payment) {
@@ -86,12 +86,17 @@ class BookingCancellationService
         });
     }
 
-    private function findBookingPayments(int $bookingId)
+    private function findBookingPaymentsForUpdate(int $bookingId)
     {
-        return $this->paymentsTable->find()
+        $query = $this->paymentsTable->find()
             ->where(['Payments.booking_id' => $bookingId])
-            ->orderBy(['Payments.payment_id' => 'DESC'])
-            ->all();
+            ->orderBy(['Payments.payment_id' => 'DESC']);
+
+        if ($this->supportsRowLocking()) {
+            $query->epilog('FOR UPDATE');
+        }
+
+        return $query->all();
     }
 
     private function loadBookingForUpdate(int $bookingId): object

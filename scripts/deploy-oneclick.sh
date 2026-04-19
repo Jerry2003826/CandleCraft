@@ -163,9 +163,12 @@ write_app_local() {
     local db_name="$6"
     local salt="$7"
     local embed_secrets="$8"
+    local uploads_root="$9"
+    local uploads_url_prefix="${10}"
 
     local host_literal user_literal pass_literal database_literal salt_literal
     local stripe_sk_literal stripe_pk_literal stripe_wh_literal
+    local uploads_root_literal uploads_url_prefix_literal
 
     host_literal="$(php_literal "$DB_HOST")"
     user_literal="$(php_literal "$db_user")"
@@ -175,6 +178,8 @@ write_app_local() {
     stripe_sk_literal="$(php_literal "$STRIPE_SECRET_KEY")"
     stripe_pk_literal="$(php_literal "$STRIPE_PUBLISHABLE_KEY")"
     stripe_wh_literal="$(php_literal "$STRIPE_WEBHOOK_SECRET")"
+    uploads_root_literal="$(php_literal "$uploads_root")"
+    uploads_url_prefix_literal="$(php_literal "$uploads_url_prefix")"
 
     if [ "$embed_secrets" = true ]; then
         cat > "$file_path" <<PHPEOF
@@ -220,6 +225,10 @@ return [
     'Recaptcha' => [
         'site_key' => env('RECAPTCHA_SITE_KEY', null),
         'secret_key' => env('RECAPTCHA_SECRET_KEY', null),
+    ],
+    'Uploads' => [
+        'resources_root' => env('UPLOAD_RESOURCES_ROOT', ${uploads_root_literal}),
+        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', ${uploads_url_prefix_literal}),
     ],
 ];
 PHPEOF
@@ -267,6 +276,10 @@ return [
     'Recaptcha' => [
         'site_key' => env('RECAPTCHA_SITE_KEY', null),
         'secret_key' => env('RECAPTCHA_SECRET_KEY', null),
+    ],
+    'Uploads' => [
+        'resources_root' => env('UPLOAD_RESOURCES_ROOT', ${uploads_root_literal}),
+        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', ${uploads_url_prefix_literal}),
     ],
 ];
 PHPEOF
@@ -489,18 +502,20 @@ for ENV in dev production review; do
 
     ENV_SALT="$(generate_salt)"
     DB_NAME="${REMOTE_USER}_${ENV}_db"
+    UPLOADS_ROOT="${REMOTE_HOME}/public_html/${SUBDIR}/uploads/resources"
+    UPLOADS_URL_PREFIX="/${SUBDIR}/uploads/resources"
 
-    write_app_local "${ENV_DIR}/config/app_local.template.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" false
+    write_app_local "${ENV_DIR}/config/app_local.template.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" false "${UPLOADS_ROOT}" "${UPLOADS_URL_PREFIX}"
 
     if [ "$EMBED_SECRETS" = true ]; then
-        write_app_local "${ENV_DIR}/config/app_local.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" true
+        write_app_local "${ENV_DIR}/config/app_local.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" true "${UPLOADS_ROOT}" "${UPLOADS_URL_PREFIX}"
         chmod 600 "${ENV_DIR}/config/app_local.php"
         validate_generated_app_local "${ENV_DIR}/config/app_local.php" "${ENV}"
     fi
 
     if [ "${PACKAGE_ONLY}" != true ]; then
         mkdir -p "${SECRET_STAGING_DIR}/${ENV}_app/config"
-        write_app_local "${SECRET_STAGING_DIR}/${ENV}_app/config/app_local.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" true
+        write_app_local "${SECRET_STAGING_DIR}/${ENV}_app/config/app_local.php" "$ENV" "$DEBUG_VAL" "${DB_USER}" "${DB_PASS}" "${DB_NAME}" "${ENV_SALT}" true "${UPLOADS_ROOT}" "${UPLOADS_URL_PREFIX}"
         chmod 600 "${SECRET_STAGING_DIR}/${ENV}_app/config/app_local.php"
         validate_generated_app_local "${SECRET_STAGING_DIR}/${ENV}_app/config/app_local.php" "${ENV}"
     fi

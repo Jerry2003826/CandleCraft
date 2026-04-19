@@ -140,6 +140,8 @@ class DeploymentScriptsTest extends TestCase
         $this->assertStringContainsString('seed_admin.sql', $databaseReadme);
         $this->assertStringNotContainsString('schema.sql', $databaseReadme);
         $this->assertStringContainsString('config/app_local.template.php', $deploymentReadme);
+        $this->assertStringContainsString("/home/cpaneluser/public_html/dev/uploads/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
+        $this->assertStringContainsString("/dev/uploads/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
     }
 
     public function testCpanelDeployEmbedSecretsHandlesSpecialCharacterPasswords(): void

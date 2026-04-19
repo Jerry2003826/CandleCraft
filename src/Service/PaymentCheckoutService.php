@@ -81,9 +81,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('Booking amount changed during checkout. Please retry.');
             }
 
-            $blockingPayment = $this->paymentsTable->find()
+            $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
@@ -104,9 +103,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('Cancelled bookings cannot be paid.');
             }
 
-            $pendingPayments = $this->paymentsTable->find()
+            $pendingPayments = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status' => 'pending',
                 ])
                 ->all();
@@ -157,9 +155,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('Booking amount changed during checkout. Please retry.');
             }
 
-            $blockingPayment = $this->paymentsTable->find()
+            $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
@@ -180,9 +177,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('Cancelled bookings cannot be paid.');
             }
 
-            $pendingPayments = $this->paymentsTable->find()
+            $pendingPayments = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status' => 'pending',
                 ])
                 ->orderBy(['Payments.updated_at' => 'DESC', 'Payments.payment_id' => 'DESC'])
@@ -289,9 +285,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('Cancelled bookings cannot be paid.');
             }
 
-            $blockingPayment = $this->paymentsTable->find()
+            $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
@@ -308,9 +303,8 @@ class PaymentCheckoutService
                 throw new RuntimeException('This booking already has a processed payment and requires manual review.');
             }
 
-            $pendingPayments = $this->paymentsTable->find()
+            $pendingPayments = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.booking_id' => $bookingId,
                     'Payments.payment_status' => 'pending',
                 ])
                 ->all();
@@ -468,6 +462,18 @@ class PaymentCheckoutService
         }
 
         return $query->firstOrFail();
+    }
+
+    private function findPaymentsForUpdate(int $bookingId)
+    {
+        $query = $this->paymentsTable->find()
+            ->where(['Payments.booking_id' => $bookingId]);
+
+        if ($this->supportsRowLocking()) {
+            $query->epilog('FOR UPDATE');
+        }
+
+        return $query;
     }
 
     private function supportsRowLocking(): bool

@@ -81,6 +81,48 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertResponseCode(500);
     }
 
+    public function testAsyncPaymentSucceededUsesConfirmationService(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $payload = $this->sessionPayload('checkout.session.async_payment_succeeded', 'cs_async_success');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(200);
+        $this->assertCount(1, FakePaymentConfirmationService::$receivedSessions);
+        $this->assertSame('cs_async_success', FakePaymentConfirmationService::$receivedSessions[0]->id);
+    }
+
+    public function testAsyncPaymentFailedUsesFailureHandler(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $payload = $this->sessionPayload('checkout.session.async_payment_failed', 'cs_async_failed');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(200);
+        $this->assertCount(1, FakePaymentConfirmationService::$failedSessions);
+        $this->assertSame('cs_async_failed', FakePaymentConfirmationService::$failedSessions[0]->id);
+    }
+
     public function testWebhookReturns200ForManualReviewFailure(): void
     {
         $secret = 'whsec_test';
@@ -152,6 +194,43 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertSame('amount_mismatch', $incident->reason_code);
     }
 
+    public function testDuplicateWebhookEventIdDoesNotCreateDuplicateOpenIncidents(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        FakePaymentConfirmationService::$handler = static function (): string {
+            throw new ManualReviewWebhookException('Cancelled booking paid late.', [
+                'session_id' => 'cs_duplicate_event',
+                'reason_code' => 'cancelled_booking_paid_late',
+            ]);
+        };
+
+        $payload = $this->sessionPayload('checkout.session.completed', 'cs_duplicate_event');
+        $headers = [
+            'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+            'Content-Type' => 'application/json',
+        ];
+
+        $this->configRequest(['headers' => $headers]);
+        $this->post('/stripe/webhook', $payload);
+        $this->assertResponseCode(200);
+
+        $this->configRequest(['headers' => $headers]);
+        $this->post('/stripe/webhook', $payload);
+        $this->assertResponseCode(200);
+
+        $incidents = FactoryLocator::get('Table')->get('PaymentWebhookIncidents')
+            ->find()
+            ->where(['session_id' => 'cs_duplicate_event'])
+            ->all()
+            ->toList();
+
+        $this->assertCount(1, $incidents);
+        $this->assertSame('open', $incidents[0]->status);
+    }
+
     public function testRetriableWebhookFailureDoesNotCreateIncident(): void
     {
         $secret = 'whsec_test';
@@ -185,15 +264,21 @@ class StripeWebhooksControllerTest extends TestCase
 
     private function completedSessionPayload(string $sessionId): string
     {
+        return $this->sessionPayload('checkout.session.completed', $sessionId);
+    }
+
+    private function sessionPayload(string $eventType, string $sessionId): string
+    {
         return (string)json_encode([
             'id' => 'evt_test_' . $sessionId,
-            'type' => 'checkout.session.completed',
+            'type' => $eventType,
             'data' => [
                 'object' => [
                     'id' => $sessionId,
                     'amount_total' => 5000,
                     'currency' => 'aud',
                     'payment_intent' => 'pi_' . $sessionId,
+                    'payment_status' => 'paid',
                     'metadata' => [
                         'booking_id' => 1,
                     ],

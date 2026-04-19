@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Service;
 
+use Cake\Core\Configure;
 use App\Service\ResourceUploadService;
 use Cake\TestSuite\TestCase;
 use Laminas\Diactoros\UploadedFile;
@@ -10,6 +11,14 @@ use RuntimeException;
 
 class ResourceUploadServiceTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        Configure::delete('Uploads.resources_root');
+        Configure::delete('Uploads.resources_url_prefix');
+
+        parent::tearDown();
+    }
+
     public function testPhpUploadIsRejected(): void
     {
         $tmpFile = tempnam(sys_get_temp_dir(), 'upload');
@@ -67,5 +76,31 @@ class ResourceUploadServiceTest extends TestCase
 
         $this->assertFileExists($outsideFile);
         unlink($outsideFile);
+    }
+
+    public function testUsesConfiguredStorageRootAndUrlPrefix(): void
+    {
+        $storageRoot = sys_get_temp_dir() . '/resource-upload-root-' . bin2hex(random_bytes(6));
+        Configure::write('Uploads.resources_root', $storageRoot);
+        Configure::write('Uploads.resources_url_prefix', '/dev/uploads/resources');
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'upload');
+        file_put_contents($tmpFile, 'pdf');
+
+        $service = new ResourceUploadService();
+        $storedPath = $service->storeUploadedFile(new UploadedFile(
+            $tmpFile,
+            filesize($tmpFile),
+            UPLOAD_ERR_OK,
+            'notes.pdf',
+            'application/pdf'
+        ));
+
+        $this->assertStringStartsWith('dev/uploads/resources/', $storedPath);
+        $this->assertDirectoryExists($storageRoot);
+        $this->assertFileExists($storageRoot . DIRECTORY_SEPARATOR . basename($storedPath));
+
+        unlink($storageRoot . DIRECTORY_SEPARATOR . basename($storedPath));
+        rmdir($storageRoot);
     }
 }

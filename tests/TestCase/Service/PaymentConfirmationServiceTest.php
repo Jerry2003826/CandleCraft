@@ -190,6 +190,22 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('pending', $booking->booking_status);
     }
 
+    public function testAsyncPaymentFailedMarksPendingPaymentFailed(): void
+    {
+        $result = $this->service->markCheckoutSessionFailed($this->makeSession('cs_owned', 1, 5000, [
+            'status' => 'complete',
+            'payment_status' => 'unpaid',
+        ]));
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('failed', $result);
+        $this->assertSame('failed', $payment->payment_status);
+        $this->assertSame('pending', $booking->booking_status);
+        $this->assertStringContainsString('checkout.session.async_payment_failed', (string)$payment->notes);
+    }
+
     private function makeSession(string $id, int $bookingId, int $amountTotal, array $overrides = []): object
     {
         return (object)array_merge([

@@ -43,6 +43,11 @@ class PaymentWebhookIncidentsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('event_id')
+            ->maxLength('event_id', 100)
+            ->allowEmptyString('event_id');
+
+        $validator
             ->scalar('event_type')
             ->maxLength('event_type', 100)
             ->requirePresence('event_type', 'create')

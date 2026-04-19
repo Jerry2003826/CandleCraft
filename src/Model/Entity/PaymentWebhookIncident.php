@@ -8,6 +8,7 @@ use Cake\ORM\Entity;
 class PaymentWebhookIncident extends Entity
 {
     protected array $_accessible = [
+        'event_id' => true,
         'event_type' => true,
         'session_id' => true,
         'payment_id' => true,

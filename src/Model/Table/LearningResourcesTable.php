@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Datasource\EntityInterface;
 use Cake\I18n\DateTime;
@@ -82,9 +83,12 @@ class LearningResourcesTable extends Table
                         return true;
                     }
 
-                    return preg_match('/^uploads\/resources\/[A-Za-z0-9._-]+$/', (string)$value) === 1;
+                    $prefix = trim((string)Configure::read('Uploads.resources_url_prefix', '/uploads/resources'), '/');
+                    $pattern = '#^' . preg_quote($prefix, '#') . '/[A-Za-z0-9._-]+$#';
+
+                    return preg_match($pattern, ltrim((string)$value, '/')) === 1;
                 },
-                'message' => 'Uploaded files must stay within uploads/resources.',
+                'message' => 'Uploaded files must stay within the configured resources directory.',
             ])
             ->allowEmptyString('file_path');
 

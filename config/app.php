@@ -424,6 +424,11 @@ return [
         'demo_mode' => filter_var(env('PAYMENTS_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    'Uploads' => [
+        'resources_root' => env('UPLOAD_RESOURCES_ROOT', WWW_ROOT . 'uploads' . DS . 'resources'),
+        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', '/uploads/resources'),
+    ],
+
     /**
      * DebugKit configuration.
      *

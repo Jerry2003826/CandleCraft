@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use Cake\Core\Configure;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 
@@ -56,7 +57,11 @@ class ResourceUploadService
         }
 
         $cleanDirectory = trim($directory, '/\\');
-        $targetDir = WWW_ROOT . 'uploads' . DS . $cleanDirectory;
+        if ($cleanDirectory !== 'resources') {
+            throw new RuntimeException('Unsupported upload directory.');
+        }
+
+        $targetDir = $this->getStorageAbsoluteDirectory();
         if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
             throw new RuntimeException('Upload directory could not be created.');
         }
@@ -64,22 +69,34 @@ class ResourceUploadService
         $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
         $file->moveTo($targetDir . DS . $storedName);
 
-        return 'uploads/' . $cleanDirectory . '/' . $storedName;
+        return $this->getStorageDirectory() . '/' . $storedName;
     }
 
     public function deleteStoredFile(?string $relativePath): void
     {
-        if (!$relativePath || !str_starts_with($relativePath, 'uploads/resources/')) {
+        $normalizedPath = $this->normalizeStoredPath($relativePath);
+        if ($normalizedPath === null) {
             return;
         }
 
-        $uploadsRoot = realpath(WWW_ROOT . 'uploads' . DS . 'resources');
+        $uploadsRoot = realpath($this->getStorageAbsoluteDirectory());
         if ($uploadsRoot === false) {
             return;
         }
 
-        $absolutePath = realpath(WWW_ROOT . str_replace('/', DS, $relativePath));
-        if ($absolutePath === false || !is_file($absolutePath)) {
+        $prefix = $this->getStorageDirectory();
+        $fileName = substr($normalizedPath, strlen($prefix) + 1);
+        if ($fileName === false || $fileName === '' || basename($fileName) !== $fileName) {
+            return;
+        }
+
+        $candidatePath = $uploadsRoot . DIRECTORY_SEPARATOR . $fileName;
+        if (!is_file($candidatePath)) {
+            return;
+        }
+
+        $absolutePath = realpath($candidatePath);
+        if ($absolutePath === false) {
             return;
         }
 
@@ -114,20 +131,26 @@ class ResourceUploadService
 
     public function getStorageDirectory(): string
     {
-        return 'uploads/resources';
+        return trim((string)Configure::read('Uploads.resources_url_prefix', '/uploads/resources'), '/');
     }
 
     public function getStorageAbsoluteDirectory(): string
     {
-        return WWW_ROOT . 'uploads' . DS . 'resources';
+        return rtrim((string)Configure::read('Uploads.resources_root', WWW_ROOT . 'uploads' . DS . 'resources'), DIRECTORY_SEPARATOR);
     }
 
     public function normalizeStoredPath(?string $relativePath): ?string
     {
-        if (!$relativePath || !str_starts_with($relativePath, 'uploads/resources/')) {
+        if (!$relativePath) {
             return null;
         }
 
-        return $relativePath;
+        $normalized = ltrim(str_replace('\\', '/', $relativePath), '/');
+        $prefix = $this->getStorageDirectory();
+        if (!str_starts_with($normalized, $prefix . '/')) {
+            return null;
+        }
+
+        return $normalized;
     }
 }

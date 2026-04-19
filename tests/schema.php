@@ -72,6 +72,12 @@ if (!isset($schema['payment_webhook_incidents'])) {
                 'default' => null,
                 'autoIncrement' => true,
             ],
+            'event_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
             'event_type' => [
                 'type' => 'string',
                 'length' => 100,
@@ -161,6 +167,10 @@ if (!isset($schema['payment_webhook_incidents'])) {
                 'type' => 'index',
                 'columns' => ['event_type'],
             ],
+            'payment_webhook_incidents_event_id_idx' => [
+                'type' => 'index',
+                'columns' => ['event_id'],
+            ],
             'payment_webhook_incidents_session_id_idx' => [
                 'type' => 'index',
                 'columns' => ['session_id'],
@@ -178,6 +188,10 @@ if (!isset($schema['payment_webhook_incidents'])) {
             'primary' => [
                 'type' => 'primary',
                 'columns' => ['incident_id'],
+            ],
+            'payment_webhook_incidents_event_reason_status_uk' => [
+                'type' => 'unique',
+                'columns' => ['event_id', 'reason_code', 'status'],
             ],
         ],
     ];

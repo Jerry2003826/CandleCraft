@@ -109,4 +109,9 @@ return [
         'site_key' => env('RECAPTCHA_SITE_KEY', null),
         'secret_key' => env('RECAPTCHA_SECRET_KEY', null),
     ],
+
+    'Uploads' => [
+        'resources_root' => env('UPLOAD_RESOURCES_ROOT', WWW_ROOT . 'uploads' . DS . 'resources'),
+        'resources_url_prefix' => env('UPLOAD_RESOURCES_URL_PREFIX', '/uploads/resources'),
+    ],
 ];

@@ -18,20 +18,40 @@ class PaymentWebhookIncidentRecorder
         $this->incidentsTable = $locator->get('PaymentWebhookIncidents');
     }
 
-    public function record(PaymentWebhookException $exception, string $eventType, object $session, string $payload): void
+    public function record(
+        PaymentWebhookException $exception,
+        string $eventType,
+        object $session,
+        string $payload,
+        string $eventId = '',
+    ): void
     {
         $context = $exception->getContext();
         $sessionId = (string)($context['session_id'] ?? $session->id ?? '');
         $reasonCode = (string)($context['reason_code'] ?? 'unknown_reason');
 
-        $incident = $this->incidentsTable->find()
-            ->where([
+        $query = $this->incidentsTable->find()->where([
+            'PaymentWebhookIncidents.reason_code' => $reasonCode,
+            'PaymentWebhookIncidents.status' => 'open',
+        ]);
+        if ($eventId !== '') {
+            $query->where([
+                'OR' => [
+                    ['PaymentWebhookIncidents.event_id' => $eventId],
+                    [
+                        'PaymentWebhookIncidents.event_type' => $eventType,
+                        'PaymentWebhookIncidents.session_id' => $sessionId,
+                    ],
+                ],
+            ]);
+        } else {
+            $query->where([
                 'PaymentWebhookIncidents.event_type' => $eventType,
                 'PaymentWebhookIncidents.session_id' => $sessionId,
-                'PaymentWebhookIncidents.reason_code' => $reasonCode,
-                'PaymentWebhookIncidents.status' => 'open',
-            ])
-            ->first();
+            ]);
+        }
+
+        $incident = $query->first();
 
         if ($incident === null) {
             $incident = $this->incidentsTable->newEmptyEntity();
@@ -51,6 +71,7 @@ class PaymentWebhookIncidentRecorder
             'resolved_at' => null,
             'resolved_by_admin_id' => null,
         ]);
+        $incident->set('event_id', $eventId !== '' ? $eventId : null);
 
         $this->incidentsTable->saveOrFail($incident);
     }

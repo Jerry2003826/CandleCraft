@@ -6,4 +6,6 @@ namespace App\Service;
 interface PaymentConfirmationServiceInterface
 {
     public function confirmCheckoutSession(object $session): string;
+
+    public function markCheckoutSessionFailed(object $session): string;
 }

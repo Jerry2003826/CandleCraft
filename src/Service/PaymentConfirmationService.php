@@ -7,6 +7,7 @@ use App\Exception\Payments\ManualReviewWebhookException;
 use App\Exception\Payments\NonRetriableWebhookException;
 use App\Exception\Payments\PaymentWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
+use Cake\Database\Driver\Mysql;
 use Cake\Datasource\FactoryLocator;
 use Cake\I18n\DateTime;
 use Cake\ORM\Locator\LocatorInterface;
@@ -37,16 +38,38 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
 
         $connection = $this->paymentsTable->getConnection();
         $result = $connection->transactional(function () use ($session, $transactionReference): string|PaymentWebhookException {
-            $payment = $this->paymentsTable->find()
+            $paymentPreview = $this->paymentsTable->find()
+                ->select(['payment_id', 'booking_id'])
                 ->where(['Payments.transaction_reference' => $transactionReference])
                 ->first();
 
-            if (!$payment) {
+            if (!$paymentPreview) {
                 return new ManualReviewWebhookException('Payment record not found.', [
                     'session_id' => $transactionReference,
                     'payment_id' => null,
                     'booking_id' => null,
                     'reason_code' => 'payment_not_found',
+                ]);
+            }
+
+            try {
+                $booking = $this->loadBookingForUpdate((int)$paymentPreview->booking_id);
+            } catch (RecordNotFoundException $exception) {
+                return new ManualReviewWebhookException('Booking record not found for payment.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'booking_not_found',
+                ], previous: $exception);
+            }
+
+            $payment = $this->loadPaymentForUpdate($transactionReference, (int)$paymentPreview->payment_id);
+            if ($payment === null) {
+                return new ManualReviewWebhookException('Payment record not found.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'payment_not_found_after_lock',
                 ]);
             }
 
@@ -177,16 +200,6 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 ]);
             }
 
-            try {
-                $booking = $this->bookingsTable->get($payment->booking_id);
-            } catch (RecordNotFoundException $exception) {
-                $this->markPaymentForReview($payment, $session, 'booking_not_found');
-
-                return new ManualReviewWebhookException('Booking record not found for payment.', $context + [
-                    'reason_code' => 'booking_not_found',
-                ], previous: $exception);
-            }
-
             $paymentMetadata = [
                 'stripe_checkout' => true,
                 'payment_intent' => (string)($session->payment_intent ?? ''),
@@ -253,6 +266,124 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         return $result;
     }
 
+    public function markCheckoutSessionFailed(object $session): string
+    {
+        $transactionReference = (string)($session->id ?? '');
+        if ($transactionReference === '') {
+            throw new NonRetriableWebhookException('Stripe session id is missing.', [
+                'session_id' => '',
+                'reason_code' => 'missing_session_id',
+            ]);
+        }
+
+        $connection = $this->paymentsTable->getConnection();
+        $result = $connection->transactional(function () use ($session, $transactionReference): string|PaymentWebhookException {
+            $paymentPreview = $this->paymentsTable->find()
+                ->select(['payment_id', 'booking_id'])
+                ->where(['Payments.transaction_reference' => $transactionReference])
+                ->first();
+
+            if ($paymentPreview === null) {
+                return new ManualReviewWebhookException('Payment record not found.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => null,
+                    'booking_id' => null,
+                    'reason_code' => 'payment_not_found',
+                ]);
+            }
+
+            try {
+                $booking = $this->loadBookingForUpdate((int)$paymentPreview->booking_id);
+            } catch (RecordNotFoundException $exception) {
+                return new ManualReviewWebhookException('Booking record not found for payment.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'booking_not_found',
+                ], previous: $exception);
+            }
+
+            $payment = $this->loadPaymentForUpdate($transactionReference, (int)$paymentPreview->payment_id);
+            if ($payment === null) {
+                return new ManualReviewWebhookException('Payment record not found.', [
+                    'session_id' => $transactionReference,
+                    'payment_id' => (int)$paymentPreview->payment_id,
+                    'booking_id' => (int)$paymentPreview->booking_id,
+                    'reason_code' => 'payment_not_found_after_lock',
+                ]);
+            }
+
+            $context = [
+                'session_id' => $transactionReference,
+                'payment_id' => (int)$payment->payment_id,
+                'booking_id' => (int)$payment->booking_id,
+            ];
+            $localPaymentStatus = (string)$payment->payment_status;
+
+            if (in_array($localPaymentStatus, ['failed', 'voided', 'expired'], true)) {
+                return 'idempotent';
+            }
+
+            if (in_array($localPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true)) {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'async_payment_failed_after_processed_payment',
+                    (string)$booking->booking_status,
+                    ['event_type' => 'checkout.session.async_payment_failed']
+                );
+
+                return new ManualReviewWebhookException(
+                    'Stripe reported an async payment failure for a payment that was already processed locally.',
+                    $context + [
+                        'reason_code' => 'async_payment_failed_after_processed_payment',
+                        'local_payment_status' => $localPaymentStatus,
+                    ]
+                );
+            }
+
+            if ($localPaymentStatus !== 'pending') {
+                $this->markPaymentForReview(
+                    $payment,
+                    $session,
+                    'unexpected_local_payment_status',
+                    (string)$booking->booking_status,
+                    [
+                        'event_type' => 'checkout.session.async_payment_failed',
+                        'local_payment_status' => $localPaymentStatus,
+                    ]
+                );
+
+                return new ManualReviewWebhookException(
+                    'Payment status is incompatible with automatic failure handling.',
+                    $context + [
+                        'reason_code' => 'unexpected_local_payment_status',
+                        'local_payment_status' => $localPaymentStatus,
+                    ]
+                );
+            }
+
+            $payment->payment_status = 'failed';
+            $payment->payment_date = $payment->payment_date ?: DateTime::now();
+            $payment->notes = PaymentNotes::merge($payment->notes, [
+                'stripe_checkout' => true,
+                'confirmation_source' => 'stripe_webhook',
+                'event_type' => 'checkout.session.async_payment_failed',
+                'session_id' => $transactionReference,
+                'payment_resolution' => 'stripe_async_payment_failed',
+            ]);
+            $this->savePayment($payment, $context + ['reason_code' => 'payment_marked_failed']);
+
+            return 'failed';
+        });
+
+        if ($result instanceof PaymentWebhookException) {
+            throw $result;
+        }
+
+        return $result;
+    }
+
     protected function savePayment(object $payment, array $context): void
     {
         try {
@@ -279,6 +410,33 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         }
     }
 
+    private function loadBookingForUpdate(int $bookingId): object
+    {
+        $query = $this->bookingsTable->find()
+            ->where(['Bookings.booking_id' => $bookingId]);
+
+        if ($this->supportsRowLocking()) {
+            $query->epilog('FOR UPDATE');
+        }
+
+        return $query->firstOrFail();
+    }
+
+    private function loadPaymentForUpdate(string $transactionReference, int $paymentId): ?object
+    {
+        $query = $this->paymentsTable->find()
+            ->where([
+                'Payments.payment_id' => $paymentId,
+                'Payments.transaction_reference' => $transactionReference,
+            ]);
+
+        if ($this->supportsRowLocking()) {
+            $query->epilog('FOR UPDATE');
+        }
+
+        return $query->first();
+    }
+
     private function markPaymentForReview(
         object $payment,
         object $session,
@@ -295,7 +453,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             'stripe_checkout' => true,
             'payment_intent' => (string)($session->payment_intent ?? ''),
             'confirmation_source' => 'stripe_webhook',
-            'event_type' => 'checkout.session.completed',
+            'event_type' => $extraNotes['event_type'] ?? 'checkout.session.completed',
             'session_id' => (string)($session->id ?? ''),
             'manual_review_required' => true,
             'reason_code' => $reasonCode,
@@ -318,5 +476,10 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
     protected function persistBooking(object $booking): void
     {
         $this->bookingsTable->saveOrFail($booking);
+    }
+
+    private function supportsRowLocking(): bool
+    {
+        return $this->paymentsTable->getConnection()->getDriver() instanceof Mysql;
     }
 }
