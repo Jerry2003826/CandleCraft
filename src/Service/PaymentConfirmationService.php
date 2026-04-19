@@ -352,17 +352,23 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     );
 
                 default:
-                    $this->markPaymentForReview(
+                    $this->markPaymentForRefundReview(
                         $payment,
                         $session,
-                        'unexpected_booking_status',
+                        'unexpected_booking_status_after_paid_checkout',
                         (string)$booking->booking_status,
-                        $eventContext
+                        $this->withEventContext([
+                            'local_payment_status' => (string)$payment->payment_status,
+                            'booking_status' => (string)$booking->booking_status,
+                            'stripe_payment_status' => $sessionPaymentStatus,
+                            'funds_captured' => true,
+                            'review_state' => 'captured_payment_with_unexpected_booking_status',
+                        ], $eventType, $confirmationSource)
                     );
 
                     return new ManualReviewWebhookException(
                         'Booking status is incompatible with automatic confirmation.',
-                        $context + ['reason_code' => 'unexpected_booking_status']
+                        $context + ['reason_code' => 'unexpected_booking_status_after_paid_checkout']
                     );
             }
         });
@@ -445,12 +451,11 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'async_payment_failed_after_processed_payment',
                     (string)$booking->booking_status,
-                    [
-                        'event_type' => 'checkout.session.async_payment_failed',
-                        'funds_captured' => false,
-                        'refund_required' => false,
-                        'review_state' => 'contradictory_terminal_event',
-                    ]
+                    $this->buildContradictoryTerminalEventNotes(
+                        $localPaymentStatus,
+                        'checkout.session.async_payment_failed',
+                        'stripe_webhook'
+                    )
                 );
 
                 return new ManualReviewWebhookException(
@@ -581,12 +586,11 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                     $session,
                     'checkout_session_expired_after_processed_payment',
                     (string)$booking->booking_status,
-                    $this->withEventContext([
-                        'local_payment_status' => $localPaymentStatus,
-                        'funds_captured' => in_array($localPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true),
-                        'refund_required' => false,
-                        'review_state' => 'contradictory_terminal_event',
-                    ], 'checkout.session.expired', 'stripe_webhook')
+                    $this->buildContradictoryTerminalEventNotes(
+                        $localPaymentStatus,
+                        'checkout.session.expired',
+                        'stripe_webhook'
+                    )
                 );
 
                 return new ManualReviewWebhookException(
@@ -790,9 +794,13 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             return;
         }
 
-        if (!in_array($decoded['reason_code'] ?? null, [
-            'checkout_completed_without_paid_status',
-            'completed_after_local_payment_voided_or_expired_without_paid_status',
+        if (($decoded['funds_captured'] ?? true) !== false) {
+            return;
+        }
+
+        if (!in_array($decoded['review_state'] ?? null, [
+            'awaiting_payment_confirmation',
+            'awaiting_payment_terminal_event',
         ], true)) {
             return;
         }
@@ -822,6 +830,30 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             'event_type' => $eventType,
             'confirmation_source' => $confirmationSource,
         ] + $notes;
+    }
+
+    private function buildContradictoryTerminalEventNotes(
+        string $localPaymentStatus,
+        string $eventType,
+        string $confirmationSource,
+    ): array {
+        $notes = $this->withEventContext([
+            'local_payment_status' => $localPaymentStatus,
+            'review_state' => 'contradictory_terminal_event',
+            'terminal_event_type' => $eventType,
+            'funds_captured' => true,
+            'stripe_terminal_event_indicates_funds_captured' => false,
+        ], $eventType, $confirmationSource);
+
+        if ($localPaymentStatus === 'paid') {
+            $notes['refund_required'] = false;
+        }
+
+        if ($localPaymentStatus === 'refund_required') {
+            $notes['refund_required'] = true;
+        }
+
+        return $notes;
     }
 
     private function paymentNotesNeedResolution(string $existingNotes): bool

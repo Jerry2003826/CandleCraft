@@ -244,6 +244,37 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertStringContainsString('"funds_captured":false', (string)$payment->notes);
     }
 
+    public function testPaidCheckoutWithUnexpectedBookingStatusEntersRefundReview(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'waitlisted';
+        $bookings->saveOrFail($booking);
+
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame(
+                'unexpected_booking_status_after_paid_checkout',
+                $exception->getContext()['reason_code'] ?? null
+            );
+        }
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertTrue((bool)($notes['funds_captured'] ?? false));
+        $this->assertTrue((bool)($notes['refund_required'] ?? false));
+        $this->assertSame(
+            'captured_payment_with_unexpected_booking_status',
+            $notes['review_state'] ?? null
+        );
+    }
+
     public function testAsyncPaymentFailedMarksPendingPaymentFailed(): void
     {
         $result = $this->service->markCheckoutSessionFailed($this->makeSession('cs_owned', 1, 5000, [
@@ -414,6 +445,38 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertStringContainsString('"review_state":"contradictory_terminal_event"', (string)$payment->notes);
     }
 
+    public function testAsyncFailedPreservesRefundReviewFlagForExistingRefundQueuePayment(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'refund_required';
+        $payment->notes = json_encode([
+            'manual_review_required' => true,
+            'refund_required' => true,
+            'funds_captured' => true,
+            'reason_code' => 'cancelled_booking_paid_late',
+        ]);
+        $payments->saveOrFail($payment);
+
+        try {
+            $this->service->markCheckoutSessionFailed($this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'complete',
+                'payment_status' => 'unpaid',
+            ]));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame('async_payment_failed_after_processed_payment', $exception->getContext()['reason_code'] ?? null);
+        }
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertTrue((bool)($notes['refund_required'] ?? false));
+        $this->assertTrue((bool)($notes['funds_captured'] ?? false));
+        $this->assertSame('contradictory_terminal_event', $notes['review_state'] ?? null);
+    }
+
     public function testExpiredTerminalEventClearsNonCapturedManualReviewOnVoidedPayment(): void
     {
         $payments = FactoryLocator::get('Table')->get('Payments');
@@ -422,7 +485,9 @@ class PaymentConfirmationServiceTest extends TestCase
         $payment->notes = json_encode([
             'manual_review_required' => true,
             'refund_required' => false,
+            'funds_captured' => false,
             'reason_code' => 'completed_after_local_payment_voided_or_expired_without_paid_status',
+            'review_state' => 'awaiting_payment_terminal_event',
             'session_id' => 'cs_owned',
         ]);
         $payments->saveOrFail($payment);
@@ -441,6 +506,36 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('resolved_by_session_expiration', $notes['review_state'] ?? null);
         $this->assertSame('checkout.session.expired', $notes['terminal_event_type'] ?? null);
         $this->assertFalse((bool)($notes['refund_required'] ?? true));
+    }
+
+    public function testExpiredTerminalEventClearsAwaitingTerminalReviewForUnexpectedLocalStatus(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'failed';
+        $payment->notes = json_encode([
+            'manual_review_required' => true,
+            'refund_required' => false,
+            'funds_captured' => false,
+            'reason_code' => 'unexpected_local_payment_status',
+            'review_state' => 'awaiting_payment_terminal_event',
+            'session_id' => 'cs_owned',
+        ]);
+        $payments->saveOrFail($payment);
+
+        $result = $this->service->markCheckoutSessionExpired($this->makeSession('cs_owned', 1, 5000, [
+            'status' => 'expired',
+            'payment_status' => 'unpaid',
+        ]));
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('idempotent', $result);
+        $this->assertSame('failed', $payment->payment_status);
+        $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
+        $this->assertSame('resolved_by_session_expiration', $notes['review_state'] ?? null);
+        $this->assertSame('stripe_checkout_session_expired', $notes['reason_code'] ?? null);
     }
 
     private function makeSession(string $id, int $bookingId, int $amountTotal, array $overrides = []): object

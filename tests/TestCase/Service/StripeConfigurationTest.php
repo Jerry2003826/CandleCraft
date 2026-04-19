@@ -23,6 +23,8 @@ class StripeConfigurationTest extends TestCase
 
     protected function tearDown(): void
     {
+        Configure::delete('Stripe.environment');
+
         if ($this->originalAppEnv !== null) {
             putenv('APP_ENV=' . $this->originalAppEnv);
         } else {
@@ -67,13 +69,28 @@ class StripeConfigurationTest extends TestCase
     {
         $previousDebug = Configure::read('debug');
         Configure::write('debug', false);
-        putenv('APP_ENV=production');
+        Configure::write('Stripe.environment', 'live');
 
         try {
             $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_test_123'));
             $this->assertFalse(StripeConfiguration::hasUsableSecretKey('rk_test_123'));
             $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_live_123'));
             $this->assertTrue(StripeConfiguration::hasUsableSecretKey('rk_live_123'));
+        } finally {
+            Configure::write('debug', $previousDebug);
+        }
+    }
+
+    public function testStagingEnvironmentCanExplicitlyAllowTestKeys(): void
+    {
+        $previousDebug = Configure::read('debug');
+        Configure::write('debug', false);
+        Configure::write('Stripe.environment', 'test');
+        putenv('APP_ENV=staging');
+
+        try {
+            $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_test_123'));
+            $this->assertTrue(StripeConfiguration::hasUsableSecretKey('rk_test_123'));
         } finally {
             Configure::write('debug', $previousDebug);
             putenv('APP_ENV');

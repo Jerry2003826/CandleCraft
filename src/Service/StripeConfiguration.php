@@ -59,9 +59,22 @@ final class StripeConfiguration
 
     private static function shouldRejectTestSecretKeys(): bool
     {
-        $environment = strtolower(trim((string)(env('APP_ENV') ?: env('CAKEPHP_ENV') ?: '')));
-        if (in_array($environment, ['prod', 'production'], true)) {
+        $configuredEnvironment = strtolower(trim((string)Configure::read('Stripe.environment', '')));
+        if (in_array($configuredEnvironment, ['live', 'production'], true)) {
             return true;
+        }
+
+        if (in_array($configuredEnvironment, ['test', 'staging', 'uat', 'sandbox', 'development', 'dev'], true)) {
+            return false;
+        }
+
+        $environment = strtolower(trim((string)(env('STRIPE_ENVIRONMENT') ?: env('APP_ENV') ?: env('CAKEPHP_ENV') ?: '')));
+        if (in_array($environment, ['live', 'prod', 'production'], true)) {
+            return true;
+        }
+
+        if (in_array($environment, ['test', 'staging', 'uat', 'sandbox', 'development', 'dev'], true)) {
+            return false;
         }
 
         return Configure::read('debug') === false && PHP_SAPI !== 'cli';

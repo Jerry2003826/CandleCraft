@@ -96,6 +96,7 @@ return [
     ],
 
     'Stripe' => [
+        'environment' => env('STRIPE_ENVIRONMENT', null),
         'secret_key' => env('STRIPE_SECRET_KEY', null),
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', null),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
