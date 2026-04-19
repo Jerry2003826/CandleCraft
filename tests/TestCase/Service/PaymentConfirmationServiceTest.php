@@ -62,6 +62,56 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('cancelled', $booking->booking_status);
     }
 
+    public function testRefundedPaymentIgnoresDuplicateCompletedWebhook(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'refunded';
+        $payment->notes = json_encode([
+            'manual_review_required' => false,
+            'refund_required' => false,
+            'funds_captured' => true,
+            'reason_code' => 'payment_fully_refunded',
+        ]);
+        $payments->saveOrFail($payment);
+
+        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('idempotent', $result);
+        $this->assertSame('refunded', $payment->payment_status);
+        $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
+        $this->assertFalse((bool)($notes['refund_required'] ?? true));
+        $this->assertSame('duplicate_completed_event_after_refund', $notes['reason_code'] ?? null);
+    }
+
+    public function testPartiallyRefundedPaymentIgnoresDuplicateCompletedWebhook(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'partially_refunded';
+        $payment->notes = json_encode([
+            'manual_review_required' => false,
+            'refund_required' => false,
+            'funds_captured' => true,
+            'reason_code' => 'payment_partially_refunded',
+        ]);
+        $payments->saveOrFail($payment);
+
+        $result = $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('idempotent', $result);
+        $this->assertSame('partially_refunded', $payment->payment_status);
+        $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
+        $this->assertFalse((bool)($notes['refund_required'] ?? true));
+        $this->assertSame('duplicate_completed_event_after_partial_refund', $notes['reason_code'] ?? null);
+    }
+
     public function testWebhookIsIdempotentForAlreadyPaidPayment(): void
     {
         $payments = FactoryLocator::get('Table')->get('Payments');
@@ -442,7 +492,10 @@ class PaymentConfirmationServiceTest extends TestCase
         $payment = $payments->get(1);
         $this->assertSame('paid', $payment->payment_status);
         $this->assertStringContainsString('"refund_required":false', (string)$payment->notes);
-        $this->assertStringContainsString('"review_state":"contradictory_terminal_event"', (string)$payment->notes);
+        $this->assertStringContainsString(
+            '"review_state":"contradictory_terminal_event_after_paid"',
+            (string)$payment->notes
+        );
     }
 
     public function testAsyncFailedPreservesRefundReviewFlagForExistingRefundQueuePayment(): void
@@ -474,7 +527,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('refund_required', $payment->payment_status);
         $this->assertTrue((bool)($notes['refund_required'] ?? false));
         $this->assertTrue((bool)($notes['funds_captured'] ?? false));
-        $this->assertSame('contradictory_terminal_event', $notes['review_state'] ?? null);
+        $this->assertSame('contradictory_terminal_event_while_refund_pending', $notes['review_state'] ?? null);
     }
 
     public function testExpiredTerminalEventClearsNonCapturedManualReviewOnVoidedPayment(): void
@@ -536,6 +589,37 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
         $this->assertSame('resolved_by_session_expiration', $notes['review_state'] ?? null);
         $this->assertSame('stripe_checkout_session_expired', $notes['reason_code'] ?? null);
+    }
+
+    public function testExpiredWebhookForRefundedPaymentDoesNotSetRefundRequiredTrue(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'refunded';
+        $payment->notes = json_encode([
+            'manual_review_required' => false,
+            'refund_required' => false,
+            'funds_captured' => true,
+            'reason_code' => 'payment_fully_refunded',
+        ]);
+        $payments->saveOrFail($payment);
+
+        try {
+            $this->service->markCheckoutSessionExpired($this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'expired',
+                'payment_status' => 'unpaid',
+            ]));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame('checkout_session_expired_after_processed_payment', $exception->getContext()['reason_code'] ?? null);
+        }
+
+        $payment = $payments->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('refunded', $payment->payment_status);
+        $this->assertFalse((bool)($notes['refund_required'] ?? true));
+        $this->assertSame('contradictory_terminal_event_after_full_refund', $notes['review_state'] ?? null);
     }
 
     private function makeSession(string $id, int $bookingId, int $amountTotal, array $overrides = []): object

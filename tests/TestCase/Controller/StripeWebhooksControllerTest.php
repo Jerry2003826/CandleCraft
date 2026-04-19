@@ -18,6 +18,7 @@ class StripeWebhooksControllerTest extends TestCase
 
     protected array $fixtures = [
         'app.PaymentWebhookIncidents',
+        'app.StripeWebhookEvents',
     ];
 
     protected function tearDown(): void
@@ -270,6 +271,62 @@ class StripeWebhooksControllerTest extends TestCase
 
         $this->assertCount(1, $incidents);
         $this->assertSame('open', $incidents[0]->status);
+    }
+
+    public function testResolvedIncidentWithProcessedEventIdDoesNotReopenOnDuplicateWebhook(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $events = FactoryLocator::get('Table')->get('StripeWebhookEvents');
+        $events->saveOrFail($events->newEntity([
+            'event_id' => 'evt_test_cs_resolved_duplicate',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_resolved_duplicate',
+            'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_resolved_duplicate')),
+            'processing_status' => 'processed',
+            'first_seen_at' => '2026-04-20 12:00:00',
+            'last_seen_at' => '2026-04-20 12:00:00',
+        ]));
+
+        $incidents = FactoryLocator::get('Table')->get('PaymentWebhookIncidents');
+        $incidents->saveOrFail($incidents->newEntity([
+            'event_id' => 'evt_test_cs_resolved_duplicate',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_resolved_duplicate',
+            'reason_code' => 'cancelled_booking_paid_late',
+            'severity' => 'error',
+            'status' => 'resolved',
+            'context_json' => '{}',
+            'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_resolved_duplicate')),
+            'notes' => 'Previously resolved incident.',
+            'created_at' => '2026-04-20 12:00:00',
+            'updated_at' => '2026-04-20 12:00:00',
+            'resolved_at' => '2026-04-20 12:05:00',
+        ]));
+
+        $payload = $this->completedSessionPayload('cs_resolved_duplicate');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('"duplicate":true');
+        $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
+
+        $allIncidents = $incidents->find()
+            ->where(['session_id' => 'cs_resolved_duplicate'])
+            ->all()
+            ->toList();
+
+        $this->assertCount(1, $allIncidents);
+        $this->assertSame('resolved', $allIncidents[0]->status);
     }
 
     public function testRetriableWebhookFailureDoesNotCreateIncident(): void

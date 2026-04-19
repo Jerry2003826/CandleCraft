@@ -32,20 +32,12 @@ class PaymentWebhookIncidentRecorder
 
         $query = $this->incidentsTable->find()->where([
             'PaymentWebhookIncidents.reason_code' => $reasonCode,
-            'PaymentWebhookIncidents.status' => 'open',
         ]);
         if ($eventId !== '') {
-            $query->where([
-                'OR' => [
-                    ['PaymentWebhookIncidents.event_id' => $eventId],
-                    [
-                        'PaymentWebhookIncidents.event_type' => $eventType,
-                        'PaymentWebhookIncidents.session_id' => $sessionId,
-                    ],
-                ],
-            ]);
+            $query->where(['PaymentWebhookIncidents.event_id' => $eventId]);
         } else {
             $query->where([
+                'PaymentWebhookIncidents.status' => 'open',
                 'PaymentWebhookIncidents.event_type' => $eventType,
                 'PaymentWebhookIncidents.session_id' => $sessionId,
             ]);
@@ -64,13 +56,16 @@ class PaymentWebhookIncidentRecorder
             'booking_id' => $context['booking_id'] ?? null,
             'reason_code' => $reasonCode,
             'severity' => $exception instanceof ManualReviewWebhookException ? 'error' : 'warning',
-            'status' => 'open',
             'context_json' => (string)json_encode($context, JSON_UNESCAPED_SLASHES),
             'payload_hash' => hash('sha256', $payload),
             'notes' => $exception->getMessage(),
-            'resolved_at' => null,
-            'resolved_by_admin_id' => null,
         ]);
+
+        if ($incident->isNew()) {
+            $incident->set('status', 'open');
+            $incident->set('resolved_at', null);
+            $incident->set('resolved_by_admin_id', null);
+        }
         $incident->set('event_id', $eventId !== '' ? $eventId : null);
 
         $this->incidentsTable->saveOrFail($incident);

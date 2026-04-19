@@ -197,4 +197,75 @@ if (!isset($schema['payment_webhook_incidents'])) {
     ];
 }
 
+if (!isset($schema['stripe_webhook_events'])) {
+    $schema['stripe_webhook_events'] = [
+        'table' => 'stripe_webhook_events',
+        'columns' => [
+            'webhook_event_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+                'autoIncrement' => true,
+            ],
+            'event_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => false,
+                'default' => null,
+            ],
+            'event_type' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => false,
+                'default' => null,
+            ],
+            'session_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'payload_hash' => [
+                'type' => 'string',
+                'length' => 64,
+                'null' => false,
+                'default' => null,
+            ],
+            'processing_status' => [
+                'type' => 'string',
+                'length' => 20,
+                'null' => false,
+                'default' => 'processing',
+            ],
+            'first_seen_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+            'last_seen_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'stripe_webhook_events_processing_status_idx' => [
+                'type' => 'index',
+                'columns' => ['processing_status'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['webhook_event_id'],
+            ],
+            'stripe_webhook_events_event_id_uk' => [
+                'type' => 'unique',
+                'columns' => ['event_id'],
+            ],
+        ],
+    ];
+}
+
 return $schema;

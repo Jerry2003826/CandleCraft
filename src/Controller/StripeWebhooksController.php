@@ -9,6 +9,7 @@ use App\Exception\Payments\PaymentWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
 use App\Service\PaymentConfirmationService;
 use App\Service\PaymentConfirmationServiceInterface;
+use App\Service\StripeWebhookEventLedger;
 use App\Service\PaymentWebhookIncidentRecorder;
 use Cake\Controller\Controller;
 use Cake\Core\Configure;
@@ -36,23 +37,41 @@ class StripeWebhooksController extends Controller
             return $this->jsonResponse(400, ['error' => 'Invalid Stripe webhook signature.']);
         }
 
+        $eventId = $this->extractEventId($event, $payload);
+        $eventType = (string)$event->type;
+        $session = $event->data->object;
+        $sessionId = (string)($session->id ?? '');
+        $ledger = new StripeWebhookEventLedger();
+
+        if (!$ledger->beginProcessing($eventId, $eventType, $sessionId, $payload)) {
+            return $this->jsonResponse(200, ['received' => true, 'duplicate' => true]);
+        }
+
         try {
-            $this->handleWebhookEvent($event);
+            $outcome = $this->handleWebhookEvent($event);
+            if ($outcome === 'ignored') {
+                $ledger->markIgnored($eventId, $eventType, $sessionId, $payload);
+            } else {
+                $ledger->markProcessed($eventId, $eventType, $sessionId, $payload);
+            }
         } catch (RetriableWebhookException $exception) {
-            $this->logWebhookFailure('error', $event->type, $event->data->object, $exception);
+            $ledger->markFailed($eventId, $eventType, $sessionId, $payload);
+            $this->logWebhookFailure('error', $eventType, $session, $exception);
 
             return $this->jsonResponse(500, ['error' => 'Temporary webhook processing failure.']);
         } catch (ManualReviewWebhookException|NonRetriableWebhookException $exception) {
             $level = $exception instanceof ManualReviewWebhookException ? 'error' : 'warning';
-            $this->logWebhookFailure($level, $event->type, $event->data->object, $exception);
-            $this->persistWebhookIncident($exception, $event->type, $event->data->object, $payload, $this->extractEventId($event, $payload));
+            $ledger->markProcessed($eventId, $eventType, $sessionId, $payload);
+            $this->logWebhookFailure($level, $eventType, $session, $exception);
+            $this->persistWebhookIncident($exception, $eventType, $session, $payload, $eventId);
         } catch (RuntimeException $exception) {
             $wrapped = new RetriableWebhookException($exception->getMessage(), [
-                'event_type' => $event->type,
-                'session_id' => (string)($event->data->object->id ?? ''),
+                'event_type' => $eventType,
+                'session_id' => $sessionId,
                 'reason_code' => 'unexpected_runtime_exception',
             ], previous: $exception);
-            $this->logWebhookFailure('error', $event->type, $event->data->object, $wrapped);
+            $ledger->markFailed($eventId, $eventType, $sessionId, $payload);
+            $this->logWebhookFailure('error', $eventType, $session, $wrapped);
 
             return $this->jsonResponse(500, ['error' => 'Temporary webhook processing failure.']);
         }
@@ -60,7 +79,7 @@ class StripeWebhooksController extends Controller
         return $this->jsonResponse(200, ['received' => true]);
     }
 
-    private function handleWebhookEvent(object $event): void
+    private function handleWebhookEvent(object $event): string
     {
         switch ((string)$event->type) {
             case 'checkout.session.completed':
@@ -70,16 +89,18 @@ class StripeWebhooksController extends Controller
                     (string)$event->type,
                     'stripe_webhook'
                 );
-                break;
+                return 'processed';
 
             case 'checkout.session.async_payment_failed':
                 $this->confirmationService()->markCheckoutSessionFailed($event->data->object);
-                break;
+                return 'processed';
 
             case 'checkout.session.expired':
                 $this->confirmationService()->markCheckoutSessionExpired($event->data->object);
-                break;
+                return 'processed';
         }
+
+        return 'ignored';
     }
 
     protected function confirmationService(): PaymentConfirmationServiceInterface

@@ -141,7 +141,7 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                 );
             }
 
-            if (in_array($localPaymentStatus, ['refund_required', 'refunded', 'partially_refunded'], true)) {
+            if ($localPaymentStatus === 'refund_required') {
                 $this->markPaymentForReview(
                     $payment,
                     $session,
@@ -161,6 +161,19 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
                         'stripe_payment_status' => $sessionPaymentStatus,
                     ]
                 );
+            }
+
+            if (in_array($localPaymentStatus, ['refunded', 'partially_refunded'], true)) {
+                $this->appendRefundLifecycleAudit(
+                    $payment,
+                    $session,
+                    $transactionReference,
+                    $eventType,
+                    $confirmationSource,
+                    $localPaymentStatus
+                );
+
+                return 'idempotent';
             }
 
             if (!in_array($localPaymentStatus, ['pending', 'paid'], true)) {
@@ -489,7 +502,6 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             }
 
             $payment->payment_status = 'failed';
-            $payment->payment_date = $payment->payment_date ?: DateTime::now();
             $payment->notes = PaymentNotes::merge($payment->notes, [
                 'stripe_checkout' => true,
                 'confirmation_source' => 'stripe_webhook',
@@ -623,7 +635,6 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             }
 
             $payment->payment_status = 'expired';
-            $payment->payment_date = $payment->payment_date ?: DateTime::now();
             $payment->notes = PaymentNotes::merge($payment->notes, [
                 'stripe_checkout' => true,
                 'confirmation_source' => 'stripe_webhook',
@@ -717,7 +728,6 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             $payment->payment_status = $targetStatus;
         }
 
-        $payment->payment_date = $payment->payment_date ?: DateTime::now();
         $payment->notes = PaymentNotes::merge($payment->notes, array_filter(array_merge([
             'stripe_checkout' => true,
             'payment_intent' => (string)($session->payment_intent ?? ''),
@@ -837,23 +847,66 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         string $eventType,
         string $confirmationSource,
     ): array {
+        $reviewState = match ($localPaymentStatus) {
+            'paid' => 'contradictory_terminal_event_after_paid',
+            'refund_required' => 'contradictory_terminal_event_while_refund_pending',
+            'partially_refunded' => 'contradictory_terminal_event_after_partial_refund',
+            'refunded' => 'contradictory_terminal_event_after_full_refund',
+            default => 'contradictory_terminal_event',
+        };
+
         $notes = $this->withEventContext([
             'local_payment_status' => $localPaymentStatus,
-            'review_state' => 'contradictory_terminal_event',
+            'review_state' => $reviewState,
             'terminal_event_type' => $eventType,
             'funds_captured' => true,
             'stripe_terminal_event_indicates_funds_captured' => false,
         ], $eventType, $confirmationSource);
 
-        if ($localPaymentStatus === 'paid') {
-            $notes['refund_required'] = false;
-        }
-
-        if ($localPaymentStatus === 'refund_required') {
-            $notes['refund_required'] = true;
-        }
+        $notes['refund_required'] = match ($localPaymentStatus) {
+            'refund_required' => true,
+            'paid', 'refunded', 'partially_refunded' => false,
+            default => false,
+        };
 
         return $notes;
+    }
+
+    private function appendRefundLifecycleAudit(
+        object $payment,
+        object $session,
+        string $transactionReference,
+        string $eventType,
+        string $confirmationSource,
+        string $localPaymentStatus,
+    ): void {
+        $reasonCode = $localPaymentStatus === 'refunded'
+            ? 'duplicate_completed_event_after_refund'
+            : 'duplicate_completed_event_after_partial_refund';
+
+        $reviewState = $localPaymentStatus === 'refunded'
+            ? 'resolved_after_refund_lifecycle'
+            : 'resolved_after_partial_refund_lifecycle';
+
+        $payment->notes = PaymentNotes::merge($payment->notes, [
+            'stripe_checkout' => true,
+            'payment_intent' => (string)($session->payment_intent ?? ''),
+            'confirmation_source' => $confirmationSource,
+            'session_id' => $transactionReference,
+            'manual_review_required' => false,
+            'review_state' => $reviewState,
+            'review_resolved_at' => DateTime::now()->i18nFormat(DateTime::ATOM),
+            'reason_code' => $reasonCode,
+            'funds_captured' => true,
+            'refund_required' => false,
+        ] + $this->buildConfirmationEventAudit((string)$payment->notes, $eventType));
+
+        $this->savePayment($payment, [
+            'session_id' => $transactionReference,
+            'payment_id' => (int)$payment->payment_id,
+            'booking_id' => (int)$payment->booking_id,
+            'reason_code' => $reasonCode,
+        ]);
     }
 
     private function paymentNotesNeedResolution(string $existingNotes): bool

@@ -40,11 +40,17 @@ class StripeConfigurationTest extends TestCase
         parent::tearDown();
     }
 
-    public function testSecretKeyValidationSupportsStandardAndRestrictedKeys(): void
+    public function testTestModeAcceptsStandardAndRestrictedTestKeys(): void
     {
+        Configure::write('Stripe.environment', 'test');
         $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_test_123'));
-        $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_live_123'));
         $this->assertTrue(StripeConfiguration::hasUsableSecretKey('rk_test_123'));
+    }
+
+    public function testLiveModeAcceptsStandardAndRestrictedLiveKeys(): void
+    {
+        Configure::write('Stripe.environment', 'live');
+        $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_live_123'));
         $this->assertTrue(StripeConfiguration::hasUsableSecretKey('rk_live_123'));
     }
 
@@ -95,5 +101,24 @@ class StripeConfigurationTest extends TestCase
             Configure::write('debug', $previousDebug);
             putenv('APP_ENV');
         }
+    }
+
+    public function testTestEnvironmentRejectsLiveKeys(): void
+    {
+        Configure::write('Stripe.environment', 'test');
+
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_live_123'));
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('rk_live_123'));
+        $this->assertTrue(StripeConfiguration::hasUsableSecretKey('sk_test_123'));
+        $this->assertTrue(StripeConfiguration::hasUsableSecretKey('rk_test_123'));
+    }
+
+    public function testUnknownConfiguredEnvironmentFailsClosed(): void
+    {
+        Configure::write('Stripe.environment', 'qa');
+
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_test_123'));
+        $this->assertFalse(StripeConfiguration::hasUsableSecretKey('sk_live_123'));
+        $this->assertFalse(StripeConfiguration::isCheckoutReady());
     }
 }

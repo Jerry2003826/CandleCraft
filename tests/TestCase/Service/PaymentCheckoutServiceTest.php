@@ -258,7 +258,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
     public function testOpenUnknownPendingSessionDoesNotExpireOrCreateReplacementCheckout(): void
     {
-        Configure::write('Stripe.secret_key', 'sk_live_123');
+        Configure::write('Stripe.secret_key', 'sk_test_123');
         Configure::write('Stripe.webhook_secret', 'whsec_test');
 
         FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
