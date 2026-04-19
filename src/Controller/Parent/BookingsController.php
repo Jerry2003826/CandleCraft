@@ -142,6 +142,7 @@ class BookingsController extends AppController
             ->count();
         $availableSlots = $class->capacity - $bookingsCount;
 
+        // Best-effort display check only; BookingService applies the canonical capacity guard on POST.
         if (!$this->request->is('post') && $availableSlots <= 0) {
             $this->Flash->error(__('This class is fully booked.'));
 

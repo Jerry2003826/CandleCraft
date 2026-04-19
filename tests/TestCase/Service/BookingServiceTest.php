@@ -63,10 +63,22 @@ class BookingServiceTest extends TestCase
         $service = new BookingService();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No valid class statuses were provided.');
+        $this->expectExceptionMessage('Unsupported class statuses were provided: completed');
 
         $service->createBookingForStudent(1, 2, null, [
             'allowedClassStatuses' => ['completed'],
+        ]);
+    }
+
+    public function testMixedInvalidAllowedStatusesFailFast(): void
+    {
+        $service = new BookingService();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported class statuses were provided: completed');
+
+        $service->createBookingForStudent(1, 2, null, [
+            'allowedClassStatuses' => ['scheduled', 'completed'],
         ]);
     }
 }

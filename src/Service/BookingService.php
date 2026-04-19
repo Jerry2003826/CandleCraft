@@ -16,6 +16,7 @@ class BookingService
     public const PARENT_ALLOWED_CLASS_STATUSES = ['scheduled', 'ongoing'];
 
     private const BOOKABLE_CLASS_STATUSES = ['scheduled', 'ongoing'];
+    private const ACTIVE_BOOKING_STATUSES = ['pending', 'confirmed'];
 
     private object $bookingsTable;
     private object $classesTable;
@@ -31,10 +32,17 @@ class BookingService
     {
         $connection = $this->bookingsTable->getConnection();
         $hasExplicitAllowedStatuses = array_key_exists('allowedClassStatuses', $options);
-        $allowedClassStatuses = array_values(array_intersect(
-            array_map('strval', (array)($options['allowedClassStatuses'] ?? self::DEFAULT_ALLOWED_CLASS_STATUSES)),
-            self::BOOKABLE_CLASS_STATUSES
-        ));
+        $requestedStatuses = array_values(array_unique(array_map(
+            static fn(mixed $status): string => strtolower(trim((string)$status)),
+            (array)($options['allowedClassStatuses'] ?? self::DEFAULT_ALLOWED_CLASS_STATUSES)
+        )));
+        $invalidStatuses = array_values(array_diff($requestedStatuses, self::BOOKABLE_CLASS_STATUSES));
+        if ($hasExplicitAllowedStatuses && $invalidStatuses !== []) {
+            throw new InvalidArgumentException(
+                'Unsupported class statuses were provided: ' . implode(', ', $invalidStatuses)
+            );
+        }
+        $allowedClassStatuses = array_values(array_intersect($requestedStatuses, self::BOOKABLE_CLASS_STATUSES));
         if ($allowedClassStatuses === []) {
             if ($hasExplicitAllowedStatuses) {
                 throw new InvalidArgumentException('No valid class statuses were provided.');
@@ -57,21 +65,26 @@ class BookingService
                 throw new RuntimeException('This class is not open for booking.');
             }
 
-            $existingBooking = $this->bookingsTable->find()
+            $activeBooking = $this->bookingsTable->find()
                 ->where([
                     'Bookings.student_id' => $studentId,
                     'Bookings.class_id' => $classId,
+                    'Bookings.booking_status IN' => self::ACTIVE_BOOKING_STATUSES,
+                ])
+                ->orderBy([
+                    'Bookings.updated_at' => 'DESC',
+                    'Bookings.booking_id' => 'DESC',
                 ])
                 ->first();
 
-            if ($existingBooking && in_array($existingBooking->booking_status, ['pending', 'confirmed'], true)) {
+            if ($activeBooking) {
                 throw new RuntimeException('This student is already booked for this class.');
             }
 
             $activeCount = $this->bookingsTable->find()
                 ->where([
                     'Bookings.class_id' => $classId,
-                    'Bookings.booking_status IN' => ['pending', 'confirmed'],
+                    'Bookings.booking_status IN' => self::ACTIVE_BOOKING_STATUSES,
                 ])
                 ->count();
 
@@ -79,21 +92,44 @@ class BookingService
                 throw new RuntimeException('This class is fully booked.');
             }
 
-            if ($existingBooking && $existingBooking->booking_status === 'cancelled') {
+            $cancelledBooking = $this->bookingsTable->find()
+                ->where([
+                    'Bookings.student_id' => $studentId,
+                    'Bookings.class_id' => $classId,
+                    'Bookings.booking_status' => 'cancelled',
+                ])
+                ->orderBy([
+                    'Bookings.updated_at' => 'DESC',
+                    'Bookings.booking_id' => 'DESC',
+                ])
+                ->first();
+
+            if ($cancelledBooking) {
                 $now = DateTime::now();
-                $existingBooking->booking_status = 'pending';
-                $existingBooking->parent_id = $parentId ?? $existingBooking->parent_id;
-                $existingBooking->price_at_booking = $class->course?->course_price ?? 0;
-                $existingBooking->booking_date = $now;
-                $existingBooking->updated_at = $now;
-                $this->bookingsTable->saveOrFail($existingBooking);
+                $cancelledBooking->booking_status = 'pending';
+                $cancelledBooking->parent_id = $parentId ?? $cancelledBooking->parent_id;
+                $cancelledBooking->price_at_booking = $class->course?->course_price ?? 0;
+                $cancelledBooking->booking_date = $now;
+                $cancelledBooking->updated_at = $now;
+                $this->bookingsTable->saveOrFail($cancelledBooking);
 
                 return [
-                    'booking' => $existingBooking,
+                    'booking' => $cancelledBooking,
                     'class' => $class,
                     'reactivated' => true,
                 ];
             }
+
+            $existingBooking = $this->bookingsTable->find()
+                ->where([
+                    'Bookings.student_id' => $studentId,
+                    'Bookings.class_id' => $classId,
+                ])
+                ->orderBy([
+                    'Bookings.updated_at' => 'DESC',
+                    'Bookings.booking_id' => 'DESC',
+                ])
+                ->first();
 
             if ($existingBooking) {
                 throw new RuntimeException('A booking record for this class already exists and cannot be duplicated.');
