@@ -11,7 +11,9 @@ class CreateStripeWebhookEvents extends BaseMigration
             return;
         }
 
-        $this->table('stripe_webhook_events')
+        $this->table('stripe_webhook_events', [
+            'id' => 'webhook_event_id',
+        ])
             ->addColumn('event_id', 'string', [
                 'limit' => 100,
                 'null' => false,

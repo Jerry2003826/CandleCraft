@@ -61,9 +61,22 @@ class StripeWebhooksController extends Controller
             return $this->jsonResponse(500, ['error' => 'Temporary webhook processing failure.']);
         } catch (ManualReviewWebhookException|NonRetriableWebhookException $exception) {
             $level = $exception instanceof ManualReviewWebhookException ? 'error' : 'warning';
-            $ledger->markProcessed($eventId, $eventType, $sessionId, $payload);
             $this->logWebhookFailure($level, $eventType, $session, $exception);
-            $this->persistWebhookIncident($exception, $eventType, $session, $payload, $eventId);
+            try {
+                $this->persistWebhookIncident($exception, $eventType, $session, $payload, $eventId);
+                $ledger->markProcessed($eventId, $eventType, $sessionId, $payload);
+            } catch (\Throwable $recordingException) {
+                $ledger->markFailed($eventId, $eventType, $sessionId, $payload);
+                Log::error('Unable to persist Stripe webhook incident: ' . json_encode([
+                    'event_type' => $eventType,
+                    'event_id' => $eventId,
+                    'session_id' => $sessionId,
+                    'reason_code' => $exception->getContext()['reason_code'] ?? 'unknown_reason',
+                    'error' => $recordingException->getMessage(),
+                ]));
+
+                return $this->jsonResponse(500, ['error' => 'Temporary webhook processing failure.']);
+            }
         } catch (RuntimeException $exception) {
             $wrapped = new RetriableWebhookException($exception->getMessage(), [
                 'event_type' => $eventType,
@@ -170,16 +183,6 @@ class StripeWebhooksController extends Controller
         string $payload,
         string $eventId,
     ): void {
-        try {
-            (new PaymentWebhookIncidentRecorder())->record($exception, $eventType, $session, $payload, $eventId);
-        } catch (\Throwable $recordingException) {
-            Log::error('Unable to persist Stripe webhook incident: ' . json_encode([
-                'event_type' => $eventType,
-                'event_id' => $eventId,
-                'session_id' => (string)($session->id ?? ''),
-                'reason_code' => $exception->getContext()['reason_code'] ?? 'unknown_reason',
-                'error' => $recordingException->getMessage(),
-            ]));
-        }
+        (new PaymentWebhookIncidentRecorder())->record($exception, $eventType, $session, $payload, $eventId);
     }
 }

@@ -273,6 +273,64 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertSame('open', $incidents[0]->status);
     }
 
+    public function testDifferentEventIdForSameBusinessEventDoesNotCreateDuplicateIncident(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        FakePaymentConfirmationService::$handler = static function (
+            object $session,
+            string $eventType,
+            string $confirmationSource
+        ): string {
+            throw new ManualReviewWebhookException('Cancelled booking paid late.', [
+                'session_id' => 'cs_business_duplicate',
+                'reason_code' => 'cancelled_booking_paid_late',
+            ]);
+        };
+
+        $firstPayload = $this->sessionPayload(
+            'checkout.session.completed',
+            'cs_business_duplicate',
+            'evt_business_duplicate_a'
+        );
+        $secondPayload = $this->sessionPayload(
+            'checkout.session.completed',
+            'cs_business_duplicate',
+            'evt_business_duplicate_b'
+        );
+
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($firstPayload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+        $this->post('/stripe/webhook', $firstPayload);
+        $this->assertResponseCode(200);
+
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($secondPayload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+        $this->post('/stripe/webhook', $secondPayload);
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('"duplicate":true');
+        $this->assertCount(1, FakePaymentConfirmationService::$receivedSessions);
+
+        $incidents = FactoryLocator::get('Table')->get('PaymentWebhookIncidents')
+            ->find()
+            ->where(['session_id' => 'cs_business_duplicate'])
+            ->all()
+            ->toList();
+
+        $this->assertCount(1, $incidents);
+    }
+
     public function testResolvedIncidentWithProcessedEventIdDoesNotReopenOnDuplicateWebhook(): void
     {
         $secret = 'whsec_test';
@@ -369,10 +427,10 @@ class StripeWebhooksControllerTest extends TestCase
         return $this->sessionPayload('checkout.session.completed', $sessionId);
     }
 
-    private function sessionPayload(string $eventType, string $sessionId): string
+    private function sessionPayload(string $eventType, string $sessionId, ?string $eventId = null): string
     {
         return (string)json_encode([
-            'id' => 'evt_test_' . $sessionId,
+            'id' => $eventId ?? 'evt_test_' . $sessionId,
             'type' => $eventType,
             'data' => [
                 'object' => [

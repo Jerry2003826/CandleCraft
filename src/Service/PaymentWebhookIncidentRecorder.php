@@ -34,10 +34,18 @@ class PaymentWebhookIncidentRecorder
             'PaymentWebhookIncidents.reason_code' => $reasonCode,
         ]);
         if ($eventId !== '') {
-            $query->where(['PaymentWebhookIncidents.event_id' => $eventId]);
+            $query->where([
+                'OR' => [
+                    ['PaymentWebhookIncidents.event_id' => $eventId],
+                    [
+                        'PaymentWebhookIncidents.event_type' => $eventType,
+                        'PaymentWebhookIncidents.session_id' => $sessionId,
+                        'PaymentWebhookIncidents.reason_code' => $reasonCode,
+                    ],
+                ],
+            ]);
         } else {
             $query->where([
-                'PaymentWebhookIncidents.status' => 'open',
                 'PaymentWebhookIncidents.event_type' => $eventType,
                 'PaymentWebhookIncidents.session_id' => $sessionId,
             ]);
