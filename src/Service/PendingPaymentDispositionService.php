@@ -14,14 +14,17 @@ class PendingPaymentDispositionService
 {
     private object $paymentsTable;
     private StripeCheckoutGatewayInterface $gateway;
+    private StripeCheckoutSessionClassifier $sessionClassifier;
 
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
+        ?StripeCheckoutSessionClassifier $sessionClassifier = null,
     ) {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->paymentsTable = $locator->get('Payments');
         $this->gateway = $gateway ?? $this->buildGateway();
+        $this->sessionClassifier = $sessionClassifier ?? new StripeCheckoutSessionClassifier();
     }
 
     public function voidPendingPayment(object $payment, string $reasonCode, array $context = []): void
@@ -41,12 +44,13 @@ class PendingPaymentDispositionService
         }
 
         $payment->payment_status = 'voided';
-        $payment->notes = PaymentNotes::merge($payment->notes, array_merge([
+        $payment->notes = PaymentNotes::merge($payment->notes, array_filter([
             'payment_resolution' => $reasonCode,
             'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
             'checkout_session_expired' => $expirationResult['expired'],
             'checkout_session_expiration_skipped' => $expirationResult['skipped'],
-        ], $context));
+            'disposition_context' => $this->buildDispositionContext($context),
+        ], static fn ($value) => $value !== null));
         $this->paymentsTable->saveOrFail($payment);
     }
 
@@ -56,18 +60,21 @@ class PendingPaymentDispositionService
 
         try {
             $session = $this->gateway->retrieveCheckoutSession($transactionReference);
-            $paymentStatus = strtolower((string)($session->payment_status ?? ''));
-            $sessionStatus = strtolower((string)($session->status ?? ''));
+            $classification = $this->sessionClassifier->classify($session);
 
-            if ($paymentStatus === 'paid' || $sessionStatus === 'complete') {
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_PAID) {
                 throw new RuntimeException('This booking already has a processed payment and requires manual review.');
             }
 
-            if ($sessionStatus === 'expired') {
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_AWAITING_PAYMENT) {
+                throw new RuntimeException('Your payment is still processing with Stripe. Please wait a moment and try again shortly.');
+            }
+
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_EXPIRED) {
                 return ['expired' => false, 'skipped' => false];
             }
 
-            if ($sessionStatus === 'open' && $paymentStatus === 'unpaid') {
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNPAID) {
                 $this->gateway->expireCheckoutSession($transactionReference);
 
                 return ['expired' => true, 'skipped' => false];
@@ -96,9 +103,12 @@ class PendingPaymentDispositionService
 
     private function isStripeConfigured(): bool
     {
-        $key = (string)Configure::read('Stripe.secret_key');
+        return StripeConfiguration::canManageCheckoutSessions();
+    }
 
-        return $key !== '' && $key !== 'sk_test_placeholder';
+    private function buildDispositionContext(array $context): ?array
+    {
+        return $context === [] ? null : $context;
     }
 
     private function buildGateway(): StripeCheckoutGatewayInterface

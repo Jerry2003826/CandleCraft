@@ -16,6 +16,7 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         Configure::delete('Payments.gateway_class');
         Configure::delete('Payments.demo_mode');
         Configure::delete('Stripe.secret_key');
+        Configure::delete('Stripe.webhook_secret');
 
         parent::tearDown();
     }
@@ -71,6 +72,7 @@ class PaymentsControllerTest extends AppIntegrationTestCase
     public function testProcessStripeDoesNotRedirectWhenPaymentSaveFails(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
         Configure::write('Payments.gateway_class', FakeStripeCheckoutGateway::class);
         $bookingId = $this->insertBooking([
             'class_id' => 2,
@@ -110,6 +112,7 @@ class PaymentsControllerTest extends AppIntegrationTestCase
     public function testRepeatedPaymentSubmissionDoesNotCreateDuplicatePendingPayments(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
         Configure::write('Payments.gateway_class', FakeStripeCheckoutGateway::class);
 
         $bookingId = $this->insertBooking([
@@ -157,6 +160,26 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         $this->assertSame(['cs_repeat_once'], array_column($payments->toList(), 'transaction_reference'));
         $this->assertCount(1, FakeStripeCheckoutGateway::$createdPayloads);
         $this->assertSame(['cs_repeat_once'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+    }
+
+    public function testProcessFailsClosedWhenWebhookSecretIsMissing(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', null);
+        Configure::write('Payments.demo_mode', false);
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/process/1');
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('Online payments are temporarily unavailable.');
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+        $this->assertSame('pending', $payment->payment_status);
+        $this->assertSame('pending', $booking->booking_status);
     }
 
     public function testZeroAmountBookingDoesNotRedirectToStripe(): void

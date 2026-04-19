@@ -23,12 +23,14 @@ class PaymentCheckoutService
     private StripeCheckoutGatewayInterface $gateway;
     private PaymentConfirmationServiceInterface $paymentConfirmationService;
     private PendingPaymentDispositionService $pendingPaymentDispositionService;
+    private StripeCheckoutSessionClassifier $sessionClassifier;
 
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
         ?PaymentConfirmationServiceInterface $paymentConfirmationService = null,
         ?PendingPaymentDispositionService $pendingPaymentDispositionService = null,
+        ?StripeCheckoutSessionClassifier $sessionClassifier = null,
     ) {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->bookingsTable = $locator->get('Bookings');
@@ -39,13 +41,12 @@ class PaymentCheckoutService
             $locator,
             $this->gateway
         );
+        $this->sessionClassifier = $sessionClassifier ?? new StripeCheckoutSessionClassifier();
     }
 
     public function isStripeConfigured(): bool
     {
-        $key = (string)Configure::read('Stripe.secret_key');
-
-        return $key !== '' && $key !== 'sk_test_placeholder';
+        return StripeConfiguration::isCheckoutReady();
     }
 
     public function isDemoModeEnabled(): bool
@@ -358,23 +359,22 @@ class PaymentCheckoutService
             ];
         }
 
-        $paymentStatus = strtolower((string)($session->payment_status ?? ''));
-        $sessionStatus = strtolower((string)($session->status ?? ''));
-        if ($paymentStatus === 'paid') {
+        $classification = $this->sessionClassifier->classify($session);
+        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_PAID) {
             return [
                 'kind' => 'already_completed',
                 'session' => $session,
             ];
         }
 
-        if ($sessionStatus === 'complete' && $paymentStatus !== 'paid') {
+        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_AWAITING_PAYMENT) {
             return [
                 'kind' => 'awaiting_payment',
                 'session' => $session,
             ];
         }
 
-        if ($sessionStatus === 'open' && $paymentStatus === 'unpaid' && !empty($session->url)) {
+        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNPAID && !empty($session->url)) {
             return [
                 'kind' => 'reuse',
                 'url' => (string)$session->url,

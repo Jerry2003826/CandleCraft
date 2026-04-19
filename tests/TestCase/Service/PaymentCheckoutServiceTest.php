@@ -25,6 +25,7 @@ class PaymentCheckoutServiceTest extends TestCase
     {
         FakeStripeCheckoutGateway::reset();
         Configure::delete('Stripe.secret_key');
+        Configure::delete('Stripe.webhook_secret');
 
         parent::tearDown();
     }
@@ -32,6 +33,7 @@ class PaymentCheckoutServiceTest extends TestCase
     public function testCompletedPendingSessionIsConfirmedAndNotExpired(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
 
         FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
             return FakeStripeCheckoutGateway::makeSession($sessionId, [
@@ -123,6 +125,7 @@ class PaymentCheckoutServiceTest extends TestCase
     public function testTransientSessionInspectionFailureDoesNotExpirePendingPayment(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
 
         FakeStripeCheckoutGateway::$retrieveHandler = static function (): object {
             throw new \RuntimeException('stripe temporarily unavailable');
@@ -164,6 +167,7 @@ class PaymentCheckoutServiceTest extends TestCase
     public function testCompleteButUnpaidPendingSessionIsNotExpiredAndNotConfirmed(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
 
         FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
             return FakeStripeCheckoutGateway::makeSession($sessionId, [

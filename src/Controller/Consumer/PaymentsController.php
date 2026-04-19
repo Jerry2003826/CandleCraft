@@ -5,6 +5,7 @@ namespace App\Controller\Consumer;
 
 use App\Service\BookingCancellationService;
 use App\Service\PaymentCheckoutService;
+use App\Service\StripeConfiguration;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Routing\Router;
@@ -14,9 +15,7 @@ class PaymentsController extends AppController
 {
     private function isStripeConfigured(): bool
     {
-        $key = Configure::read('Stripe.secret_key');
-
-        return !empty($key) && $key !== 'sk_test_placeholder';
+        return StripeConfiguration::isCheckoutReady();
     }
 
     private function isDemoModeEnabled(): bool

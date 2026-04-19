@@ -186,8 +186,11 @@ class PaymentConfirmationServiceTest extends TestCase
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
         $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
 
-        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertSame('pending', $payment->payment_status);
         $this->assertSame('pending', $booking->booking_status);
+        $this->assertStringContainsString('checkout_completed_without_paid_status', (string)$payment->notes);
+        $this->assertStringContainsString('"funds_captured":false', (string)$payment->notes);
+        $this->assertStringContainsString('"refund_required":false', (string)$payment->notes);
     }
 
     public function testAsyncPaymentFailedMarksPendingPaymentFailed(): void

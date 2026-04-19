@@ -148,12 +148,17 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             }
 
             if ($sessionPaymentStatus !== 'paid') {
-                $this->markPaymentForReview(
+                $this->markPaymentForReviewWithoutRefundRequirement(
                     $payment,
                     $session,
                     'checkout_completed_without_paid_status',
                     null,
-                    ['stripe_payment_status' => $sessionPaymentStatus]
+                    [
+                        'stripe_payment_status' => $sessionPaymentStatus,
+                        'funds_captured' => false,
+                        'refund_required' => false,
+                        'review_state' => 'awaiting_payment_confirmation',
+                    ]
                 );
 
                 return new ManualReviewWebhookException(
@@ -443,9 +448,13 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
         string $reasonCode,
         ?string $bookingStatus = null,
         array $extraNotes = [],
+        ?string $targetStatus = 'refund_required',
     ): void {
-        if (!in_array($payment->payment_status, ['refund_required', 'refunded', 'partially_refunded'], true)) {
-            $payment->payment_status = 'refund_required';
+        if (
+            $targetStatus !== null &&
+            !in_array($payment->payment_status, ['refund_required', 'refunded', 'partially_refunded'], true)
+        ) {
+            $payment->payment_status = $targetStatus;
         }
 
         $payment->payment_date = $payment->payment_date ?: DateTime::now();
@@ -466,6 +475,23 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             'booking_id' => (int)$payment->booking_id,
             'reason_code' => $reasonCode,
         ]);
+    }
+
+    private function markPaymentForReviewWithoutRefundRequirement(
+        object $payment,
+        object $session,
+        string $reasonCode,
+        ?string $bookingStatus = null,
+        array $extraNotes = [],
+    ): void {
+        $this->markPaymentForReview(
+            $payment,
+            $session,
+            $reasonCode,
+            $bookingStatus,
+            $extraNotes,
+            null
+        );
     }
 
     protected function persistPayment(object $payment): void
