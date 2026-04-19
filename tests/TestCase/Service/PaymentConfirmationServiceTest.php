@@ -59,6 +59,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
 
         $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
         $this->assertSame('cancelled', $booking->booking_status);
     }
 
@@ -147,6 +148,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
 
         $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
         $this->assertStringContainsString('manual_review_required', (string)$payment->notes);
         $this->assertStringContainsString('amount_mismatch', (string)$payment->notes);
     }
@@ -195,6 +197,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $booking = $bookings->get(1);
 
         $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
         $this->assertSame('confirmed', $booking->booking_status);
     }
 
@@ -219,6 +222,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $payment = $payments->get(1);
 
         $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
     }
 
     public function testLateWebhookForVoidedPaymentWithoutPaidStatusDoesNotRequireRefund(): void
@@ -317,6 +321,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $notes = json_decode((string)$payment->notes, true);
 
         $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
         $this->assertTrue((bool)($notes['funds_captured'] ?? false));
         $this->assertTrue((bool)($notes['refund_required'] ?? false));
         $this->assertSame(
