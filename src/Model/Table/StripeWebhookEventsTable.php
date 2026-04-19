@@ -114,6 +114,43 @@ class StripeWebhookEventsTable extends Table
             ->allowEmptyString('suspicious_count');
 
         $validator
+            ->nonNegativeInteger('replay_count')
+            ->allowEmptyString('replay_count');
+
+        $validator
+            ->scalar('last_replay_event_id')
+            ->maxLength('last_replay_event_id', 100)
+            ->allowEmptyString('last_replay_event_id');
+
+        $validator
+            ->scalar('last_replay_payload_hash')
+            ->maxLength('last_replay_payload_hash', 64)
+            ->allowEmptyString('last_replay_payload_hash');
+
+        $validator
+            ->dateTime('last_replay_seen_at')
+            ->allowEmptyDateTime('last_replay_seen_at');
+
+        $validator
+            ->scalar('last_suppressed_status_update')
+            ->maxLength('last_suppressed_status_update', 20)
+            ->allowEmptyString('last_suppressed_status_update');
+
+        $validator
+            ->scalar('last_suppressed_status_event_id')
+            ->maxLength('last_suppressed_status_event_id', 100)
+            ->allowEmptyString('last_suppressed_status_event_id');
+
+        $validator
+            ->scalar('last_suppressed_status_payload_hash')
+            ->maxLength('last_suppressed_status_payload_hash', 64)
+            ->allowEmptyString('last_suppressed_status_payload_hash');
+
+        $validator
+            ->dateTime('last_suppressed_status_seen_at')
+            ->allowEmptyDateTime('last_suppressed_status_seen_at');
+
+        $validator
             ->dateTime('first_seen_at')
             ->requirePresence('first_seen_at', 'create')
             ->notEmptyDateTime('first_seen_at');

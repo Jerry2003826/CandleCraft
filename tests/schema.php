@@ -286,6 +286,53 @@ if (!isset($schema['stripe_webhook_events'])) {
                 'default' => 0,
                 'autoIncrement' => null,
             ],
+            'replay_count' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => 0,
+                'autoIncrement' => null,
+            ],
+            'last_replay_event_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'last_replay_payload_hash' => [
+                'type' => 'string',
+                'length' => 64,
+                'null' => true,
+                'default' => null,
+            ],
+            'last_replay_seen_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+            'last_suppressed_status_update' => [
+                'type' => 'string',
+                'length' => 20,
+                'null' => true,
+                'default' => null,
+            ],
+            'last_suppressed_status_event_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'last_suppressed_status_payload_hash' => [
+                'type' => 'string',
+                'length' => 64,
+                'null' => true,
+                'default' => null,
+            ],
+            'last_suppressed_status_seen_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
             'first_seen_at' => [
                 'type' => 'datetime',
                 'null' => false,

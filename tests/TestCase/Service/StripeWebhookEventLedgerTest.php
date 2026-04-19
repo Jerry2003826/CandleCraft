@@ -162,8 +162,19 @@ class StripeWebhookEventLedgerTest extends TestCase
             '{"id":"evt_duplicate_business_event"}'
         );
 
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_original'])
+            ->firstOrFail();
+
         $this->assertSame(StripeWebhookEventLedger::RESULT_DUPLICATE, $claimed);
         $this->assertSame(1, $this->eventsTable->find()->count());
+        $this->assertSame(1, (int)$event->replay_count);
+        $this->assertSame('evt_duplicate_business_event', $event->last_replay_event_id);
+        $this->assertSame(
+            hash('sha256', '{"id":"evt_duplicate_business_event"}'),
+            $event->last_replay_payload_hash
+        );
+        $this->assertNotNull($event->last_replay_seen_at);
     }
 
     public function testFreshProcessingBusinessDuplicateIsReportedAsInProgress(): void
@@ -311,6 +322,8 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame(StripeWebhookEventLedger::RESULT_SUSPICIOUS, $claimed);
         $this->assertSame('failed', $event->processing_status);
         $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame(1, (int)$event->replay_count);
+        $this->assertSame('evt_suspicious_business_retry', $event->last_replay_event_id);
         $this->assertSame(1, $this->eventsTable->find()->count());
     }
 
@@ -505,6 +518,47 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('checkout.session.completed:cs_other_status_guard', $event->suspicious_business_event_key);
         $this->assertSame('processed', $event->suspicious_target_status);
         $this->assertSame('checkout.session.completed:cs_status_guard', $event->business_event_key);
+    }
+
+    public function testSuppressedStatusUpdateIsAuditedOnSuspiciousRow(): void
+    {
+        $eventTime = DateTime::now()->subMinutes(5);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_suspicious_status_update',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_suspicious_status_update',
+            'payload_hash' => hash('sha256', '{"id":"evt_suspicious_status_update"}'),
+            'processing_status' => 'processing',
+            'suspicious_state' => 'suspicious',
+            'suspicious_reason_code' => 'event_id_business_key_mismatch',
+            'suspicious_seen_at' => $eventTime,
+            'suspicious_count' => 1,
+            'first_seen_at' => $eventTime,
+            'processing_started_at' => $eventTime,
+            'last_seen_at' => $eventTime,
+        ]);
+
+        $this->ledger->markProcessed(
+            'evt_suspicious_status_update',
+            'checkout.session.completed',
+            'cs_suspicious_status_update',
+            '{"id":"evt_suspicious_status_update","replayed":true}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_suspicious_status_update'])
+            ->firstOrFail();
+
+        $this->assertSame('processing', $event->processing_status);
+        $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame('processed', $event->last_suppressed_status_update);
+        $this->assertSame('evt_suspicious_status_update', $event->last_suppressed_status_event_id);
+        $this->assertSame(
+            hash('sha256', '{"id":"evt_suspicious_status_update","replayed":true}'),
+            $event->last_suppressed_status_payload_hash
+        );
+        $this->assertNotNull($event->last_suppressed_status_seen_at);
     }
 
     public function testStatusUpdateDoesNotClearExistingBusinessEventKeyWhenIncomingSessionIsMissing(): void

@@ -136,6 +136,7 @@ class StripeWebhookEventLedger
             return;
         }
 
+        $payloadHash = hash('sha256', $payload);
         $businessEventKey = $this->buildBusinessEventKey($eventType, $sessionId);
         $matchedByEventId = true;
         $event = $this->findByEventId($eventId);
@@ -163,7 +164,7 @@ class StripeWebhookEventLedger
             $this->markEventSuspicious(
                 $event,
                 $now,
-                hash('sha256', $payload),
+                $payloadHash,
                 'status_update_business_key_mismatch',
                 $businessEventKey,
                 $status
@@ -172,14 +173,15 @@ class StripeWebhookEventLedger
         }
 
         if ($this->isSuspiciousEvent($event)) {
+            $this->recordSuppressedStatusUpdate($event, $eventId, $status, $payloadHash, $now);
             if ($matchedByEventId) {
-                $this->touchExistingEvent($event, $now, hash('sha256', $payload));
+                $this->touchExistingEvent($event, $now, $payloadHash);
             } else {
                 $this->touchBusinessDuplicateEvent(
                     $event,
                     $eventId,
                     $now,
-                    hash('sha256', $payload),
+                    $payloadHash,
                     'suspicious_status_update'
                 );
             }
@@ -193,8 +195,9 @@ class StripeWebhookEventLedger
             $event->business_event_key = $businessEventKey;
         }
         if ($matchedByEventId) {
-            $this->preservePayloadHash($event, hash('sha256', $payload));
+            $this->preservePayloadHash($event, $payloadHash);
         } else {
+            $this->applyBusinessReplayAudit($event, $eventId, $payloadHash, $now);
             $this->logBusinessEventReplay($event, $eventId, 'status_update');
         }
         $event->processing_status = $status;
@@ -349,6 +352,7 @@ class StripeWebhookEventLedger
         string $payloadHash,
         string $context,
     ): void {
+        $this->applyBusinessReplayAudit($event, $incomingEventId, $payloadHash, $now);
         $this->logBusinessEventReplay($event, $incomingEventId, $context);
         $this->touchExistingEventInternal($event, $now, $payloadHash, $context, false);
     }
@@ -427,7 +431,12 @@ class StripeWebhookEventLedger
         ], $conditions);
 
         if ($updated > 0) {
-            $this->logBusinessEventReplay($event, $incomingEventId, 'business_retry');
+            $reloaded = $this->findByEventId((string)$event->event_id);
+            if ($reloaded !== null) {
+                $this->touchBusinessDuplicateEvent($reloaded, $incomingEventId, $now, $payloadHash, 'business_retry');
+            } else {
+                $this->logBusinessEventReplay($event, $incomingEventId, 'business_retry');
+            }
 
             return self::RESULT_CLAIMED;
         }
@@ -523,6 +532,35 @@ class StripeWebhookEventLedger
         $event->suspicious_count = max(1, (int)($event->suspicious_count ?? 0) + 1);
         $event->last_seen_at = $now;
         $this->eventsTable->saveOrFail($event);
+    }
+
+    private function recordSuppressedStatusUpdate(
+        object $event,
+        string $eventId,
+        string $targetStatus,
+        string $payloadHash,
+        DateTime $now,
+    ): void {
+        $event->last_suppressed_status_update = $targetStatus;
+        $event->last_suppressed_status_event_id = $eventId !== '' ? $eventId : null;
+        $event->last_suppressed_status_payload_hash = $payloadHash;
+        $event->last_suppressed_status_seen_at = $now;
+    }
+
+    private function applyBusinessReplayAudit(
+        object $event,
+        string $incomingEventId,
+        string $payloadHash,
+        DateTime $now,
+    ): void {
+        if ($incomingEventId === '' || (string)$event->event_id === $incomingEventId) {
+            return;
+        }
+
+        $event->replay_count = max(1, (int)($event->replay_count ?? 0) + 1);
+        $event->last_replay_event_id = $incomingEventId;
+        $event->last_replay_payload_hash = $payloadHash;
+        $event->last_replay_seen_at = $now;
     }
 
     private function buildBusinessEventKey(string $eventType, string $sessionId): ?string
