@@ -159,8 +159,11 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertResponseCode(200);
         $this->assertResponseContains('"suspicious":true');
         $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
-        $this->assertSame('suspicious', $event->processing_status);
+        $this->assertSame('processing', $event->processing_status);
         $this->assertSame('checkout.session.completed:cs_original_suspicious', $event->business_event_key);
+        $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame('event_id_business_key_mismatch', $event->suspicious_reason_code);
+        $this->assertSame('checkout.session.completed:cs_replayed_suspicious', $event->suspicious_business_event_key);
     }
 
     public function testAsyncPaymentSucceededUsesConfirmationService(): void

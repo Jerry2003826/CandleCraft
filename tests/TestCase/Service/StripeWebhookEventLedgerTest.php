@@ -232,7 +232,10 @@ class StripeWebhookEventLedgerTest extends TestCase
 
         $this->assertSame(StripeWebhookEventLedger::RESULT_SUSPICIOUS, $claimed);
         $this->assertSame('checkout.session.completed:cs_original_key', $original->business_event_key);
-        $this->assertSame('suspicious', $original->processing_status);
+        $this->assertSame('processing', $original->processing_status);
+        $this->assertSame('suspicious', $original->suspicious_state);
+        $this->assertSame('event_id_business_key_mismatch', $original->suspicious_reason_code);
+        $this->assertSame('checkout.session.completed:cs_other_key', $original->suspicious_business_event_key);
         $this->assertSame('checkout.session.completed:cs_other_key', $other->business_event_key);
         $this->assertSame('failed', $other->processing_status);
     }
@@ -422,7 +425,11 @@ class StripeWebhookEventLedgerTest extends TestCase
             ->where(['event_id' => 'evt_status_guard'])
             ->firstOrFail();
 
-        $this->assertSame('suspicious', $event->processing_status);
+        $this->assertSame('failed', $event->processing_status);
+        $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame('status_update_business_key_mismatch', $event->suspicious_reason_code);
+        $this->assertSame('checkout.session.completed:cs_other_status_guard', $event->suspicious_business_event_key);
+        $this->assertSame('processed', $event->suspicious_target_status);
         $this->assertSame('checkout.session.completed:cs_status_guard', $event->business_event_key);
     }
 
@@ -452,7 +459,11 @@ class StripeWebhookEventLedgerTest extends TestCase
             ->where(['event_id' => 'evt_missing_session'])
             ->firstOrFail();
 
-        $this->assertSame('suspicious', $event->processing_status);
+        $this->assertSame('failed', $event->processing_status);
+        $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame('status_update_business_key_mismatch', $event->suspicious_reason_code);
+        $this->assertNull($event->suspicious_business_event_key);
+        $this->assertSame('processed', $event->suspicious_target_status);
         $this->assertSame('checkout.session.completed:cs_missing_session', $event->business_event_key);
     }
 

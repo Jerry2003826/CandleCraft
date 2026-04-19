@@ -244,6 +244,48 @@ if (!isset($schema['stripe_webhook_events'])) {
                 'null' => false,
                 'default' => 'processing',
             ],
+            'suspicious_state' => [
+                'type' => 'string',
+                'length' => 20,
+                'null' => false,
+                'default' => 'clean',
+            ],
+            'suspicious_reason_code' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'suspicious_seen_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+            'suspicious_business_event_key' => [
+                'type' => 'string',
+                'length' => 255,
+                'null' => true,
+                'default' => null,
+            ],
+            'suspicious_payload_hash' => [
+                'type' => 'string',
+                'length' => 64,
+                'null' => true,
+                'default' => null,
+            ],
+            'suspicious_target_status' => [
+                'type' => 'string',
+                'length' => 20,
+                'null' => true,
+                'default' => null,
+            ],
+            'suspicious_count' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => 0,
+                'autoIncrement' => null,
+            ],
             'first_seen_at' => [
                 'type' => 'datetime',
                 'null' => false,

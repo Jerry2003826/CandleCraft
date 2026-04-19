@@ -467,7 +467,13 @@ class StripeWebhookEventLedger
             'target_status' => $targetStatus,
         ]);
 
-        $event->processing_status = 'suspicious';
+        $event->suspicious_state = 'suspicious';
+        $event->suspicious_reason_code = $reasonCode;
+        $event->suspicious_seen_at = $now;
+        $event->suspicious_business_event_key = $incomingBusinessEventKey;
+        $event->suspicious_payload_hash = $payloadHash;
+        $event->suspicious_target_status = $targetStatus;
+        $event->suspicious_count = max(1, (int)($event->suspicious_count ?? 0) + 1);
         $event->last_seen_at = $now;
         $this->eventsTable->saveOrFail($event);
     }

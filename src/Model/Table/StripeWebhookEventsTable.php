@@ -66,6 +66,38 @@ class StripeWebhookEventsTable extends Table
             ->notEmptyString('processing_status');
 
         $validator
+            ->inList('suspicious_state', ['clean', 'suspicious'])
+            ->allowEmptyString('suspicious_state');
+
+        $validator
+            ->scalar('suspicious_reason_code')
+            ->maxLength('suspicious_reason_code', 100)
+            ->allowEmptyString('suspicious_reason_code');
+
+        $validator
+            ->dateTime('suspicious_seen_at')
+            ->allowEmptyDateTime('suspicious_seen_at');
+
+        $validator
+            ->scalar('suspicious_business_event_key')
+            ->maxLength('suspicious_business_event_key', 255)
+            ->allowEmptyString('suspicious_business_event_key');
+
+        $validator
+            ->scalar('suspicious_payload_hash')
+            ->maxLength('suspicious_payload_hash', 64)
+            ->allowEmptyString('suspicious_payload_hash');
+
+        $validator
+            ->scalar('suspicious_target_status')
+            ->maxLength('suspicious_target_status', 20)
+            ->allowEmptyString('suspicious_target_status');
+
+        $validator
+            ->nonNegativeInteger('suspicious_count')
+            ->allowEmptyString('suspicious_count');
+
+        $validator
             ->dateTime('first_seen_at')
             ->requirePresence('first_seen_at', 'create')
             ->notEmptyDateTime('first_seen_at');
