@@ -78,6 +78,27 @@ class ConditionalAuthenticationMiddlewareTest extends TestCase
         }
     }
 
+    public function testDebugKitDoesNotBypassAuthWhenDebugDisabled(): void
+    {
+        $originalDebug = Configure::read('debug');
+        Configure::write('debug', false);
+
+        try {
+            $authMiddleware = $this->createMock(AuthenticationMiddleware::class);
+            $authMiddleware->expects($this->once())
+                ->method('process')
+                ->willReturn((new Response())->withStringBody('auth'));
+
+            $middleware = new ConditionalAuthenticationMiddleware($authMiddleware);
+            $request = new ServerRequest(['url' => '/debug-kit/toolbar/request-id']);
+            $response = $middleware->process($request, $this->successHandler('handled'));
+
+            $this->assertSame('auth', (string)$response->getBody());
+        } finally {
+            Configure::write('debug', $originalDebug);
+        }
+    }
+
     private function successHandler(string $body): RequestHandlerInterface
     {
         return new class ($body) implements RequestHandlerInterface {

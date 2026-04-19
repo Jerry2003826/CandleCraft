@@ -50,6 +50,27 @@ class ConditionalCsrfProtectionMiddlewareTest extends TestCase
         }
     }
 
+    public function testDebugKitDoesNotBypassCsrfWhenDebugDisabled(): void
+    {
+        $originalDebug = Configure::read('debug');
+        Configure::write('debug', false);
+
+        try {
+            $csrfMiddleware = $this->createMock(CsrfProtectionMiddleware::class);
+            $csrfMiddleware->expects($this->once())
+                ->method('process')
+                ->willReturn((new Response())->withStringBody('csrf'));
+
+            $middleware = new ConditionalCsrfProtectionMiddleware($csrfMiddleware);
+            $request = new ServerRequest(['url' => '/debug-kit/dashboard/reset']);
+            $response = $middleware->process($request, $this->successHandler('handled'));
+
+            $this->assertSame('csrf', (string)$response->getBody());
+        } finally {
+            Configure::write('debug', $originalDebug);
+        }
+    }
+
     private function successHandler(string $body): RequestHandlerInterface
     {
         return new class ($body) implements RequestHandlerInterface {

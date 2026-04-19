@@ -39,8 +39,16 @@ class UsersController extends AppController
                 return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']);
             }
 
+            if ($role === 'customer') {
+                return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']);
+            }
+
+            if ($role === 'parent') {
+                return $this->redirect(['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index']);
+            }
+
             $this->Authentication->logout();
-            $this->Flash->info(__('This portal currently supports admin, teacher, and student logins.'));
+            $this->Flash->info(__('This portal currently supports admin, teacher, student, and parent logins.'));
 
             return $this->redirect('/');
         }

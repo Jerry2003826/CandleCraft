@@ -70,7 +70,7 @@ class UsersTable extends Table
             ->notEmptyString('password_hash');
 
         $validator
-            ->inList('user_role', ['admin', 'teacher', 'student'])
+            ->inList('user_role', ['admin', 'teacher', 'student', 'parent', 'customer'])
             ->requirePresence('user_role', 'create')
             ->notEmptyString('user_role');
 
@@ -116,7 +116,7 @@ class UsersTable extends Table
             ->notEmptyString('password_hash');
 
         $validator
-            ->inList('user_role', ['admin', 'teacher', 'student'])
+            ->inList('user_role', ['admin', 'teacher', 'student', 'parent', 'customer'])
             ->requirePresence('user_role', 'create')
             ->notEmptyString('user_role');
 

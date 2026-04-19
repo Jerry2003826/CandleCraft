@@ -26,6 +26,19 @@ class CsrfRetryMiddlewareTest extends TestCase
         $this->assertSame('/login', $response->getHeaderLine('Location'));
     }
 
+    public function testMissingRefererFallsBackToSubdirectoryLoginPath(): void
+    {
+        $middleware = new CsrfRetryMiddleware();
+        $request = (new ServerRequest(['url' => '/candlecraft/consumer/bookings']))
+            ->withUri(new Uri('https://app.example/candlecraft/consumer/bookings'))
+            ->withAttribute('base', '/candlecraft');
+
+        $response = $middleware->process($request, $this->invalidCsrfHandler());
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/candlecraft/login', $response->getHeaderLine('Location'));
+    }
+
     public function testSameOriginRefererKeepsRelativePathAndQuery(): void
     {
         $middleware = new CsrfRetryMiddleware();

@@ -4,15 +4,22 @@ declare(strict_types=1);
 namespace App\Controller\Parent;
 
 use App\Controller\AppController as BaseAppController;
+use App\Service\CustomerAccessPolicy;
 use Cake\Event\EventInterface;
+use Cake\Http\Response;
 
 class AppController extends BaseAppController
 {
+    protected bool $bookingAccessEnabled = false;
+    protected bool $paymentAccessEnabled = false;
+    protected bool $ageVerifiedByAdmin = false;
+
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
 
         $identity = $this->Authentication->getIdentity();
+        $accessPolicy = new CustomerAccessPolicy();
         if (!$identity) {
             $this->shortCircuitRequest(
                 $event,
@@ -45,8 +52,18 @@ class AppController extends BaseAppController
             return;
         }
 
+        $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity);
+        $this->bookingAccessEnabled = $accessPolicy->canBook($identity);
+        $this->paymentAccessEnabled = $accessPolicy->canPay($identity);
+        $restrictedResponse = $this->enforceAgeRestrictions();
+        if ($restrictedResponse !== null) {
+            $this->shortCircuitRequest($event, $restrictedResponse);
+
+            return;
+        }
+
         $this->viewBuilder()->setLayout('portal');
-        $this->set('portalContext', [
+        $portalContext = [
             'title' => 'Parent Portal',
             'icon' => 'bi bi-people',
             'welcome' => 'Family Hub',
@@ -66,22 +83,10 @@ class AppController extends BaseAppController
                     'action' => 'children',
                 ],
                 [
-                    'label' => 'Booking System',
-                    'icon' => 'bi bi-palette',
-                    'url' => ['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index'],
-                    'controller' => 'Courses',
-                ],
-                [
                     'label' => 'View Schedule & Attendance',
                     'icon' => 'bi bi-calendar-event',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index'],
                     'controller' => 'Bookings',
-                ],
-                [
-                    'label' => 'Payment Portal',
-                    'icon' => 'bi bi-credit-card',
-                    'url' => ['prefix' => 'Parent', 'controller' => 'Payments', 'action' => 'index'],
-                    'controller' => 'Payments',
                 ],
                 [
                     'label' => 'Learning Resources',
@@ -96,6 +101,55 @@ class AppController extends BaseAppController
                     'controller' => 'Notifications',
                 ],
             ],
-        ]);
+        ];
+        if ($this->bookingAccessEnabled) {
+            array_splice($portalContext['nav'], 2, 0, [[
+                'label' => 'Booking System',
+                'icon' => 'bi bi-palette',
+                'url' => ['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index'],
+                'controller' => 'Courses',
+            ]]);
+        }
+        if ($this->paymentAccessEnabled) {
+            array_splice($portalContext['nav'], 4, 0, [[
+                'label' => 'Payment Portal',
+                'icon' => 'bi bi-credit-card',
+                'url' => ['prefix' => 'Parent', 'controller' => 'Payments', 'action' => 'index'],
+                'controller' => 'Payments',
+            ]]);
+        }
+        $this->set('portalContext', $portalContext);
+        $this->set('bookingAccessEnabled', $this->bookingAccessEnabled);
+        $this->set('paymentAccessEnabled', $this->paymentAccessEnabled);
+        $this->set('ageVerifiedByAdmin', $this->ageVerifiedByAdmin);
+    }
+
+    private function enforceAgeRestrictions(): ?Response
+    {
+        $controller = $this->request->getParam('controller');
+        $action = $this->request->getParam('action');
+
+        $restricted = [
+            'Bookings' => ['add'],
+            'Payments' => ['index', 'process', 'success', 'cancel', 'receipt'],
+        ];
+
+        if (!isset($restricted[$controller]) || !in_array($action, $restricted[$controller], true)) {
+            return null;
+        }
+
+        $blocked = match ($controller) {
+            'Bookings' => !$this->bookingAccessEnabled,
+            'Payments' => !$this->paymentAccessEnabled,
+            default => false,
+        };
+
+        if ($blocked) {
+            $this->Flash->warning(__('Your adult verification is still pending. You can manage linked students, schedules, and learning resources now. Booking and payment will unlock after an administrator confirms you are 18 or older.'));
+
+            return $this->redirect(['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index']);
+        }
+
+        return null;
     }
 }

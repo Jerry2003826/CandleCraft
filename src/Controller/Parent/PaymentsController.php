@@ -8,6 +8,7 @@ use App\Service\PaymentCheckoutService;
 use App\Service\StripeConfiguration;
 use Cake\Core\Configure;
 use Cake\Http\Response;
+use Cake\Log\Log;
 use Cake\Routing\Router;
 use RuntimeException;
 
@@ -142,13 +143,22 @@ class PaymentsController extends AppController
             $payment = $result['payment'];
             $booking = $result['booking'];
 
-            $this->loadComponent('Notification');
-            $className = $booking->class_entity?->course?->course_name ?? 'Class';
-            $this->Notification->sendPaymentReceipt(
-                $this->Authentication->getIdentity()->get('user_id'),
-                $className,
-                (float)$payment->amount,
-            );
+            try {
+                $this->loadComponent('Notification');
+                $className = $booking->class_entity?->course?->course_name ?? 'Class';
+                $this->Notification->sendPaymentReceipt(
+                    $this->Authentication->getIdentity()->get('user_id'),
+                    $className,
+                    (float)$payment->amount,
+                );
+            } catch (\Throwable $exception) {
+                Log::warning('Payment receipt notification failed.', [
+                    'payment_id' => $payment->payment_id ?? null,
+                    'booking_id' => $booking->booking_id ?? null,
+                    'portal' => 'parent',
+                    'error' => $exception->getMessage(),
+                ]);
+            }
 
             $message = ($result['completed_reason'] ?? null) === 'zero_amount'
                 ? __('Free booking confirmed successfully.')

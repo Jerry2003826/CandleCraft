@@ -39,17 +39,17 @@ class CsrfRetryMiddleware implements MiddlewareInterface
     {
         $referer = trim($request->getHeaderLine('Referer'));
         if ($referer === '') {
-            return '/login';
+            return $this->loginPath($request);
         }
 
         $parts = parse_url($referer);
         if ($parts === false) {
-            return '/login';
+            return $this->loginPath($request);
         }
 
         $path = (string)($parts['path'] ?? '');
         if ($path === '' || !str_starts_with($path, '/')) {
-            return '/login';
+            return $this->loginPath($request);
         }
 
         $requestHost = strtolower((string)$request->getUri()->getHost());
@@ -58,15 +58,22 @@ class CsrfRetryMiddleware implements MiddlewareInterface
         $refererScheme = strtolower((string)($parts['scheme'] ?? $requestScheme));
 
         if (($parts['host'] ?? null) !== null && $refererHost !== $requestHost) {
-            return '/login';
+            return $this->loginPath($request);
         }
 
         if (($parts['scheme'] ?? null) !== null && $requestScheme !== '' && $refererScheme !== $requestScheme) {
-            return '/login';
+            return $this->loginPath($request);
         }
 
         $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . $parts['query'] : '';
 
         return $path . $query;
+    }
+
+    private function loginPath(ServerRequestInterface $request): string
+    {
+        $base = rtrim((string)$request->getAttribute('base', ''), '/');
+
+        return ($base !== '' ? $base : '') . '/login';
     }
 }

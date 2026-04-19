@@ -85,6 +85,7 @@ class AppController extends Controller
             'teacher' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
             'parent' => ['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index'],
             'student' => ['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'],
+            'customer' => ['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'],
             default => ['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'],
         };
     }

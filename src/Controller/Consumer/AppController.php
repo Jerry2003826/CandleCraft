@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace App\Controller\Consumer;
 
 use App\Controller\AppController as BaseAppController;
+use App\Service\CustomerAccessPolicy;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 
 class AppController extends BaseAppController
 {
     protected bool $bookingAccessEnabled = false;
+    protected bool $paymentAccessEnabled = false;
     protected bool $ageVerifiedByAdmin = false;
     protected ?int $declaredAge = null;
     protected string $userRole = '';
@@ -19,21 +21,22 @@ class AppController extends BaseAppController
         parent::beforeFilter($event);
 
         $identity = $this->Authentication->getIdentity();
+        $accessPolicy = new CustomerAccessPolicy();
         $this->userRole = $identity ? (string)$identity->get('user_role') : '';
 
         if (!$identity) {
             $this->shortCircuitRequest(
                 $event,
-                $this->rejectUnauthenticatedAccess('Please sign in with a student account to continue.')
+                $this->rejectUnauthenticatedAccess('Please sign in with a customer account to continue.')
             );
 
             return;
         }
 
-        if ($this->userRole !== 'student') {
+        if (!in_array($this->userRole, ['student', 'customer'], true)) {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a student account to continue.')
+                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a customer account to continue.')
             );
 
             return;
@@ -56,8 +59,9 @@ class AppController extends BaseAppController
         }
 
         $this->declaredAge = $this->determineDeclaredAge($student);
-        $this->ageVerifiedByAdmin = (bool)($student->user?->age_verified_by_admin ?? false);
-        $this->bookingAccessEnabled = $this->ageVerifiedByAdmin;
+        $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity);
+        $this->bookingAccessEnabled = $accessPolicy->canBook($identity);
+        $this->paymentAccessEnabled = $accessPolicy->canPay($identity);
         $restrictedResponse = $this->enforceAgeRestrictions();
         if ($restrictedResponse !== null) {
             $this->shortCircuitRequest($event, $restrictedResponse);
@@ -68,6 +72,7 @@ class AppController extends BaseAppController
         $this->viewBuilder()->setLayout('portal');
         $this->set('portalContext', $this->buildPortalContext());
         $this->set('bookingAccessEnabled', $this->bookingAccessEnabled);
+        $this->set('paymentAccessEnabled', $this->paymentAccessEnabled);
         $this->set('ageVerifiedByAdmin', $this->ageVerifiedByAdmin);
         $this->set('declaredAge', $this->declaredAge);
         $this->set('userRole', $this->userRole);
@@ -99,11 +104,17 @@ class AppController extends BaseAppController
             'Payments' => ['index', 'process', 'success', 'cancel', 'receipt'],
         ];
 
-        if (
-            !$this->bookingAccessEnabled
-            && isset($restricted[$controller])
-            && in_array($action, $restricted[$controller], true)
-        ) {
+        if (!isset($restricted[$controller]) || !in_array($action, $restricted[$controller], true)) {
+            return null;
+        }
+
+        $blocked = match ($controller) {
+            'Bookings' => !$this->bookingAccessEnabled,
+            'Payments' => !$this->paymentAccessEnabled,
+            default => false,
+        };
+
+        if ($blocked) {
             $this->Flash->warning(__('Your adult verification is still pending. You can browse courses, but booking and payment stay locked until an administrator confirms you are 18 or older.'));
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']);
         }
@@ -121,28 +132,16 @@ class AppController extends BaseAppController
                 'controller' => 'Dashboard',
             ],
             [
-                'label' => 'Booking System',
-                'icon' => 'bi bi-palette',
-                'url' => ['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index'],
-                'controller' => 'Courses',
-            ],
-            [
                 'label' => 'View Schedule & Attendance',
                 'icon' => 'bi bi-calendar-event',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index'],
                 'controller' => 'Bookings',
             ],
             [
-                'label' => 'Payment Portal',
-                'icon' => 'bi bi-credit-card',
-                'url' => ['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'index'],
-                'controller' => 'Payments',
-            ],
-            [
                 'label' => 'Learning Resources',
-            'icon' => 'bi bi-folder',
-            'url' => ['prefix' => 'Consumer', 'controller' => 'Resources', 'action' => 'index'],
-            'controller' => 'Resources',
+                'icon' => 'bi bi-folder',
+                'url' => ['prefix' => 'Consumer', 'controller' => 'Resources', 'action' => 'index'],
+                'controller' => 'Resources',
             ],
             [
                 'label' => 'Notifications',
@@ -151,6 +150,24 @@ class AppController extends BaseAppController
                 'controller' => 'Notifications',
             ],
         ];
+
+        if ($this->bookingAccessEnabled) {
+            array_splice($nav, 1, 0, [[
+                'label' => 'Booking System',
+                'icon' => 'bi bi-palette',
+                'url' => ['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index'],
+                'controller' => 'Courses',
+            ]]);
+        }
+
+        if ($this->paymentAccessEnabled) {
+            array_splice($nav, 3, 0, [[
+                'label' => 'Payment Portal',
+                'icon' => 'bi bi-credit-card',
+                'url' => ['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'index'],
+                'controller' => 'Payments',
+            ]]);
+        }
 
         return [
             'title' => 'Customer Portal',

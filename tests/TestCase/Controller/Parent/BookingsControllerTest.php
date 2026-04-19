@@ -31,4 +31,16 @@ class BookingsControllerTest extends AppIntegrationTestCase
 
         $this->assertResponseCode(404);
     }
+
+    public function testUnderageParentCannotOpenBookingForm(): void
+    {
+        $this->loginAsParent(ageVerifiedByAdmin: false);
+
+        $this->get('/parent/bookings/add/1/1');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/parent');
+        $this->assertSession(6, 'Auth.user_id');
+        $this->assertSession('parent', 'Auth.user_role');
+    }
 }
