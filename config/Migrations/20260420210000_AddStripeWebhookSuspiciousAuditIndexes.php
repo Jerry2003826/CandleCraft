@@ -44,11 +44,11 @@ class AddStripeWebhookSuspiciousAuditIndexes extends BaseMigration
 
         $table = $this->table('stripe_webhook_events');
 
-        if ($table->hasIndex(['suspicious_reason_code', 'suspicious_seen_at'])) {
+        if ($table->hasIndexByName('idx_stripe_webhook_events_suspicious_reason')) {
             $table->removeIndexByName('idx_stripe_webhook_events_suspicious_reason');
         }
 
-        if ($table->hasIndex(['suspicious_state', 'suspicious_seen_at'])) {
+        if ($table->hasIndexByName('idx_stripe_webhook_events_suspicious_audit')) {
             $table->removeIndexByName('idx_stripe_webhook_events_suspicious_audit');
         }
 

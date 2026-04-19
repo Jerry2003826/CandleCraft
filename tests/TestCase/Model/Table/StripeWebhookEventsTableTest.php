@@ -137,6 +137,25 @@ class StripeWebhookEventsTableTest extends TestCase
         $this->assertNotEmpty($event->getErrors()['suspicious_state'] ?? []);
     }
 
+    public function testProcessingStatusSuspiciousIsReservedForLegacyAuditRows(): void
+    {
+        $now = DateTime::now();
+
+        $event = $this->StripeWebhookEvents->newEntity([
+            'event_id' => 'evt_invalid_legacy_suspicious',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_invalid_legacy_suspicious',
+            'payload_hash' => hash('sha256', 'evt_invalid_legacy_suspicious'),
+            'processing_status' => 'suspicious',
+            'suspicious_state' => 'clean',
+            'first_seen_at' => $now,
+            'processing_started_at' => $now,
+            'last_seen_at' => $now,
+        ]);
+
+        $this->assertNotEmpty($event->getErrors()['processing_status'] ?? []);
+    }
+
     private function saveWebhookEvent(array $data): void
     {
         $entity = $this->StripeWebhookEvents->newEntity($data);

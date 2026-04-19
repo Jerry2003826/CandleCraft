@@ -67,6 +67,21 @@ class StripeWebhookEventsTable extends Table
             ->notEmptyString('processing_status');
 
         $validator
+            ->add('processing_status', 'legacySuspiciousRequiresAudit', [
+                'rule' => function ($value, array $context): bool {
+                    if ($value !== 'suspicious') {
+                        return true;
+                    }
+
+                    $data = $context['data'] ?? [];
+
+                    return ($data['suspicious_state'] ?? null) === 'suspicious'
+                        && ($data['suspicious_reason_code'] ?? null) === 'legacy_suspicious_state';
+                },
+                'message' => 'processing_status=suspicious is reserved for legacy audit rows.',
+            ]);
+
+        $validator
             ->inList('suspicious_state', ['clean', 'suspicious'])
             ->notEmptyString('suspicious_state');
 

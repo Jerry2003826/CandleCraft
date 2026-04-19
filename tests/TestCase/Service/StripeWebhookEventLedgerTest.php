@@ -240,6 +240,80 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('failed', $other->processing_status);
     }
 
+    public function testSuspiciousStaleProcessingEventRemainsTerminal(): void
+    {
+        $staleTime = DateTime::now()->subMinutes(15);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_suspicious_processing',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_suspicious_processing',
+            'payload_hash' => hash('sha256', '{"id":"evt_suspicious_processing"}'),
+            'processing_status' => 'processing',
+            'suspicious_state' => 'suspicious',
+            'suspicious_reason_code' => 'event_id_business_key_mismatch',
+            'suspicious_seen_at' => $staleTime,
+            'suspicious_count' => 1,
+            'first_seen_at' => $staleTime,
+            'processing_started_at' => $staleTime,
+            'last_seen_at' => $staleTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_suspicious_processing',
+            'checkout.session.completed',
+            'cs_suspicious_processing',
+            '{"id":"evt_suspicious_processing"}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_suspicious_processing'])
+            ->firstOrFail();
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_SUSPICIOUS, $claimed);
+        $this->assertSame('processing', $event->processing_status);
+        $this->assertSame(
+            $staleTime->format('Y-m-d H:i:s'),
+            $event->processing_started_at->format('Y-m-d H:i:s')
+        );
+    }
+
+    public function testSuspiciousBusinessCollisionDoesNotClaimCanonicalRow(): void
+    {
+        $staleTime = DateTime::now()->subMinutes(15);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_suspicious_canonical',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_suspicious_business',
+            'payload_hash' => hash('sha256', '{"id":"evt_suspicious_canonical"}'),
+            'processing_status' => 'failed',
+            'suspicious_state' => 'suspicious',
+            'suspicious_reason_code' => 'event_id_business_key_mismatch',
+            'suspicious_seen_at' => $staleTime,
+            'suspicious_count' => 1,
+            'first_seen_at' => $staleTime,
+            'processing_started_at' => $staleTime,
+            'last_seen_at' => $staleTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_suspicious_business_retry',
+            'checkout.session.completed',
+            'cs_suspicious_business',
+            '{"id":"evt_suspicious_business_retry"}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_suspicious_canonical'])
+            ->firstOrFail();
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_SUSPICIOUS, $claimed);
+        $this->assertSame('failed', $event->processing_status);
+        $this->assertSame('suspicious', $event->suspicious_state);
+        $this->assertSame(1, $this->eventsTable->find()->count());
+    }
+
     public function testBusinessRetryClaimPreservesCanonicalEventIdAndPayloadHash(): void
     {
         $failedTime = DateTime::now()->subMinutes(15);

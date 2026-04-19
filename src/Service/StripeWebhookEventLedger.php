@@ -171,6 +171,22 @@ class StripeWebhookEventLedger
             return;
         }
 
+        if ($this->isSuspiciousEvent($event)) {
+            if ($matchedByEventId) {
+                $this->touchExistingEvent($event, $now, hash('sha256', $payload));
+            } else {
+                $this->touchBusinessDuplicateEvent(
+                    $event,
+                    $eventId,
+                    $now,
+                    hash('sha256', $payload),
+                    'suspicious_status_update'
+                );
+            }
+
+            return;
+        }
+
         $event->event_type = $eventType;
         $event->session_id = $sessionId;
         if ($businessEventKey !== null) {
@@ -234,6 +250,12 @@ class StripeWebhookEventLedger
             return self::RESULT_SUSPICIOUS;
         }
 
+        if ($this->isSuspiciousEvent($event)) {
+            $this->touchExistingEvent($event, $now, $payloadHash);
+
+            return self::RESULT_SUSPICIOUS;
+        }
+
         if ($status === 'processing') {
             $processedBusinessDuplicate = $this->findProcessedBusinessDuplicate($eventType, $sessionId);
             if (
@@ -287,6 +309,7 @@ class StripeWebhookEventLedger
         } else {
             $conditions['processing_status'] = 'failed';
         }
+        $conditions['suspicious_state'] = 'clean';
 
         $updated = $this->eventsTable->updateAll([
             'processing_status' => 'processing',
@@ -302,6 +325,12 @@ class StripeWebhookEventLedger
 
         $reloaded = $this->findByEventId((string)$event->event_id);
         if ($reloaded !== null) {
+            if ($this->isSuspiciousEvent($reloaded)) {
+                $this->touchExistingEvent($reloaded, $now, $payloadHash);
+
+                return self::RESULT_SUSPICIOUS;
+            }
+
             $this->touchExistingEvent($reloaded, $now, $payloadHash);
         }
 
@@ -350,6 +379,12 @@ class StripeWebhookEventLedger
     ): string {
         $status = (string)$event->processing_status;
 
+        if ($this->isSuspiciousEvent($event)) {
+            $this->touchBusinessDuplicateEvent($event, $incomingEventId, $now, $payloadHash, 'suspicious_business_duplicate');
+
+            return self::RESULT_SUSPICIOUS;
+        }
+
         if ($status === 'processing') {
             $cutoff = $now->subMinutes(self::PROCESSING_TIMEOUT_MINUTES);
             if ($event->processing_started_at !== null && $event->processing_started_at <= $cutoff) {
@@ -383,6 +418,7 @@ class StripeWebhookEventLedger
         } else {
             $conditions['processing_status'] = 'failed';
         }
+        $conditions['suspicious_state'] = 'clean';
 
         $updated = $this->eventsTable->updateAll([
             'processing_status' => 'processing',
@@ -398,6 +434,12 @@ class StripeWebhookEventLedger
 
         $reloaded = $this->findByBusinessEventKey((string)$event->business_event_key);
         if ($reloaded !== null) {
+            if ($this->isSuspiciousEvent($reloaded)) {
+                $this->touchBusinessDuplicateEvent($reloaded, $incomingEventId, $now, $payloadHash, 'suspicious_business_retry');
+
+                return self::RESULT_SUSPICIOUS;
+            }
+
             $this->touchBusinessDuplicateEvent($reloaded, $incomingEventId, $now, $payloadHash, 'business_retry');
         }
 
@@ -447,6 +489,11 @@ class StripeWebhookEventLedger
         }
 
         return $businessEventKey === null || $existingBusinessKey !== $businessEventKey;
+    }
+
+    private function isSuspiciousEvent(object $event): bool
+    {
+        return (string)($event->suspicious_state ?? 'clean') === 'suspicious';
     }
 
     private function markEventSuspicious(
