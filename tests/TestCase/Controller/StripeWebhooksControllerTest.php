@@ -122,6 +122,47 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
     }
 
+    public function testSuspiciousWebhookEventReturnsTerminalAckWithoutProcessing(): void
+    {
+        $secret = 'whsec_test';
+        $freshTime = DateTime::now()->subMinutes(5);
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        $events = FactoryLocator::get('Table')->get('StripeWebhookEvents');
+        $events->saveOrFail($events->newEntity([
+            'event_id' => 'evt_test_cs_suspicious',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_original_suspicious',
+            'business_event_key' => 'checkout.session.completed:cs_original_suspicious',
+            'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_original_suspicious')),
+            'processing_status' => 'processing',
+            'first_seen_at' => $freshTime,
+            'processing_started_at' => $freshTime,
+            'last_seen_at' => $freshTime,
+        ]));
+
+        $payload = $this->completedSessionPayload('cs_replayed_suspicious', 'evt_test_cs_suspicious');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $event = $events->find()
+            ->where(['event_id' => 'evt_test_cs_suspicious'])
+            ->firstOrFail();
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('"suspicious":true');
+        $this->assertCount(0, FakePaymentConfirmationService::$receivedSessions);
+        $this->assertSame('suspicious', $event->processing_status);
+        $this->assertSame('checkout.session.completed:cs_original_suspicious', $event->business_event_key);
+    }
+
     public function testAsyncPaymentSucceededUsesConfirmationService(): void
     {
         $secret = 'whsec_test';
@@ -461,9 +502,9 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertSame(0, $count);
     }
 
-    private function completedSessionPayload(string $sessionId): string
+    private function completedSessionPayload(string $sessionId, ?string $eventId = null): string
     {
-        return $this->sessionPayload('checkout.session.completed', $sessionId);
+        return $this->sessionPayload('checkout.session.completed', $sessionId, $eventId);
     }
 
     private function sessionPayload(string $eventType, string $sessionId, ?string $eventId = null): string

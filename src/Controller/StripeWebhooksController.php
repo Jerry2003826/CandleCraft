@@ -47,6 +47,9 @@ class StripeWebhooksController extends Controller
         if ($claimResult === StripeWebhookEventLedger::RESULT_DUPLICATE) {
             return $this->jsonResponse(200, ['received' => true, 'duplicate' => true]);
         }
+        if ($claimResult === StripeWebhookEventLedger::RESULT_SUSPICIOUS) {
+            return $this->jsonResponse(200, ['received' => true, 'suspicious' => true]);
+        }
         if ($claimResult === StripeWebhookEventLedger::RESULT_IN_PROGRESS) {
             return $this->jsonResponse(500, ['error' => 'Webhook event is already being processed.']);
         }

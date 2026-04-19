@@ -15,6 +15,7 @@ class StripeWebhookEventLedger
     public const RESULT_CLAIMED = 'claimed';
     public const RESULT_DUPLICATE = 'duplicate';
     public const RESULT_IN_PROGRESS = 'in_progress';
+    public const RESULT_SUSPICIOUS = 'suspicious';
 
     private object $eventsTable;
 
@@ -159,19 +160,22 @@ class StripeWebhookEventLedger
         }
 
         if ($matchedByEventId && $this->hasMismatchedBusinessKey($event, $businessEventKey)) {
-            Log::warning('Stripe webhook status update attempted to rewrite an existing business event key.', [
-                'event_id' => $eventId,
-                'existing_business_event_key' => (string)($event->business_event_key ?? ''),
-                'incoming_business_event_key' => $businessEventKey,
-                'target_status' => $status,
-            ]);
-
+            $this->markEventSuspicious(
+                $event,
+                $now,
+                hash('sha256', $payload),
+                'status_update_business_key_mismatch',
+                $businessEventKey,
+                $status
+            );
             return;
         }
 
         $event->event_type = $eventType;
         $event->session_id = $sessionId;
-        $event->business_event_key = $businessEventKey;
+        if ($businessEventKey !== null) {
+            $event->business_event_key = $businessEventKey;
+        }
         if ($matchedByEventId) {
             $this->preservePayloadHash($event, hash('sha256', $payload));
         } else {
@@ -217,17 +221,17 @@ class StripeWebhookEventLedger
         $status = (string)$event->processing_status;
 
         if (
-            $businessEventKey !== null &&
-            (string)($event->business_event_key ?? '') !== '' &&
-            (string)$event->business_event_key !== $businessEventKey
+            $this->hasMismatchedBusinessKey($event, $businessEventKey)
         ) {
-            Log::warning('Stripe webhook event_id matched a different business event key.', [
-                'event_id' => (string)$event->event_id,
-            ]);
+            $this->markEventSuspicious(
+                $event,
+                $now,
+                $payloadHash,
+                'event_id_business_key_mismatch',
+                $businessEventKey
+            );
 
-            $this->touchExistingEvent($event, $now, $payloadHash);
-
-            return self::RESULT_IN_PROGRESS;
+            return self::RESULT_SUSPICIOUS;
         }
 
         if ($status === 'processing') {
@@ -436,13 +440,36 @@ class StripeWebhookEventLedger
 
     private function hasMismatchedBusinessKey(object $event, ?string $businessEventKey): bool
     {
-        if ($businessEventKey === null) {
+        $existingBusinessKey = (string)($event->business_event_key ?? '');
+
+        if ($existingBusinessKey === '') {
             return false;
         }
 
-        $existingBusinessKey = (string)($event->business_event_key ?? '');
+        return $businessEventKey === null || $existingBusinessKey !== $businessEventKey;
+    }
 
-        return $existingBusinessKey !== '' && $existingBusinessKey !== $businessEventKey;
+    private function markEventSuspicious(
+        object $event,
+        DateTime $now,
+        string $payloadHash,
+        string $reasonCode,
+        ?string $incomingBusinessEventKey,
+        ?string $targetStatus = null,
+    ): void {
+        $this->logPayloadHashMismatch($event, $payloadHash, $reasonCode);
+
+        Log::warning('Stripe webhook ledger detected a suspicious business key mismatch.', [
+            'event_id' => (string)$event->event_id,
+            'reason_code' => $reasonCode,
+            'existing_business_event_key' => (string)($event->business_event_key ?? ''),
+            'incoming_business_event_key' => $incomingBusinessEventKey,
+            'target_status' => $targetStatus,
+        ]);
+
+        $event->processing_status = 'suspicious';
+        $event->last_seen_at = $now;
+        $this->eventsTable->saveOrFail($event);
     }
 
     private function buildBusinessEventKey(string $eventType, string $sessionId): ?string

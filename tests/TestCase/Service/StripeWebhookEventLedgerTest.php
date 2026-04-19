@@ -230,9 +230,9 @@ class StripeWebhookEventLedgerTest extends TestCase
             ->where(['event_id' => 'evt_other_key'])
             ->firstOrFail();
 
-        $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
+        $this->assertSame(StripeWebhookEventLedger::RESULT_SUSPICIOUS, $claimed);
         $this->assertSame('checkout.session.completed:cs_original_key', $original->business_event_key);
-        $this->assertSame('processing', $original->processing_status);
+        $this->assertSame('suspicious', $original->processing_status);
         $this->assertSame('checkout.session.completed:cs_other_key', $other->business_event_key);
         $this->assertSame('failed', $other->processing_status);
     }
@@ -422,8 +422,38 @@ class StripeWebhookEventLedgerTest extends TestCase
             ->where(['event_id' => 'evt_status_guard'])
             ->firstOrFail();
 
-        $this->assertSame('failed', $event->processing_status);
+        $this->assertSame('suspicious', $event->processing_status);
         $this->assertSame('checkout.session.completed:cs_status_guard', $event->business_event_key);
+    }
+
+    public function testStatusUpdateDoesNotClearExistingBusinessEventKeyWhenIncomingSessionIsMissing(): void
+    {
+        $eventTime = DateTime::now()->subMinutes(5);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_missing_session',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_missing_session',
+            'payload_hash' => hash('sha256', '{"id":"evt_missing_session"}'),
+            'processing_status' => 'failed',
+            'first_seen_at' => $eventTime,
+            'processing_started_at' => $eventTime,
+            'last_seen_at' => $eventTime,
+        ]);
+
+        $this->ledger->markProcessed(
+            'evt_missing_session',
+            'checkout.session.completed',
+            '',
+            '{"id":"evt_missing_session"}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_missing_session'])
+            ->firstOrFail();
+
+        $this->assertSame('suspicious', $event->processing_status);
+        $this->assertSame('checkout.session.completed:cs_missing_session', $event->business_event_key);
     }
 
     private function saveWebhookEvent(array $data): void

@@ -61,7 +61,7 @@ class StripeWebhookEventsTable extends Table
             ->notEmptyString('payload_hash');
 
         $validator
-            ->inList('processing_status', ['processing', 'processed', 'ignored', 'failed'])
+            ->inList('processing_status', ['processing', 'processed', 'ignored', 'failed', 'suspicious'])
             ->requirePresence('processing_status', 'create')
             ->notEmptyString('processing_status');
 
