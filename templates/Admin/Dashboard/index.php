@@ -59,7 +59,7 @@ $this->assign('title', 'Dashboard');
                             <?php endif; ?>
                         </div>
                         <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
-                            <?= h(\Cake\Utility\Text::truncate((string)($request->subject ?: 'Student account request'), 80)) ?>
+                            <?= h(\Cake\Utility\Text::truncate((string)($request->subject ?: 'Customer portal request'), 80)) ?>
                         </div>
                     </div>
                     <div class="d-flex gap-2 flex-wrap">

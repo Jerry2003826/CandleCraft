@@ -38,6 +38,11 @@ class AttendanceRecordsTable extends Table
             ->inList('attendance_status', ['present', 'absent', 'late', 'excused'])
             ->notEmptyString('attendance_status');
 
+        $validator
+            ->scalar('attendance_notes')
+            ->maxLength('attendance_notes', 1000)
+            ->allowEmptyString('attendance_notes');
+
         return $validator;
     }
 

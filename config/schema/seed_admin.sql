@@ -203,8 +203,8 @@ INSERT INTO messages (sender_name, sender_email, sender_phone, source_page, subj
 VALUES
 ('Ava Park', 'ava.park@example.com',
  '0400000000', 'account-request',
- 'Student account request',
- '[REQUEST TYPE: account_access]\n[REQUESTED ROLE: student]\n[DECLARED AGE: 17]\n\nI would like to join the beginner pottery class and need a portal login before I can book.',
+ 'Customer portal request',
+ '[REQUEST TYPE: customer_access]\n[REQUESTED PORTAL: customer]\n[LEGACY PROFILE TYPE: student]\n[DECLARED AGE: 17]\n[SELF DECLARED 18+: no]\n\nI would like to join the beginner pottery class and need a portal login before I can book.',
  'contact_form', 'unread', DATE_SUB(NOW(), INTERVAL 40 MINUTE), DATE_SUB(NOW(), INTERVAL 40 MINUTE)),
 
 ('Sarah Jones', 'sarah.jones@example.com',

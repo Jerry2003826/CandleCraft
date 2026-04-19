@@ -36,7 +36,11 @@ $this->assign('title', 'Create Account');
         </div>
         <div class="col-md-6">
             <p class="mb-1" style="color: var(--admin-text-secondary); font-size: 14px;">Requested Account</p>
-            <p class="mb-0" style="color: var(--admin-text-primary); font-weight: 600;">Student</p>
+            <p class="mb-0" style="color: var(--admin-text-primary); font-weight: 600;"><?= h((string)($requestMeta['requested_role_label'] ?? 'Customer')) ?></p>
+        </div>
+        <div class="col-md-6">
+            <p class="mb-1" style="color: var(--admin-text-secondary); font-size: 14px;">Legacy Profile</p>
+            <p class="mb-0" style="color: var(--admin-text-primary); font-weight: 600;"><?= h((string)($requestMeta['legacy_profile_label'] ?? 'Student')) ?></p>
         </div>
         <div class="col-md-6">
             <p class="mb-1" style="color: var(--admin-text-secondary); font-size: 14px;">Email</p>
@@ -62,7 +66,7 @@ $this->assign('title', 'Create Account');
         <h2 class="admin-form-title">Create Portal Account</h2>
     </div>
     <p style="margin: 0 0 24px; color: var(--admin-text-secondary);">
-        Saving this form will create the student login and immediately email the requester their login address and temporary password.
+        Saving this form will create customer portal access using the legacy student profile flow, then email the requester their login address and temporary password.
     </p>
 
     <?= $this->Form->create(null) ?>
@@ -194,7 +198,7 @@ $this->assign('title', 'Create Account');
                 <div class="admin-form-group mb-0">
                     <label class="admin-form-label">Adult Verification Rule</label>
                     <div style="padding: 16px 18px; background-color: var(--admin-search-bg); border-radius: 12px;">
-                        Students created from requests can browse courses immediately, but they cannot book or pay until an administrator confirms they are 18 or older from the student record.
+                        Customers created from requests can browse courses immediately, but booking and payment stay locked until an administrator confirms they are 18 or older from the linked student profile.
                     </div>
                 </div>
             </div>

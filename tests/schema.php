@@ -23,8 +23,6 @@ foreach ($rawSchema as $tableName => $tableSchema) {
             // SQLite only auto-increments INTEGER PRIMARY KEY columns correctly.
             // Keep these aligned with production BIGINT AUTO_INCREMENT ids.
             if (
-                in_array($tableName, ['bookings', 'payments', 'learning_resources'], true) &&
-                in_array($columnName, ['booking_id', 'payment_id', 'resource_id'], true) &&
                 ($column['autoIncrement'] ?? false) === true &&
                 ($column['type'] ?? null) === 'biginteger'
             ) {
@@ -38,6 +36,35 @@ foreach ($rawSchema as $tableName => $tableSchema) {
 
             $table['columns'][$columnName] = $column;
         }
+    }
+
+    if ($tableName === 'messages') {
+        $table['columns'] += [
+            'parent_message_id' => [
+                'type' => 'biginteger',
+                'length' => 20,
+                'null' => true,
+                'default' => null,
+            ],
+            'recipient_name' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'recipient_email' => [
+                'type' => 'string',
+                'length' => 255,
+                'null' => true,
+                'default' => null,
+            ],
+            'delivery_status' => [
+                'type' => 'string',
+                'length' => 20,
+                'null' => true,
+                'default' => null,
+            ],
+        ];
     }
 
     $indexes = [];

@@ -12,7 +12,7 @@ class TeachersController extends AppController
         $teachersTable = $this->fetchTable('Teachers');
         $query = $teachersTable->find()
             ->contain(['Users'])
-            ->order(['Teachers.teacher_name' => 'ASC']);
+            ->orderBy(['Teachers.teacher_name' => 'ASC']);
 
         $status = $this->request->getQuery('status');
         if ($status && in_array($status, ['active', 'inactive'])) {
@@ -118,7 +118,15 @@ class TeachersController extends AppController
         $teacher = $teachersTable->get($id, contain: ['Users']);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $teacher = $teachersTable->patchEntity($teacher, $this->request->getData());
+            $teacher = $teachersTable->patchEntity($teacher, $this->request->getData(), [
+                'fields' => [
+                    'teacher_name',
+                    'phone_number',
+                    'specialization',
+                    'teacher_status',
+                    'hire_date',
+                ],
+            ]);
             if ($teachersTable->save($teacher)) {
                 $this->Flash->success(__('The teacher has been saved.'));
 

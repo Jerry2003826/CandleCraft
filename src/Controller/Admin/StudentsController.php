@@ -12,7 +12,7 @@ class StudentsController extends AppController
         $studentsTable = $this->fetchTable('Students');
         $query = $studentsTable->find()
             ->contain(['Users'])
-            ->order(['Students.student_name' => 'ASC']);
+            ->orderBy(['Students.student_name' => 'ASC']);
 
         $status = $this->request->getQuery('status');
         if ($status && in_array($status, ['active', 'inactive'])) {
@@ -146,7 +146,15 @@ class StudentsController extends AppController
         $student = $studentsTable->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $student = $studentsTable->patchEntity($student, $this->request->getData());
+            $student = $studentsTable->patchEntity($student, $this->request->getData(), [
+                'fields' => [
+                    'student_name',
+                    'declared_age',
+                    'student_status',
+                    'date_of_birth',
+                    'medical_notes',
+                ],
+            ]);
             if ($studentsTable->save($student)) {
                 $this->Flash->success(__('The student has been saved.'));
 

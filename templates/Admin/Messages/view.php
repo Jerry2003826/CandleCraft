@@ -57,7 +57,8 @@ $displayText = trim($displayText);
             </div>
             <div>
                 <strong style="color: var(--admin-text-primary); font-family: 'Inter', sans-serif; font-size: 15px;">Portal Access Request:</strong>
-                <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px;">Requested access as <strong style="color: var(--admin-text-primary);">Student</strong>.</span>
+                <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px;">Requested access as <strong style="color: var(--admin-text-primary);"><?= h((string)($requestMeta['requested_role_label'] ?? 'Customer')) ?></strong>.</span>
+                <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px; margin-left: 8px;">Legacy profile: <strong style="color: var(--admin-text-primary);"><?= h((string)($requestMeta['legacy_profile_label'] ?? 'Student')) ?></strong>.</span>
                 <?php if ($hasAgeDeclaration): ?>
                     <span style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; font-size: 14px; margin-left: 8px;">Declared age: <strong style="color: var(--admin-text-primary);"><?= h((string)$declaredAge) ?></strong>.</span>
                 <?php endif; ?>
@@ -133,7 +134,7 @@ $displayText = trim($displayText);
             <div style="margin-bottom: 16px;">
                 <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Type</div>
                 <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
-                    <?= $isAccountRequest ? 'Account Request' : 'Enquiry' ?>
+                    <?= $isAccountRequest ? 'Customer Access Request' : 'Enquiry' ?>
                 </div>
             </div>
             <div style="margin-bottom: 16px;">
@@ -155,7 +156,13 @@ $displayText = trim($displayText);
                 <div style="margin-bottom: 16px;">
                     <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Requested Account</div>
                     <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
-                        Student
+                        <?= h((string)($requestMeta['requested_role_label'] ?? 'Customer')) ?>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Legacy Profile</div>
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);">
+                        <?= h((string)($requestMeta['legacy_profile_label'] ?? 'Student')) ?>
                     </div>
                 </div>
                 <?php if ($existingUser): ?>

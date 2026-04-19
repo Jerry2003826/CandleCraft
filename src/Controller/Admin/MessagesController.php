@@ -17,7 +17,7 @@ class MessagesController extends AppController
         $query = $messagesTable->find()
             ->contain(['SenderUsers', 'ReceiverUsers'])
             ->where(['Messages.message_type' => 'contact_form'])
-            ->order(['Messages.sent_at' => 'DESC']);
+            ->orderBy(['Messages.sent_at' => 'DESC']);
 
         $status = $this->request->getQuery('status');
         if ($status && in_array($status, ['unread', 'read', 'replied', 'archived'])) {
@@ -57,7 +57,7 @@ class MessagesController extends AppController
         $replies = $messagesTable->find()
             ->where(['Messages.parent_message_id' => $message->message_id])
             ->contain(['SenderUsers', 'ReceiverUsers'])
-            ->order(['Messages.sent_at' => 'ASC'])
+            ->orderBy(['Messages.sent_at' => 'ASC'])
             ->all();
 
         $this->set(compact('message', 'replies', 'requestMeta', 'existingUser', 'linkedStudent'));
@@ -99,6 +99,7 @@ class MessagesController extends AppController
             'student_status' => 'active',
             'teacher_status' => 'active',
             'declared_age' => $requestMeta['declared_age'],
+            'self_declared_adult' => (bool)$requestMeta['self_declared_adult'],
             'date_of_birth' => '',
             'medical_notes' => '',
             'specialization' => '',
@@ -303,6 +304,8 @@ class MessagesController extends AppController
             [
                 '/^\[REQUEST TYPE:\s*[^\]]+\]\s*$/mi',
                 '/^\[REQUESTED ROLE:\s*[^\]]+\]\s*$/mi',
+                '/^\[REQUESTED PORTAL:\s*[^\]]+\]\s*$/mi',
+                '/^\[LEGACY PROFILE TYPE:\s*[^\]]+\]\s*$/mi',
                 '/^\[SELF DECLARED 18\+:\s*[^\]]+\]\s*$/mi',
                 '/^\[DECLARED AGE:\s*[^\]]+\]\s*$/mi',
             ],
@@ -310,11 +313,18 @@ class MessagesController extends AppController
             $messageText,
         );
 
+        $legacyProfileType = $this->extractTaggedValue($messageText, 'LEGACY PROFILE TYPE') ?? 'student';
+        $requestedPortal = $this->extractTaggedValue($messageText, 'REQUESTED PORTAL');
+
         return [
             'is_account_request' => (($message->source_page ?? null) === 'account-request')
-                || str_contains($messageText, '[REQUEST TYPE: account_access]'),
-            'requested_role' => 'student',
-            'requested_role_label' => 'Student',
+                || str_contains($messageText, '[REQUEST TYPE: account_access]')
+                || str_contains($messageText, '[REQUEST TYPE: customer_access]'),
+            'requested_role' => 'customer',
+            'requested_role_label' => 'Customer',
+            'requested_portal' => $requestedPortal ?: 'customer',
+            'legacy_profile_type' => $legacyProfileType,
+            'legacy_profile_label' => ucfirst($legacyProfileType),
             'declared_age' => $declaredAge,
             'self_declared_adult' => $legacyDeclaredAdult,
             'clean_message_text' => trim((string)$cleanMessageText),
@@ -401,7 +411,7 @@ class MessagesController extends AppController
                     'user_role' => $role,
                     'account_status' => $account['account_status'] ?? 'active',
                     'age_verified_by_admin' => false,
-                    'self_declared_adult' => false,
+                    'self_declared_adult' => (bool)($account['self_declared_adult'] ?? false),
                 ],
                 [
                     'accessibleFields' => [

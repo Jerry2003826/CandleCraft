@@ -65,13 +65,15 @@ class PagesController extends AppController
             $subject = trim((string)$this->request->getData('subject'));
             $messageSourcePage = $sourcePage;
             $declaredAge = $this->normaliseDeclaredAge($this->request->getData('declared_age'));
+            $selfDeclaredAdult = $requestAccount && !empty($this->request->getData('self_declared_adult'));
 
             if ($requestAccount) {
                 $messageText = $this->buildAccountRequestMessageText(
                     $declaredAge,
+                    $selfDeclaredAdult,
                     $messageText,
                 );
-                $subject = 'Student account request';
+                $subject = 'Customer portal request';
                 $messageSourcePage = 'account-request';
             }
 
@@ -242,12 +244,14 @@ class PagesController extends AppController
         return null;
     }
 
-    private function buildAccountRequestMessageText(?int $declaredAge, string $messageText): string
+    private function buildAccountRequestMessageText(?int $declaredAge, bool $selfDeclaredAdult, string $messageText): string
     {
         $parts = [
-            '[REQUEST TYPE: account_access]',
-            '[REQUESTED ROLE: student]',
+            '[REQUEST TYPE: customer_access]',
+            '[REQUESTED PORTAL: customer]',
+            '[LEGACY PROFILE TYPE: student]',
             '[DECLARED AGE: ' . ($declaredAge ?? 'unknown') . ']',
+            '[SELF DECLARED 18+: ' . ($selfDeclaredAdult ? 'yes' : 'no') . ']',
         ];
 
         if ($messageText !== '') {

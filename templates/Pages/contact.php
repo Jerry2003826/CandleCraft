@@ -143,7 +143,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                                         I would like CandleCraft Academy to <strong style="color: var(--home-accent);">create a portal account for me</strong>.
                                         <br>
                                         <small style="color: var(--home-text-muted);">
-                                            Tick this box if you want the admin team to set up your student login after reviewing this enquiry.
+                                            Tick this box if you want the admin team to set up your customer portal access after reviewing this enquiry.
                                         </small>
                                     </span>
                                 </label>
@@ -153,9 +153,9 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                         <div id="request-account-fields" style="grid-column: 1 / -1; display: none;">
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 20px; padding: 20px; background: rgba(210, 154, 88, 0.08); border: 1px solid rgba(210, 154, 88, 0.22); border-radius: 18px;">
                                 <div class="form-group" style="display: flex; flex-direction: column;">
-                                    <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Student account request</label>
+                                    <label style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 8px;">Customer portal request</label>
                                     <div style="padding: 16px; background: rgba(210, 154, 88, 0.1); border: 1px solid rgba(210, 154, 88, 0.22); border-radius: 12px; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.95rem; line-height: 1.5; flex: 1;">
-                                        Account applications submitted here are treated as <strong style="color: var(--home-accent);">student portal requests</strong>.
+                                        Account applications submitted here are treated as <strong style="color: var(--home-accent);">customer portal requests</strong> and are provisioned through our legacy student profile flow.
                                     </div>
                                 </div>
 
@@ -171,8 +171,20 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                                     ]) ?>
                                     <?= $this->Form->error('declared_age') ?>
                                     <small style="display: block; margin-top: 10px; color: var(--home-text-muted); font-family: var(--font-grown);">
-                                        Students cannot book or pay until an administrator confirms they are 18 or older.
+                                        Customer booking and payment access stay locked until an administrator confirms they are 18 or older.
                                     </small>
+                                </div>
+
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; color: #f5ecdf; font-family: var(--font-grown); font-size: 0.9rem; line-height: 1.5;">
+                                        <?= $this->Form->checkbox('self_declared_adult', [
+                                            'id' => 'self-declared-adult',
+                                            'checked' => (bool)$this->request->getData('self_declared_adult'),
+                                            'hiddenField' => false,
+                                            'style' => 'width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--home-accent);',
+                                        ]) ?>
+                                        <span>I confirm that I am 18 years or older.</span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -221,6 +233,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
         const requestAccount = document.getElementById('request-account');
         const requestAccountFields = document.getElementById('request-account-fields');
         const declaredAge = document.getElementById('declared-age');
+        const selfDeclaredAdult = document.getElementById('self-declared-adult');
 
         if (!requestAccount || !requestAccountFields) {
             return;
@@ -234,8 +247,14 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 declaredAge.required = wantsAccount;
             }
 
-            if (!wantsAccount && declaredAge) {
-                declaredAge.value = '';
+            if (!wantsAccount) {
+                if (declaredAge) {
+                    declaredAge.value = '';
+                }
+
+                if (selfDeclaredAdult) {
+                    selfDeclaredAdult.checked = false;
+                }
             }
         };
 

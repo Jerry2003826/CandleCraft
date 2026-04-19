@@ -14,6 +14,7 @@ class DashboardController extends AppController
             'OR' => [
                 ['Messages.source_page' => 'account-request'],
                 ['Messages.message_text LIKE' => '%[REQUEST TYPE: account_access]%'],
+                ['Messages.message_text LIKE' => '%[REQUEST TYPE: customer_access]%'],
             ],
         ];
         $pendingAccountRequestConditions = $accountRequestConditions + [
