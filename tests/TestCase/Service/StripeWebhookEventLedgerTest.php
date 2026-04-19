@@ -239,6 +239,116 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame(1, $this->eventsTable->find()->count());
     }
 
+    public function testDetachedFailedRowRetryUsesCanonicalBusinessEventRow(): void
+    {
+        $failedTime = DateTime::now()->subMinutes(15);
+        $canonicalHash = hash('sha256', '{"id":"evt_canonical"}');
+        $detachedHash = hash('sha256', '{"id":"evt_detached"}');
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_canonical',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_detached_retry',
+            'payload_hash' => $canonicalHash,
+            'processing_status' => 'failed',
+            'first_seen_at' => $failedTime,
+            'processing_started_at' => $failedTime,
+            'last_seen_at' => $failedTime,
+        ]);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_detached',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_detached_retry',
+            'business_event_key' => null,
+            'payload_hash' => $detachedHash,
+            'processing_status' => 'failed',
+            'first_seen_at' => $failedTime,
+            'processing_started_at' => $failedTime,
+            'last_seen_at' => $failedTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_detached',
+            'checkout.session.completed',
+            'cs_detached_retry',
+            '{"id":"evt_detached"}'
+        );
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_CLAIMED, $claimed);
+
+        $this->ledger->markProcessed(
+            'evt_detached',
+            'checkout.session.completed',
+            'cs_detached_retry',
+            '{"id":"evt_detached"}'
+        );
+
+        $canonical = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_canonical'])
+            ->firstOrFail();
+        $detached = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_detached'])
+            ->firstOrFail();
+
+        $this->assertSame('processed', $canonical->processing_status);
+        $this->assertSame('checkout.session.completed:cs_detached_retry', $canonical->business_event_key);
+        $this->assertSame($canonicalHash, $canonical->payload_hash);
+
+        $this->assertSame('failed', $detached->processing_status);
+        $this->assertNull($detached->business_event_key);
+        $this->assertSame($detachedHash, $detached->payload_hash);
+        $this->assertSame(2, $this->eventsTable->find()->count());
+    }
+
+    public function testDetachedStaleProcessingRowIsSuppressedWhenCanonicalBusinessEventIsProcessed(): void
+    {
+        $processedTime = DateTime::now()->subMinutes(5);
+        $staleTime = DateTime::now()->subMinutes(15);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_canonical_processed',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_detached_stale',
+            'payload_hash' => hash('sha256', '{"id":"evt_canonical_processed"}'),
+            'processing_status' => 'processed',
+            'first_seen_at' => $processedTime,
+            'processing_started_at' => $processedTime,
+            'last_seen_at' => $processedTime,
+        ]);
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_detached_stale',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_detached_stale',
+            'business_event_key' => null,
+            'payload_hash' => hash('sha256', '{"id":"evt_detached_stale"}'),
+            'processing_status' => 'processing',
+            'first_seen_at' => $staleTime,
+            'processing_started_at' => $staleTime,
+            'last_seen_at' => $staleTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_detached_stale',
+            'checkout.session.completed',
+            'cs_detached_stale',
+            '{"id":"evt_detached_stale"}'
+        );
+
+        $canonical = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_canonical_processed'])
+            ->firstOrFail();
+        $detached = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_detached_stale'])
+            ->firstOrFail();
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_DUPLICATE, $claimed);
+        $this->assertSame('processed', $canonical->processing_status);
+        $this->assertSame('processing', $detached->processing_status);
+        $this->assertNull($detached->business_event_key);
+    }
+
     private function saveWebhookEvent(array $data): void
     {
         $data += [

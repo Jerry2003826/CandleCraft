@@ -103,10 +103,14 @@ class HardenStripeWebhookEventsLedger extends BaseMigration
 
     private function backfillProcessingStartedAt(): void
     {
+        $fallbackTimestamp = $this->quoteLiteral(date('Y-m-d H:i:s'));
         $this->execute(
-            "UPDATE stripe_webhook_events
-             SET processing_started_at = COALESCE(processing_started_at, first_seen_at, last_seen_at)
-             WHERE processing_started_at IS NULL"
+            sprintf(
+                "UPDATE stripe_webhook_events
+                 SET processing_started_at = COALESCE(processing_started_at, first_seen_at, last_seen_at, %s)
+                 WHERE processing_started_at IS NULL",
+                $fallbackTimestamp
+            )
         );
     }
 

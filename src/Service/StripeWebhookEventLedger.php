@@ -36,6 +36,19 @@ class StripeWebhookEventLedger
 
         $event = $this->findByEventId($eventId);
         if ($event !== null) {
+            $businessCollision = $this->findExistingBusinessCollision($event, $businessEventKey);
+            if ($businessCollision !== null) {
+                return $this->handleBusinessEventCollision(
+                    $businessCollision,
+                    $eventId,
+                    $eventType,
+                    $sessionId,
+                    $businessEventKey,
+                    $payloadHash,
+                    $now
+                );
+            }
+
             return $this->handleExistingEvent($event, $eventType, $sessionId, $businessEventKey, $payloadHash, $now);
         }
 
@@ -128,6 +141,12 @@ class StripeWebhookEventLedger
         if ($event === null && $businessEventKey !== null) {
             $event = $this->findByBusinessEventKey($businessEventKey);
             $matchedByEventId = false;
+        } elseif ($event !== null) {
+            $businessCollision = $this->findExistingBusinessCollision($event, $businessEventKey);
+            if ($businessCollision !== null) {
+                $event = $businessCollision;
+                $matchedByEventId = false;
+            }
         }
         $now = DateTime::now();
 
@@ -201,6 +220,16 @@ class StripeWebhookEventLedger
         }
 
         if ($status === 'processing') {
+            $processedBusinessDuplicate = $this->findProcessedBusinessDuplicate($eventType, $sessionId);
+            if (
+                $processedBusinessDuplicate !== null &&
+                (string)$processedBusinessDuplicate->event_id !== (string)$event->event_id
+            ) {
+                $this->touchExistingEvent($event, $now, $payloadHash);
+
+                return self::RESULT_DUPLICATE;
+            }
+
             $cutoff = $now->subMinutes(self::PROCESSING_TIMEOUT_MINUTES);
             if ($event->processing_started_at !== null && $event->processing_started_at <= $cutoff) {
                 return $this->claimExistingEvent($event, $now, $payloadHash, true);
@@ -365,6 +394,24 @@ class StripeWebhookEventLedger
         return $this->eventsTable->find()
             ->where(['StripeWebhookEvents.business_event_key' => $businessEventKey])
             ->first();
+    }
+
+    private function findExistingBusinessCollision(object $event, ?string $businessEventKey): ?object
+    {
+        if ($businessEventKey === null) {
+            return null;
+        }
+
+        $businessEvent = $this->findByBusinessEventKey($businessEventKey);
+        if ($businessEvent === null) {
+            return null;
+        }
+
+        if ((string)$businessEvent->event_id === (string)$event->event_id) {
+            return null;
+        }
+
+        return $businessEvent;
     }
 
     private function buildBusinessEventKey(string $eventType, string $sessionId): ?string
