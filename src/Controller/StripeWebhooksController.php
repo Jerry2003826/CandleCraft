@@ -65,7 +65,10 @@ class StripeWebhooksController extends Controller
         switch ((string)$event->type) {
             case 'checkout.session.completed':
             case 'checkout.session.async_payment_succeeded':
-                $this->confirmationService()->confirmCheckoutSession($event->data->object);
+                $this->confirmationService()->confirmCheckoutSession(
+                    $event->data->object,
+                    (string)$event->type
+                );
                 break;
 
             case 'checkout.session.async_payment_failed':

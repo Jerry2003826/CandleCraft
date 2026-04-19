@@ -374,7 +374,7 @@ class PaymentCheckoutService
             ];
         }
 
-        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNPAID && !empty($session->url)) {
+        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_NON_PAID && !empty($session->url)) {
             return [
                 'kind' => 'reuse',
                 'url' => (string)$session->url,
@@ -430,7 +430,7 @@ class PaymentCheckoutService
 
     private function expireSessionAfterPersistenceFailure(string $sessionId): void
     {
-        if ($sessionId === '' || !$this->isStripeConfigured()) {
+        if ($sessionId === '' || !StripeConfiguration::canManageCheckoutSessions()) {
             return;
         }
 

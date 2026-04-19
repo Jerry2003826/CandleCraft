@@ -209,6 +209,69 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertStringContainsString('checkout.session.async_payment_failed', (string)$payment->notes);
     }
 
+    public function testAsyncPaymentSucceededClearsManualReviewMarkers(): void
+    {
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'complete',
+                'payment_status' => 'unpaid',
+            ]));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException) {
+        }
+
+        $result = $this->service->confirmCheckoutSession(
+            $this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'complete',
+                'payment_status' => 'paid',
+            ]),
+            'checkout.session.async_payment_succeeded'
+        );
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('confirmed', $result);
+        $this->assertSame('paid', $payment->payment_status);
+        $this->assertSame('confirmed', $booking->booking_status);
+        $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
+        $this->assertSame('resolved_by_payment_confirmation', $notes['review_state'] ?? null);
+        $this->assertSame('checkout.session.async_payment_succeeded', $notes['event_type'] ?? null);
+        $this->assertSame('payment_confirmed', $notes['reason_code'] ?? null);
+        $this->assertTrue((bool)($notes['funds_captured'] ?? false));
+        $this->assertFalse((bool)($notes['refund_required'] ?? true));
+    }
+
+    public function testAsyncPaymentFailedClearsManualReviewMarkers(): void
+    {
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000, [
+                'status' => 'complete',
+                'payment_status' => 'unpaid',
+            ]));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException) {
+        }
+
+        $result = $this->service->markCheckoutSessionFailed($this->makeSession('cs_owned', 1, 5000, [
+            'status' => 'complete',
+            'payment_status' => 'unpaid',
+        ]));
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $notes = json_decode((string)$payment->notes, true);
+
+        $this->assertSame('failed', $result);
+        $this->assertSame('failed', $payment->payment_status);
+        $this->assertFalse((bool)($notes['manual_review_required'] ?? true));
+        $this->assertSame('resolved_by_async_payment_failure', $notes['review_state'] ?? null);
+        $this->assertSame('checkout.session.async_payment_failed', $notes['event_type'] ?? null);
+        $this->assertSame('stripe_async_payment_failed', $notes['reason_code'] ?? null);
+        $this->assertFalse((bool)($notes['funds_captured'] ?? true));
+        $this->assertFalse((bool)($notes['refund_required'] ?? true));
+    }
+
     private function makeSession(string $id, int $bookingId, int $amountTotal, array $overrides = []): object
     {
         return (object)array_merge([

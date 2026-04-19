@@ -85,4 +85,30 @@ class PendingPaymentDispositionServiceTest extends TestCase
         $this->assertTrue((bool)($notes['disposition_context']['checkout_session_expired'] ?? false));
         $this->assertSame('keep_me', $notes['disposition_context']['custom_flag'] ?? null);
     }
+
+    public function testGatewayRuntimeExceptionIsWrappedAsGenericDispositionFailure(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        FakeStripeCheckoutGateway::$retrieveHandler = static function (): object {
+            throw new RuntimeException('stripe transport failed');
+        };
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $service = new PendingPaymentDispositionService(gateway: new FakeStripeCheckoutGateway());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The checkout session could not be cancelled right now. Please try again.');
+
+        try {
+            $service->voidPendingPayment($payment, 'booking_cancelled', [
+                'portal_source' => 'service_test',
+            ]);
+        } finally {
+            $savedPayment = $payments->get(1);
+            $this->assertSame('pending', $savedPayment->payment_status);
+            $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+            $this->assertSame([], FakeStripeCheckoutGateway::$expiredSessionIds);
+        }
+    }
 }

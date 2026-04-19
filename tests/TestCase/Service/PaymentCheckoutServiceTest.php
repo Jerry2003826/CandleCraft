@@ -209,6 +209,48 @@ class PaymentCheckoutServiceTest extends TestCase
         }
     }
 
+    public function testOpenNoPaymentRequiredPendingSessionIsReused(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
+
+        FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
+            return FakeStripeCheckoutGateway::makeSession($sessionId, [
+                'status' => 'open',
+                'payment_status' => 'no_payment_required',
+                'url' => 'https://checkout.stripe.test/reuse-' . $sessionId,
+            ]);
+        };
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->where(['Bookings.booking_id' => 1])
+            ->firstOrFail();
+
+        $service = new PaymentCheckoutService(
+            gateway: new FakeStripeCheckoutGateway(),
+            paymentConfirmationService: new PaymentConfirmationService()
+        );
+
+        $result = $service->startCheckout($booking, [
+            'success_url' => 'http://localhost/success',
+            'cancel_url' => 'http://localhost/cancel',
+            'portal_source' => 'service_test',
+            'payer_id' => 4,
+        ]);
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $savedBooking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('redirect', $result['kind']);
+        $this->assertTrue((bool)$result['reused']);
+        $this->assertSame('https://checkout.stripe.test/reuse-cs_owned', $result['redirectUrl']);
+        $this->assertSame('pending', $payment->payment_status);
+        $this->assertSame('pending', $savedBooking->booking_status);
+        $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+        $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
+    }
+
     public function testZeroAmountCheckoutRechecksPriceUnderLock(): void
     {
         Configure::write('Stripe.secret_key', null);

@@ -19,7 +19,7 @@ final class StripeConfiguration
 
     public static function hasUsableSecretKey(?string $value = null): bool
     {
-        return self::isUsableValue($value ?? (string)Configure::read('Stripe.secret_key'), 'sk_');
+        return self::isUsableValue($value ?? (string)Configure::read('Stripe.secret_key'), ['sk_', 'rk_']);
     }
 
     public static function hasUsableWebhookSecret(?string $value = null): bool
@@ -27,17 +27,19 @@ final class StripeConfiguration
         return self::isUsableValue($value ?? (string)Configure::read('Stripe.webhook_secret'), 'whsec_');
     }
 
-    private static function isUsableValue(string $value, string $requiredPrefix): bool
+    private static function isUsableValue(string $value, array|string $requiredPrefixes): bool
     {
         $normalized = trim($value);
         if ($normalized === '') {
             return false;
         }
 
-        if (!str_starts_with($normalized, $requiredPrefix)) {
-            return false;
+        foreach ((array)$requiredPrefixes as $requiredPrefix) {
+            if (str_starts_with($normalized, $requiredPrefix)) {
+                return !str_contains(strtolower($normalized), 'placeholder');
+            }
         }
 
-        return !str_contains(strtolower($normalized), 'placeholder');
+        return false;
     }
 }

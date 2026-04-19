@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Exception\Payments\PaymentDispositionBlockedException;
 use Cake\Core\Configure;
 use Cake\Datasource\FactoryLocator;
 use Cake\Log\Log;
@@ -63,25 +64,29 @@ class PendingPaymentDispositionService
             $classification = $this->sessionClassifier->classify($session);
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_PAID) {
-                throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                throw new PaymentDispositionBlockedException(
+                    'This booking already has a processed payment and requires manual review.'
+                );
             }
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_AWAITING_PAYMENT) {
-                throw new RuntimeException('Your payment is still processing with Stripe. Please wait a moment and try again shortly.');
+                throw new PaymentDispositionBlockedException(
+                    'Your payment is still processing with Stripe. Please wait a moment and try again shortly.'
+                );
             }
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_EXPIRED) {
                 return ['expired' => false, 'skipped' => false];
             }
 
-            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNPAID) {
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_NON_PAID) {
                 $this->gateway->expireCheckoutSession($transactionReference);
 
                 return ['expired' => true, 'skipped' => false];
             }
 
             return ['expired' => false, 'skipped' => false];
-        } catch (RuntimeException $exception) {
+        } catch (PaymentDispositionBlockedException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
             Log::error('Failed to expire Stripe checkout session during pending payment disposition: ' . json_encode([
