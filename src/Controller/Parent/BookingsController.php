@@ -126,7 +126,10 @@ class BookingsController extends AppController
 
         $class = $this->fetchTable('Classes')->find()
             ->contain(['Courses', 'Teachers'])
-            ->where(['Classes.class_id' => $classId])
+            ->where([
+                'Classes.class_id' => $classId,
+                'Classes.class_status IN' => ['scheduled', 'ongoing'],
+            ])
             ->firstOrFail();
 
         $bookingsTable = $this->fetchTable('Bookings');

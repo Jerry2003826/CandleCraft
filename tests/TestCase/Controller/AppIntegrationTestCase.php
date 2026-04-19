@@ -22,6 +22,7 @@ abstract class AppIntegrationTestCase extends TestCase
         'app.Bookings',
         'app.Payments',
         'app.LearningResources',
+        'app.Notifications',
         'app.TeacherAvailabilities',
         'app.Messages',
         'app.Categories',

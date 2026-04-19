@@ -514,4 +514,68 @@ if (!isset($schema['parent_students'])) {
     ];
 }
 
+if (!isset($schema['notifications'])) {
+    $schema['notifications'] = [
+        'table' => 'notifications',
+        'columns' => [
+            'id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+                'autoIncrement' => true,
+            ],
+            'user_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+            ],
+            'title' => [
+                'type' => 'string',
+                'length' => 200,
+                'null' => false,
+                'default' => null,
+            ],
+            'message' => [
+                'type' => 'text',
+                'null' => false,
+                'default' => null,
+            ],
+            'notification_type' => [
+                'type' => 'string',
+                'length' => 50,
+                'null' => false,
+                'default' => null,
+            ],
+            'is_read' => [
+                'type' => 'boolean',
+                'null' => false,
+                'default' => false,
+            ],
+            'created' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'notifications_user_id_idx' => [
+                'type' => 'index',
+                'columns' => ['user_id'],
+            ],
+            'notifications_is_read_idx' => [
+                'type' => 'index',
+                'columns' => ['is_read'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['id'],
+            ],
+        ],
+    ];
+}
+
 return $schema;

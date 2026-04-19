@@ -9,29 +9,8 @@ class NotificationsController extends AppController
 {
     public function index(): void
     {
-        $identity = $this->Authentication->getIdentity();
-        $parentsTable = $this->fetchTable('Parents');
-        $parentStudentsTable = $this->fetchTable('ParentStudents');
         $notificationsTable = $this->fetchTable('Notifications');
-        $studentsTable = $this->fetchTable('Students');
-
-        $parent = $parentsTable->find()
-            ->where(['Parents.user_id' => $identity?->get('user_id')])
-            ->firstOrFail();
-
-        $childUserIds = $parentStudentsTable->find()
-            ->where(['ParentStudents.parent_id' => $parent->parent_id])
-            ->all()
-            ->map(function ($ps) use ($studentsTable) {
-                $student = $studentsTable->find()
-                    ->where(['Students.student_id' => $ps->student_id])
-                    ->first();
-                return $student ? $student->user_id : null;
-            })
-            ->filter()
-            ->toArray();
-
-        $userIds = array_merge([$identity->get('user_id')], array_values($childUserIds));
+        $userIds = $this->getAllowedNotificationUserIds();
 
         $notifications = $notificationsTable->find()
             ->where(['Notifications.user_id IN' => $userIds])
@@ -46,11 +25,14 @@ class NotificationsController extends AppController
     public function markRead(?int $notificationId = null): ?Response
     {
         $this->request->allowMethod(['post']);
-        $identity = $this->Authentication->getIdentity();
         $notificationsTable = $this->fetchTable('Notifications');
+        $userIds = $this->getAllowedNotificationUserIds();
 
         $notification = $notificationsTable->find()
-            ->where(['Notifications.id' => $notificationId])
+            ->where([
+                'Notifications.id' => $notificationId,
+                'Notifications.user_id IN' => $userIds,
+            ])
             ->firstOrFail();
 
         $notification->is_read = true;
@@ -62,29 +44,8 @@ class NotificationsController extends AppController
     public function markAllRead(): ?Response
     {
         $this->request->allowMethod(['post']);
-        $identity = $this->Authentication->getIdentity();
-        $parentsTable = $this->fetchTable('Parents');
-        $parentStudentsTable = $this->fetchTable('ParentStudents');
         $notificationsTable = $this->fetchTable('Notifications');
-        $studentsTable = $this->fetchTable('Students');
-
-        $parent = $parentsTable->find()
-            ->where(['Parents.user_id' => $identity?->get('user_id')])
-            ->firstOrFail();
-
-        $childUserIds = $parentStudentsTable->find()
-            ->where(['ParentStudents.parent_id' => $parent->parent_id])
-            ->all()
-            ->map(function ($ps) use ($studentsTable) {
-                $student = $studentsTable->find()
-                    ->where(['Students.student_id' => $ps->student_id])
-                    ->first();
-                return $student ? $student->user_id : null;
-            })
-            ->filter()
-            ->toArray();
-
-        $userIds = array_merge([$identity->get('user_id')], array_values($childUserIds));
+        $userIds = $this->getAllowedNotificationUserIds();
 
         $notifications = $notificationsTable->find()
             ->where([
@@ -101,5 +62,29 @@ class NotificationsController extends AppController
         $this->Flash->success(__('All notifications marked as read.'));
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function getAllowedNotificationUserIds(): array
+    {
+        $identity = $this->Authentication->getIdentity();
+        $parent = $this->fetchTable('Parents')->find()
+            ->where(['Parents.user_id' => $identity?->get('user_id')])
+            ->firstOrFail();
+
+        $childUserIds = $this->fetchTable('ParentStudents')->find()
+            ->where(['ParentStudents.parent_id' => $parent->parent_id])
+            ->contain(['Students'])
+            ->all()
+            ->map(fn($parentStudent) => $parentStudent->student?->user_id)
+            ->filter(fn($userId) => is_numeric($userId))
+            ->map(fn($userId) => (int)$userId)
+            ->toList();
+
+        $userIds = array_merge([(int)$identity?->get('user_id')], $childUserIds);
+
+        return array_values(array_unique(array_filter($userIds, fn($userId) => $userId > 0)));
     }
 }
