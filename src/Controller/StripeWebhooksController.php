@@ -9,6 +9,7 @@ use App\Exception\Payments\PaymentWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
 use App\Service\PaymentConfirmationService;
 use App\Service\PaymentConfirmationServiceInterface;
+use App\Service\PaymentWebhookIncidentRecorder;
 use Cake\Controller\Controller;
 use Cake\Core\Configure;
 use Cake\Http\Response;
@@ -45,6 +46,7 @@ class StripeWebhooksController extends Controller
             } catch (ManualReviewWebhookException|NonRetriableWebhookException $exception) {
                 $level = $exception instanceof ManualReviewWebhookException ? 'error' : 'warning';
                 $this->logWebhookFailure($level, $event->type, $event->data->object, $exception);
+                $this->persistWebhookIncident($exception, $event->type, $event->data->object, $payload);
             } catch (RuntimeException $exception) {
                 $wrapped = new RetriableWebhookException($exception->getMessage(), [
                     'event_type' => $event->type,
@@ -103,5 +105,23 @@ class StripeWebhooksController extends Controller
         }
 
         Log::warning('Stripe webhook completed session could not be fully applied: ' . json_encode($context));
+    }
+
+    private function persistWebhookIncident(
+        PaymentWebhookException $exception,
+        string $eventType,
+        object $session,
+        string $payload,
+    ): void {
+        try {
+            (new PaymentWebhookIncidentRecorder())->record($exception, $eventType, $session, $payload);
+        } catch (\Throwable $recordingException) {
+            Log::error('Unable to persist Stripe webhook incident: ' . json_encode([
+                'event_type' => $eventType,
+                'session_id' => (string)($session->id ?? ''),
+                'reason_code' => $exception->getContext()['reason_code'] ?? 'unknown_reason',
+                'error' => $recordingException->getMessage(),
+            ]));
+        }
     }
 }

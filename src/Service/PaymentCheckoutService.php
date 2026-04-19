@@ -15,6 +15,8 @@ use Throwable;
 
 class PaymentCheckoutService
 {
+    private const SESSION_RECOVERY_ERROR = 'Unable to recover the current payment session. Please try again shortly.';
+
     private object $bookingsTable;
     private object $paymentsTable;
     private StripeCheckoutGatewayInterface $gateway;
@@ -67,6 +69,11 @@ class PaymentCheckoutService
 
         return $connection->transactional(function () use ($bookingId, $context): array {
             $booking = $this->loadBookingForUpdate($bookingId);
+
+            if (!$this->isZeroAmountBooking($booking)) {
+                throw new RuntimeException('Booking amount changed during checkout. Please retry.');
+            }
+
             $blockingPayment = $this->paymentsTable->find()
                 ->where([
                     'Payments.booking_id' => $bookingId,
@@ -209,6 +216,18 @@ class PaymentCheckoutService
                         'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
                     ]);
                 }
+
+                if (($inspection['kind'] ?? null) === 'inspection_failed') {
+                    Log::warning('Unable to inspect Stripe checkout session during reuse scan: ' . json_encode([
+                        'booking_id' => (int)$booking->booking_id,
+                        'payment_id' => (int)($pendingPayment->payment_id ?? 0),
+                        'session_id' => (string)($pendingPayment->transaction_reference ?? ''),
+                        'portal_source' => (string)($context['portal_source'] ?? 'unknown'),
+                        'error' => (string)($inspection['error'] ?? ''),
+                    ]));
+
+                    throw new RuntimeException(self::SESSION_RECOVERY_ERROR);
+                }
             }
 
             $session = $this->createStripeSession($booking, $context);
@@ -324,8 +343,11 @@ class PaymentCheckoutService
 
         try {
             $session = $this->gateway->retrieveCheckoutSession($transactionReference);
-        } catch (Throwable) {
-            return ['kind' => 'stale'];
+        } catch (Throwable $exception) {
+            return [
+                'kind' => 'inspection_failed',
+                'error' => $exception->getMessage(),
+            ];
         }
 
         $paymentStatus = strtolower((string)($session->payment_status ?? ''));

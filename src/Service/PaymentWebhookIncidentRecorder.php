@@ -1,0 +1,57 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Service;
+
+use App\Exception\Payments\ManualReviewWebhookException;
+use App\Exception\Payments\PaymentWebhookException;
+use Cake\Datasource\FactoryLocator;
+use Cake\ORM\Locator\LocatorInterface;
+
+class PaymentWebhookIncidentRecorder
+{
+    private object $incidentsTable;
+
+    public function __construct(?LocatorInterface $tableLocator = null)
+    {
+        $locator = $tableLocator ?? FactoryLocator::get('Table');
+        $this->incidentsTable = $locator->get('PaymentWebhookIncidents');
+    }
+
+    public function record(PaymentWebhookException $exception, string $eventType, object $session, string $payload): void
+    {
+        $context = $exception->getContext();
+        $sessionId = (string)($context['session_id'] ?? $session->id ?? '');
+        $reasonCode = (string)($context['reason_code'] ?? 'unknown_reason');
+
+        $incident = $this->incidentsTable->find()
+            ->where([
+                'PaymentWebhookIncidents.event_type' => $eventType,
+                'PaymentWebhookIncidents.session_id' => $sessionId,
+                'PaymentWebhookIncidents.reason_code' => $reasonCode,
+                'PaymentWebhookIncidents.status' => 'open',
+            ])
+            ->first();
+
+        if ($incident === null) {
+            $incident = $this->incidentsTable->newEmptyEntity();
+        }
+
+        $incident = $this->incidentsTable->patchEntity($incident, [
+            'event_type' => $eventType,
+            'session_id' => $sessionId,
+            'payment_id' => $context['payment_id'] ?? null,
+            'booking_id' => $context['booking_id'] ?? null,
+            'reason_code' => $reasonCode,
+            'severity' => $exception instanceof ManualReviewWebhookException ? 'error' : 'warning',
+            'status' => 'open',
+            'context_json' => (string)json_encode($context, JSON_UNESCAPED_SLASHES),
+            'payload_hash' => hash('sha256', $payload),
+            'notes' => $exception->getMessage(),
+            'resolved_at' => null,
+            'resolved_by_admin_id' => null,
+        ]);
+
+        $this->incidentsTable->saveOrFail($incident);
+    }
+}

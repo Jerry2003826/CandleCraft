@@ -120,6 +120,84 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertSame([], FakeStripeCheckoutGateway::$retrievedSessionIds);
     }
 
+    public function testTransientSessionInspectionFailureDoesNotExpirePendingPayment(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+
+        FakeStripeCheckoutGateway::$retrieveHandler = static function (): object {
+            throw new \RuntimeException('stripe temporarily unavailable');
+        };
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->where(['Bookings.booking_id' => 1])
+            ->firstOrFail();
+
+        $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unable to recover the current payment session. Please try again shortly.');
+
+        try {
+            $service->startCheckout($booking, [
+                'success_url' => 'http://localhost/success',
+                'cancel_url' => 'http://localhost/cancel',
+                'portal_source' => 'service_test',
+                'payer_id' => 4,
+            ]);
+        } finally {
+            $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+            $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+            $payments = FactoryLocator::get('Table')->get('Payments')->find()
+                ->where(['Payments.booking_id' => 1])
+                ->all()
+                ->toList();
+
+            $this->assertSame('pending', $payment->payment_status);
+            $this->assertSame('pending', $booking->booking_status);
+            $this->assertCount(1, $payments);
+            $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
+            $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+        }
+    }
+
+    public function testZeroAmountCheckoutRechecksPriceUnderLock(): void
+    {
+        Configure::write('Stripe.secret_key', null);
+        Configure::write('Payments.demo_mode', false);
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->where(['Bookings.booking_id' => 1])
+            ->firstOrFail();
+        $booking->price_at_booking = 0.00;
+
+        $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Booking amount changed during checkout. Please retry.');
+
+        try {
+            $service->startCheckout($booking, [
+                'success_url' => 'http://localhost/success',
+                'cancel_url' => 'http://localhost/cancel',
+                'portal_source' => 'service_test',
+                'payer_id' => 4,
+            ]);
+        } finally {
+            $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+            $savedBooking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+            $payments = FactoryLocator::get('Table')->get('Payments')->find()
+                ->where(['Payments.booking_id' => 1])
+                ->all()
+                ->toList();
+
+            $this->assertSame('pending', $payment->payment_status);
+            $this->assertSame('pending', $savedBooking->booking_status);
+            $this->assertCount(1, $payments);
+        }
+    }
+
     private function insertBooking(array $values): int
     {
         $connection = FactoryLocator::get('Table')->get('Bookings')->getConnection();

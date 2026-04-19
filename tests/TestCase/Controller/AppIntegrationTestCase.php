@@ -23,6 +23,7 @@ abstract class AppIntegrationTestCase extends TestCase
         'app.TeacherAvailabilities',
         'app.Messages',
         'app.Categories',
+        'app.PaymentWebhookIncidents',
     ];
 
     protected function loginAsAdmin(): void

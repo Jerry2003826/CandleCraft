@@ -28,12 +28,12 @@ class DeploymentScriptsTest extends TestCase
         parent::tearDown();
     }
 
-    public function testDeployOneclickPackageOnlyGeneratesUniqueSaltsAndNoPlaceholders(): void
+    public function testDeployOneclickPackageOnlyGeneratesTemplatesWithoutSecretsOrDatabaseDump(): void
     {
         $outputDir = $this->tempDir . '/deploy-oneclick';
         $scriptPath = $this->repoRoot . '/scripts/deploy-oneclick.sh';
 
-        $this->runCommand(sprintf(
+        $this->runCommandExpectSuccess(sprintf(
             'cd %s && bash %s --package-only --skip-composer-install --output-dir %s --user %s --host %s --db-user %s --db-pass %s',
             escapeshellarg($this->repoRoot),
             escapeshellarg($scriptPath),
@@ -44,21 +44,73 @@ class DeploymentScriptsTest extends TestCase
             escapeshellarg('shared-db-password')
         ));
 
-        $salts = [];
         foreach (['dev', 'production', 'review'] as $environment) {
-            $configPath = $outputDir . '/' . $environment . '_app/config/app_local.php';
-            $salts[] = $this->assertGeneratedConfig($configPath, 'shared-db-password', $environment === 'production');
+            $templatePath = $outputDir . '/' . $environment . '_app/config/app_local.template.php';
+            $realPath = $outputDir . '/' . $environment . '_app/config/app_local.php';
+            $this->assertTemplateConfig($templatePath, $environment === 'production');
+            $this->assertFileDoesNotExist($realPath);
         }
 
-        $this->assertCount(3, array_unique($salts));
+        $this->assertFileDoesNotExist($outputDir . '/database.sql');
     }
 
-    public function testCpanelDeployCopiesLegacyDatabaseReferencesAndGeneratesRealSecrets(): void
+    public function testDeployOneclickEmbedSecretsHandlesSpecialCharacterPasswords(): void
     {
-        $outputDir = $this->tempDir . '/cpanel';
+        $passwords = [
+            "pa'ssword",
+            'slash\\password',
+            'cash$money',
+            'space password',
+        ];
+        $scriptPath = $this->repoRoot . '/scripts/deploy-oneclick.sh';
+
+        foreach ($passwords as $index => $password) {
+            $outputDir = $this->tempDir . '/deploy-oneclick-embed-' . $index;
+
+            $this->runCommandExpectSuccess(sprintf(
+                'cd %s && bash %s --package-only --embed-secrets --keep-artifacts --skip-composer-install --output-dir %s --user %s --host %s --db-user %s --db-pass %s',
+                escapeshellarg($this->repoRoot),
+                escapeshellarg($scriptPath),
+                escapeshellarg($outputDir),
+                escapeshellarg('deployuser'),
+                escapeshellarg('package-only.local'),
+                escapeshellarg('deployuser'),
+                escapeshellarg($password)
+            ));
+
+            foreach (['dev', 'production', 'review'] as $environment) {
+                $configPath = $outputDir . '/' . $environment . '_app/config/app_local.php';
+                $this->assertEmbeddedConfig($configPath, $environment === 'production');
+            }
+        }
+    }
+
+    public function testDeployOneclickRejectsCloneToReviewWithoutOverwriteConfirmation(): void
+    {
+        $outputDir = $this->tempDir . '/deploy-oneclick-confirmation';
+        $scriptPath = $this->repoRoot . '/scripts/deploy-oneclick.sh';
+
+        [$exitCode, $output] = $this->runCommand(sprintf(
+            'cd %s && bash %s --package-only --skip-composer-install --output-dir %s --user %s --host %s --db-user %s --db-pass %s --clone-local-data --clone-targets=review',
+            escapeshellarg($this->repoRoot),
+            escapeshellarg($scriptPath),
+            escapeshellarg($outputDir),
+            escapeshellarg('deployuser'),
+            escapeshellarg('package-only.local'),
+            escapeshellarg('deployuser'),
+            escapeshellarg('shared-db-password')
+        ));
+
+        $this->assertNotSame(0, $exitCode);
+        $this->assertStringContainsString('requires an interactive OVERWRITE confirmation', $output);
+    }
+
+    public function testCpanelDeployDefaultArtifactsUseTemplatesAndCopyLegacyDatabaseReferences(): void
+    {
+        $outputDir = $this->tempDir . '/cpanel-default';
         $scriptPath = $this->repoRoot . '/scripts/cpanel-deploy.sh';
 
-        $this->runCommand(sprintf(
+        $this->runCommandExpectSuccess(sprintf(
             'cd %s && bash %s %s %s --skip-composer-install --output-dir %s --dev-db-pass %s --production-db-pass %s --review-db-pass %s',
             escapeshellarg($this->repoRoot),
             escapeshellarg($scriptPath),
@@ -70,12 +122,12 @@ class DeploymentScriptsTest extends TestCase
             escapeshellarg('review-secret')
         ));
 
-        $salts = [];
-        $salts[] = $this->assertGeneratedConfig($outputDir . '/dev_app/config/app_local.php', 'dev-secret', false);
-        $salts[] = $this->assertGeneratedConfig($outputDir . '/production_app/config/app_local.php', 'prod-secret', true);
-        $salts[] = $this->assertGeneratedConfig($outputDir . '/review_app/config/app_local.php', 'review-secret', false);
-
-        $this->assertCount(3, array_unique($salts));
+        foreach (['dev', 'production', 'review'] as $environment) {
+            $templatePath = $outputDir . '/' . $environment . '_app/config/app_local.template.php';
+            $realPath = $outputDir . '/' . $environment . '_app/config/app_local.php';
+            $this->assertTemplateConfig($templatePath, $environment === 'production');
+            $this->assertFileDoesNotExist($realPath);
+        }
 
         $databaseSchema = $outputDir . '/database/academy_management_db.sql';
         $seedAdmin = $outputDir . '/database/seed_admin.sql';
@@ -87,37 +139,93 @@ class DeploymentScriptsTest extends TestCase
         $this->assertStringContainsString('academy_management_db.sql', $databaseReadme);
         $this->assertStringContainsString('seed_admin.sql', $databaseReadme);
         $this->assertStringNotContainsString('schema.sql', $databaseReadme);
-        $this->assertStringContainsString('academy_management_db.sql', $deploymentReadme);
-        $this->assertStringContainsString('seed_admin.sql', $deploymentReadme);
-        $this->assertStringContainsString('rotate database credentials if needed', $deploymentReadme);
+        $this->assertStringContainsString('config/app_local.template.php', $deploymentReadme);
     }
 
-    private function runCommand(string $command): void
+    public function testCpanelDeployEmbedSecretsHandlesSpecialCharacterPasswords(): void
+    {
+        $passwords = [
+            "pa'ssword",
+            'slash\\password',
+            'cash$money',
+            'space password',
+        ];
+        $scriptPath = $this->repoRoot . '/scripts/cpanel-deploy.sh';
+
+        foreach ($passwords as $index => $password) {
+            $outputDir = $this->tempDir . '/cpanel-embed-' . $index;
+
+            $this->runCommandExpectSuccess(sprintf(
+                'cd %s && bash %s %s %s --skip-composer-install --embed-secrets --keep-artifacts --output-dir %s --dev-db-pass %s --production-db-pass %s --review-db-pass %s',
+                escapeshellarg($this->repoRoot),
+                escapeshellarg($scriptPath),
+                escapeshellarg('cpaneluser'),
+                escapeshellarg('example.com'),
+                escapeshellarg($outputDir),
+                escapeshellarg($password),
+                escapeshellarg($password),
+                escapeshellarg($password)
+            ));
+
+            foreach (['dev', 'production', 'review'] as $environment) {
+                $configPath = $outputDir . '/' . $environment . '_app/config/app_local.php';
+                $this->assertEmbeddedConfig($configPath, $environment === 'production');
+            }
+        }
+    }
+
+    private function runCommand(string $command): array
     {
         $output = [];
         $exitCode = 0;
 
         exec($command . ' 2>&1', $output, $exitCode);
 
-        $this->assertSame(0, $exitCode, implode(PHP_EOL, $output));
+        return [$exitCode, implode(PHP_EOL, $output)];
     }
 
-    private function assertGeneratedConfig(string $configPath, string $expectedPassword, bool $production): string
+    private function runCommandExpectSuccess(string $command): void
+    {
+        [$exitCode, $output] = $this->runCommand($command);
+
+        $this->assertSame(0, $exitCode, $output);
+    }
+
+    private function assertTemplateConfig(string $configPath, bool $production): void
+    {
+        $this->assertFileExists($configPath);
+
+        $contents = (string)file_get_contents($configPath);
+        $this->assertStringContainsString('app_local.template.php', $configPath);
+        $this->assertStringContainsString("'salt' => env('SECURITY_SALT', '__SET_A_UNIQUE_SECURITY_SALT__')", $contents);
+        $this->assertStringContainsString("'password' => env('DATABASE_PASSWORD', null)", $contents);
+        $this->assertStringNotContainsString('CHANGE_ME_', $contents);
+        $this->assertPhpLintPasses($configPath);
+
+        if ($production) {
+            $this->assertStringContainsString("'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN),", $contents);
+        }
+    }
+
+    private function assertEmbeddedConfig(string $configPath, bool $production): void
     {
         $this->assertFileExists($configPath);
 
         $contents = (string)file_get_contents($configPath);
         $this->assertStringNotContainsString('__SALT__', $contents);
         $this->assertStringNotContainsString('CHANGE_ME_', $contents);
-        $this->assertStringContainsString("'password' => '" . $expectedPassword . "'", $contents);
+        $this->assertStringContainsString("'password' => env('DATABASE_PASSWORD',", $contents);
+        $this->assertPhpLintPasses($configPath);
 
         if ($production) {
             $this->assertStringContainsString("'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN),", $contents);
         }
+    }
 
-        $matched = preg_match("/'salt' => env\\('SECURITY_SALT', '([^']+)'\\),/", $contents, $matches);
-        $this->assertSame(1, $matched, 'Expected generated config to contain an embedded unique salt.');
-
-        return $matches[1];
+    private function assertPhpLintPasses(string $filePath): void
+    {
+        [$exitCode, $output] = $this->runCommand(sprintf('php -l %s', escapeshellarg($filePath)));
+        $this->assertSame(0, $exitCode, $output);
+        $this->assertStringContainsString('No syntax errors detected', $output);
     }
 }

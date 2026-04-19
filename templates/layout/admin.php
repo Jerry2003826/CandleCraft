@@ -113,6 +113,10 @@ $this->Paginator->setTemplates([
                        class="nav-link <?= $controller === 'Messages' ? 'active' : '' ?>">
                         <i class="bi bi-chat-square-text"></i><span>Enquiries</span>
                     </a>
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'PaymentWebhookIncidents', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'PaymentWebhookIncidents' ? 'active' : '' ?>">
+                        <i class="bi bi-exclamation-triangle"></i><span>Webhook Incidents</span>
+                    </a>
                 </nav>
             </div>
 

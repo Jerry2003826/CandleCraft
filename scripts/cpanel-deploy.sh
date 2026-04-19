@@ -2,28 +2,9 @@
 # ============================================================================
 # cPanel Deployment Packager for CandleCraft (CakePHP 5)
 # ============================================================================
-# This script prepares deployment packages for dev, production, and review
-# environments on cPanel shared hosting.
-#
-# Usage:
-#   ./scripts/cpanel-deploy.sh [CPANEL_USER] [DOMAIN]
-#
-# Example:
-#   ./scripts/cpanel-deploy.sh myuser example.com
-#
-# What it creates in ./cpanel-output/:
-#   ├── dev_app/          - Full CakePHP app for dev environment
-#   ├── production_app/   - Full CakePHP app for production environment
-#   ├── review_app/       - Full CakePHP app for review environment
-#   ├── public_html_dev/  - Webroot files for dev subdirectory
-#   ├── public_html_prod/ - Webroot files for production subdirectory
-#   ├── public_html_rev/  - Webroot files for review subdirectory
-#   └── database/         - SQL export for import via phpMyAdmin
-# ============================================================================
 
-set -e
+set -euo pipefail
 
-# ---- Configuration ----
 CPANEL_USER=""
 DOMAIN=""
 APP_NAME="CandleCraft"
@@ -33,11 +14,30 @@ DEV_DB_PASS=""
 PRODUCTION_DB_PASS=""
 REVIEW_DB_PASS=""
 SKIP_COMPOSER_INSTALL=false
+EMBED_SECRETS=false
+KEEP_ARTIFACTS=false
 
-# ---- Colors ----
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
+
+info() {
+    echo -e "${BLUE}$1${NC}"
+}
+
+success() {
+    echo -e "${GREEN}$1${NC}"
+}
+
+warn() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
+die() {
+    echo "Error: $1" >&2
+    exit 1
+}
 
 generate_salt() {
     if command -v openssl >/dev/null 2>&1; then
@@ -46,6 +46,10 @@ generate_salt() {
     fi
 
     php -r 'echo bin2hex(random_bytes(32));'
+}
+
+php_literal() {
+    php -r 'echo var_export($argv[1], true);' "$1"
 }
 
 prompt_for_password() {
@@ -58,172 +62,54 @@ prompt_for_password() {
         echo ""
     fi
 
-    [ -z "$result" ] && {
-        echo "Error: ${env_name} database password is required."
-        exit 1
-    }
+    [ -z "$result" ] && die "${env_name} database password is required."
 
     printf '%s' "$result"
 }
 
-validate_generated_app_local() {
+write_app_local() {
     local file_path="$1"
     local env_name="$2"
+    local debug_default="$3"
+    local db_user="$4"
+    local db_pass="$5"
+    local db_name="$6"
+    local salt="$7"
+    local embed_secrets="$8"
 
-    grep -q "__SALT__" "$file_path" && {
-        echo "Error: ${env_name} app_local.php still contains __SALT__"
-        exit 1
-    }
+    local host_literal user_literal pass_literal database_literal salt_literal
+    host_literal="$(php_literal 'localhost')"
+    user_literal="$(php_literal "$db_user")"
+    pass_literal="$(php_literal "$db_pass")"
+    database_literal="$(php_literal "$db_name")"
+    salt_literal="$(php_literal "$salt")"
 
-    grep -q "CHANGE_ME_" "$file_path" && {
-        echo "Error: ${env_name} app_local.php still contains placeholder database credentials"
-        exit 1
-    }
-
-    if [ "$env_name" = "production" ]; then
-        grep -q "'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN)," "$file_path" || {
-            echo "Error: production app_local.php must default debug to false"
-            exit 1
-        }
-    fi
-}
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
-        --dev-db-pass) DEV_DB_PASS="$2"; shift 2 ;;
-        --production-db-pass) PRODUCTION_DB_PASS="$2"; shift 2 ;;
-        --review-db-pass) REVIEW_DB_PASS="$2"; shift 2 ;;
-        --skip-composer-install) SKIP_COMPOSER_INSTALL=true; shift ;;
-        --help|-h)
-            cat <<'EOF'
-Usage:
-  ./scripts/cpanel-deploy.sh [CPANEL_USER] [DOMAIN] [OPTIONS]
-
-Options:
-  --output-dir PATH            Output directory (default: ./cpanel-output)
-  --dev-db-pass PASSWORD       dev environment database password
-  --production-db-pass PASSWORD production environment database password
-  --review-db-pass PASSWORD    review environment database password
-  --skip-composer-install      Reuse the current vendor/ directory without running composer install
-EOF
-            exit 0
-            ;;
-        --*)
-            echo "Unknown option: $1"
-            exit 1
-            ;;
-        *)
-            if [ -z "$CPANEL_USER" ]; then
-                CPANEL_USER="$1"
-            elif [ -z "$DOMAIN" ]; then
-                DOMAIN="$1"
-            else
-                echo "Unexpected extra argument: $1"
-                exit 1
-            fi
-            shift
-            ;;
-    esac
-done
-
-CPANEL_USER="${CPANEL_USER:-cpaneluser}"
-DOMAIN="${DOMAIN:-example.com}"
-DEV_DB_PASS="$(prompt_for_password "dev" "${DEV_DB_PASS}")"
-PRODUCTION_DB_PASS="$(prompt_for_password "production" "${PRODUCTION_DB_PASS}")"
-REVIEW_DB_PASS="$(prompt_for_password "review" "${REVIEW_DB_PASS}")"
-
-echo -e "${BLUE}=== cPanel Deployment Packager for ${APP_NAME} ===${NC}"
-echo ""
-echo "cPanel User: ${CPANEL_USER}"
-echo "Domain:      ${DOMAIN}"
-echo "Output:      ${OUTPUT_DIR}/"
-echo ""
-
-# ---- Step 1: Clean output directory ----
-echo -e "${GREEN}[1/6] Cleaning output directory...${NC}"
-rm -rf "${OUTPUT_DIR}"
-mkdir -p "${OUTPUT_DIR}/database"
-
-# ---- Step 2: Install production dependencies ----
-echo -e "${GREEN}[2/6] Installing production dependencies...${NC}"
-if [ "${SKIP_COMPOSER_INSTALL}" = true ]; then
-    echo "Skipping composer install and reusing the current vendor/ directory."
-else
-    composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
-        echo "Warning: composer install failed. Using existing vendor/ directory."
-    }
-fi
-
-# ---- Step 3: Create app packages for each environment ----
-for ENV in dev production review; do
-    echo -e "${GREEN}[3/6] Creating ${ENV}_app package...${NC}"
-
-    ENV_DIR="${OUTPUT_DIR}/${ENV}_app"
-    mkdir -p "${ENV_DIR}"
-    ENV_SALT="$(generate_salt)"
-
-    if [ "$ENV" = "production" ]; then
-        DB_PASSWORD="${PRODUCTION_DB_PASS}"
-    elif [ "$ENV" = "review" ]; then
-        DB_PASSWORD="${REVIEW_DB_PASS}"
-    else
-        DB_PASSWORD="${DEV_DB_PASS}"
-    fi
-
-    # Copy full CakePHP application
-    cp -r bin "${ENV_DIR}/"
-    cp -r config "${ENV_DIR}/"
-    cp -r resources "${ENV_DIR}/"
-    cp -r src "${ENV_DIR}/"
-    cp -r templates "${ENV_DIR}/"
-    cp -r vendor "${ENV_DIR}/"
-    cp -r webroot "${ENV_DIR}/"
-
-    # Create required runtime directories
-    mkdir -p "${ENV_DIR}/tmp/cache/models"
-    mkdir -p "${ENV_DIR}/tmp/cache/persistent"
-    mkdir -p "${ENV_DIR}/tmp/sessions"
-    mkdir -p "${ENV_DIR}/tmp/tests"
-    mkdir -p "${ENV_DIR}/logs"
-
-    # Copy root files
-    cp composer.json "${ENV_DIR}/"
-    cp composer.lock "${ENV_DIR}/"
-    cp index.php "${ENV_DIR}/"
-    cp .htaccess "${ENV_DIR}/"
-    cp LICENSE "${ENV_DIR}/" 2>/dev/null || true
-
-    # ---- Modify app_local.php for this environment ----
-    cat > "${ENV_DIR}/config/app_local.php" << PHPEOF
+    if [ "$embed_secrets" = true ]; then
+        cat > "$file_path" <<PHPEOF
 <?php
 
 use function Cake\Core\env;
 
-/*
- * ${ENV} environment configuration for cPanel deployment.
- * Database: ${CPANEL_USER}_${ENV}_db
- */
 return [
-    'debug' => filter_var(env('DEBUG', $([ "$ENV" = "production" ] && echo "false" || echo "true")), FILTER_VALIDATE_BOOLEAN),
+    'debug' => filter_var(env('DEBUG', ${debug_default}), FILTER_VALIDATE_BOOLEAN),
 
     'Security' => [
-        'salt' => env('SECURITY_SALT', '${ENV_SALT}'),
+        'salt' => env('SECURITY_SALT', ${salt_literal}),
     ],
 
     'Datasources' => [
         'default' => [
-            'host' => 'localhost',
-            'username' => '${CPANEL_USER}_${ENV}',
-            'password' => '${DB_PASSWORD}',
-            'database' => '${CPANEL_USER}_${ENV}_db',
+            'host' => env('DATABASE_HOST', ${host_literal}),
+            'username' => env('DATABASE_USERNAME', ${user_literal}),
+            'password' => env('DATABASE_PASSWORD', ${pass_literal}),
+            'database' => env('DATABASE_NAME', ${database_literal}),
             'url' => env('DATABASE_URL', null),
         ],
         'test' => [
-            'host' => 'localhost',
-            'username' => '${CPANEL_USER}_${ENV}',
-            'password' => '${DB_PASSWORD}',
-            'database' => '${CPANEL_USER}_${ENV}_test_db',
+            'host' => env('DATABASE_TEST_HOST', ${host_literal}),
+            'username' => env('DATABASE_TEST_USERNAME', ${user_literal}),
+            'password' => env('DATABASE_TEST_PASSWORD', ${pass_literal}),
+            'database' => env('DATABASE_TEST_NAME', ${database_literal}),
             'url' => env('DATABASE_TEST_URL', null),
         ],
     ],
@@ -251,10 +137,189 @@ return [
     ],
 ];
 PHPEOF
+    else
+        cat > "$file_path" <<PHPEOF
+<?php
 
-    validate_generated_app_local "${ENV_DIR}/config/app_local.php" "${ENV}"
+use function Cake\Core\env;
 
-    # ---- Modify App.base for subdirectory routing ----
+return [
+    'debug' => filter_var(env('DEBUG', ${debug_default}), FILTER_VALIDATE_BOOLEAN),
+
+    'Security' => [
+        'salt' => env('SECURITY_SALT', '__SET_A_UNIQUE_SECURITY_SALT__'),
+    ],
+
+    'Datasources' => [
+        'default' => [
+            'host' => env('DATABASE_HOST', 'localhost'),
+            'username' => env('DATABASE_USERNAME', ${user_literal}),
+            'password' => env('DATABASE_PASSWORD', null),
+            'database' => env('DATABASE_NAME', ${database_literal}),
+            'url' => env('DATABASE_URL', null),
+        ],
+        'test' => [
+            'host' => env('DATABASE_TEST_HOST', 'localhost'),
+            'username' => env('DATABASE_TEST_USERNAME', ${user_literal}),
+            'password' => env('DATABASE_TEST_PASSWORD', null),
+            'database' => env('DATABASE_TEST_NAME', ${database_literal}),
+            'url' => env('DATABASE_TEST_URL', null),
+        ],
+    ],
+
+    'EmailTransport' => [
+        'default' => [
+            'host' => 'localhost',
+            'port' => 25,
+            'username' => null,
+            'password' => null,
+            'client' => null,
+            'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+        ],
+    ],
+
+    'Stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY', null),
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', null),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
+    ],
+
+    'Recaptcha' => [
+        'site_key' => env('RECAPTCHA_SITE_KEY', null),
+        'secret_key' => env('RECAPTCHA_SECRET_KEY', null),
+    ],
+];
+PHPEOF
+    fi
+}
+
+validate_generated_app_local() {
+    local file_path="$1"
+    local env_name="$2"
+
+    php -l "$file_path" >/dev/null || die "${env_name} generated config failed php -l validation"
+    grep -q "__SALT__" "$file_path" && die "${env_name} app_local.php still contains __SALT__"
+    grep -q "CHANGE_ME_" "$file_path" && die "${env_name} app_local.php still contains placeholder credentials"
+
+    if [ "$env_name" = "production" ]; then
+        grep -q "'debug' => filter_var(env('DEBUG', false), FILTER_VALIDATE_BOOLEAN)," "$file_path" || \
+            die "production app_local.php must default debug to false"
+    fi
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
+        --dev-db-pass) DEV_DB_PASS="$2"; shift 2 ;;
+        --production-db-pass) PRODUCTION_DB_PASS="$2"; shift 2 ;;
+        --review-db-pass) REVIEW_DB_PASS="$2"; shift 2 ;;
+        --skip-composer-install) SKIP_COMPOSER_INSTALL=true; shift ;;
+        --embed-secrets) EMBED_SECRETS=true; shift ;;
+        --keep-artifacts) KEEP_ARTIFACTS=true; shift ;;
+        --help|-h)
+            cat <<'EOF'
+Usage:
+  ./scripts/cpanel-deploy.sh [CPANEL_USER] [DOMAIN] [OPTIONS]
+
+Options:
+  --output-dir PATH             Output directory (default: ./cpanel-output)
+  --dev-db-pass PASSWORD        dev environment database password
+  --production-db-pass PASSWORD production environment database password
+  --review-db-pass PASSWORD     review environment database password
+  --skip-composer-install       Reuse the current vendor/ directory without running composer install
+  --embed-secrets               Write real app_local.php files into local artifacts
+  --keep-artifacts              Keep generated local artifacts
+EOF
+            exit 0
+            ;;
+        --*)
+            die "Unknown option: $1"
+            ;;
+        *)
+            if [ -z "$CPANEL_USER" ]; then
+                CPANEL_USER="$1"
+            elif [ -z "$DOMAIN" ]; then
+                DOMAIN="$1"
+            else
+                die "Unexpected extra argument: $1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+[ "$EMBED_SECRETS" = true ] && [ "$KEEP_ARTIFACTS" != true ] && \
+    die "--embed-secrets requires --keep-artifacts so plaintext secrets are never left behind by accident."
+
+CPANEL_USER="${CPANEL_USER:-cpaneluser}"
+DOMAIN="${DOMAIN:-example.com}"
+DEV_DB_PASS="$(prompt_for_password "dev" "${DEV_DB_PASS}")"
+PRODUCTION_DB_PASS="$(prompt_for_password "production" "${PRODUCTION_DB_PASS}")"
+REVIEW_DB_PASS="$(prompt_for_password "review" "${REVIEW_DB_PASS}")"
+
+echo -e "${BLUE}=== cPanel Deployment Packager for ${APP_NAME} ===${NC}"
+echo "cPanel User: ${CPANEL_USER}"
+echo "Domain:      ${DOMAIN}"
+echo "Output:      ${OUTPUT_DIR}/"
+echo ""
+
+info "[1/6] Cleaning output directory..."
+rm -rf "${OUTPUT_DIR}"
+mkdir -p "${OUTPUT_DIR}/database"
+
+info "[2/6] Installing production dependencies..."
+if [ "${SKIP_COMPOSER_INSTALL}" = true ]; then
+    echo "Skipping composer install and reusing the current vendor/ directory."
+else
+    composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || {
+        warn "composer install failed. Using existing vendor/ directory."
+    }
+fi
+
+for ENV in dev production review; do
+    info "[3/6] Creating ${ENV}_app package..."
+
+    ENV_DIR="${OUTPUT_DIR}/${ENV}_app"
+    mkdir -p "${ENV_DIR}"
+    rm -rf "${ENV_DIR:?}"/*
+
+    cp -r bin "${ENV_DIR}/"
+    cp -r config "${ENV_DIR}/"
+    cp -r resources "${ENV_DIR}/"
+    cp -r src "${ENV_DIR}/"
+    cp -r templates "${ENV_DIR}/"
+    cp -r vendor "${ENV_DIR}/"
+    cp -r webroot "${ENV_DIR}/"
+
+    rm -f "${ENV_DIR}/config/app_local.php"
+    mkdir -p "${ENV_DIR}/tmp/cache/models" "${ENV_DIR}/tmp/cache/persistent" "${ENV_DIR}/tmp/sessions" "${ENV_DIR}/tmp/tests" "${ENV_DIR}/logs"
+
+    cp composer.json "${ENV_DIR}/"
+    cp composer.lock "${ENV_DIR}/"
+    cp index.php "${ENV_DIR}/"
+    cp .htaccess "${ENV_DIR}/"
+    cp LICENSE "${ENV_DIR}/" 2>/dev/null || true
+
+    ENV_SALT="$(generate_salt)"
+    if [ "$ENV" = "production" ]; then
+        DB_PASSWORD="${PRODUCTION_DB_PASS}"
+        DEBUG_VAL="false"
+    elif [ "$ENV" = "review" ]; then
+        DB_PASSWORD="${REVIEW_DB_PASS}"
+        DEBUG_VAL="true"
+    else
+        DB_PASSWORD="${DEV_DB_PASS}"
+        DEBUG_VAL="true"
+    fi
+
+    write_app_local "${ENV_DIR}/config/app_local.template.php" "$ENV" "$DEBUG_VAL" "${CPANEL_USER}_${ENV}" "$DB_PASSWORD" "${CPANEL_USER}_${ENV}_db" "$ENV_SALT" false
+
+    if [ "$EMBED_SECRETS" = true ]; then
+        write_app_local "${ENV_DIR}/config/app_local.php" "$ENV" "$DEBUG_VAL" "${CPANEL_USER}_${ENV}" "$DB_PASSWORD" "${CPANEL_USER}_${ENV}_db" "$ENV_SALT" true
+        chmod 600 "${ENV_DIR}/config/app_local.php"
+        validate_generated_app_local "${ENV_DIR}/config/app_local.php" "${ENV}"
+    fi
+
     if [ "$ENV" = "production" ]; then
         SUBDIR="production"
     elif [ "$ENV" = "review" ]; then
@@ -263,15 +328,11 @@ PHPEOF
         SUBDIR="dev"
     fi
 
-    # Update App.base in app.php
     sed -i.bak "s/'base' => false/'base' => '\/${SUBDIR}'/" "${ENV_DIR}/config/app.php" 2>/dev/null || true
     rm -f "${ENV_DIR}/config/app.php.bak"
-
 done
 
-# ---- Step 4: Create public_html subdirectory files ----
-echo -e "${GREEN}[4/6] Creating public_html subdirectory files...${NC}"
-
+info "[4/6] Creating public_html subdirectory files..."
 for ENV in dev production review; do
     if [ "$ENV" = "production" ]; then
         PUB_DIR="${OUTPUT_DIR}/public_html_production"
@@ -285,28 +346,16 @@ for ENV in dev production review; do
     fi
 
     mkdir -p "${PUB_DIR}"
-
-    # Copy webroot assets
     cp -r webroot/css "${PUB_DIR}/" 2>/dev/null || mkdir -p "${PUB_DIR}/css"
     cp -r webroot/js "${PUB_DIR}/" 2>/dev/null || mkdir -p "${PUB_DIR}/js"
     cp -r webroot/img "${PUB_DIR}/" 2>/dev/null || mkdir -p "${PUB_DIR}/img"
     cp -r webroot/uploads "${PUB_DIR}/" 2>/dev/null || mkdir -p "${PUB_DIR}/uploads"
     cp webroot/favicon.ico "${PUB_DIR}/" 2>/dev/null || true
 
-    # Create modified index.php pointing to app root
-    cat > "${PUB_DIR}/index.php" << 'PHPEOF'
+    cat > "${PUB_DIR}/index.php" <<'PHPEOF'
 <?php
-/**
- * cPanel Front Controller - CandleCraft
- *
- * This file is placed in public_html/{env}/ and routes requests
- * to the CakePHP application located outside the web root.
- */
-
-// For built-in server
 if (PHP_SAPI === 'cli-server') {
     $_SERVER['PHP_SELF'] = '/' . basename(__FILE__);
-
     $url = parse_url(urldecode($_SERVER['REQUEST_URI']));
     $file = __DIR__ . $url['path'];
     if (!str_contains($url['path'], '..') && str_contains($url['path'], '.') && is_file($file)) {
@@ -314,10 +363,7 @@ if (PHP_SAPI === 'cli-server') {
     }
 }
 
-// >>> IMPORTANT: Change this path to match your cPanel setup <<<
-// Format: /home/{cPanel_username}/{env}_app
 define('APP_ROOT', '/home/CPANEL_USER/ENV_APP');
-
 require APP_ROOT . '/vendor/autoload.php';
 
 use App\Application;
@@ -327,13 +373,11 @@ $server = new Server(new Application(APP_ROOT . '/config'));
 $server->emit($server->run());
 PHPEOF
 
-    # Replace placeholders with actual values
     sed -i.bak "s|CPANEL_USER|${CPANEL_USER}|g" "${PUB_DIR}/index.php"
     sed -i.bak "s|ENV_APP|${ENV}_app|g" "${PUB_DIR}/index.php"
     rm -f "${PUB_DIR}/index.php.bak"
 
-    # Create .htaccess with RewriteBase for subdirectory
-    cat > "${PUB_DIR}/.htaccess" << APACHEOF
+    cat > "${PUB_DIR}/.htaccess" <<APACHEOF
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /${SUBDIR}
@@ -341,17 +385,13 @@ PHPEOF
     RewriteRule ^ index.php [L]
 </IfModule>
 APACHEOF
-
 done
 
-# ---- Step 5: Export database ----
-echo -e "${GREEN}[5/6] Preparing database export instructions...${NC}"
-
+info "[5/6] Preparing database export instructions..."
 cp "${SRC_DIR}/config/schema/academy_management_db.sql" "${OUTPUT_DIR}/database/academy_management_db.sql"
 cp "${SRC_DIR}/config/schema/seed_admin.sql" "${OUTPUT_DIR}/database/seed_admin.sql"
 
-# Create a helper SQL file that creates the database and user
-cat > "${OUTPUT_DIR}/database/README.md" << 'MDEOF'
+cat > "${OUTPUT_DIR}/database/README.md" <<'MDEOF'
 # Database Setup for cPanel
 
 Prefer CakePHP migrations + seeds for new environments. The SQL files in this folder are kept only as a fallback/reference path.
@@ -390,10 +430,8 @@ cd /home/username/review_app && php bin/cake.php migrations migrate
 ```
 MDEOF
 
-# ---- Step 6: Create deployment README ----
-echo -e "${GREEN}[6/6] Creating deployment guide...${NC}"
-
-cat > "${OUTPUT_DIR}/README.md" << MDEOF
+info "[6/6] Creating deployment guide..."
+cat > "${OUTPUT_DIR}/README.md" <<MDEOF
 # cPanel Deployment Guide - CandleCraft
 
 ## Quick Start
@@ -419,7 +457,7 @@ chmod 755 /home/${CPANEL_USER}/public_html/dev/uploads/
 \`\`\`
 
 ### 4. Configure Databases
-Review the generated \`config/app_local.php\` in each \`*_app/\` directory and rotate database credentials if needed.
+Use \`config/app_local.template.php\` in each \`*_app/\` directory as the starting point for environment-specific secrets. If you generated artifacts with \`--embed-secrets\`, verify the real \`config/app_local.php\` files and rotate credentials if needed.
 
 ### 5. Verify
 Visit:
@@ -435,31 +473,25 @@ Visit:
 - For database setup, prefer CakePHP migrations + seeds. Legacy SQL references live in \`database/academy_management_db.sql\` and \`database/seed_admin.sql\`.
 MDEOF
 
-# ---- Create ZIP archives for easy upload ----
 echo ""
 echo -e "${BLUE}=== Creating ZIP archives ===${NC}"
-
 cd "${OUTPUT_DIR}"
-
 for ENV in dev production review; do
     zip -rq "${ENV}_app.zip" "${ENV}_app/"
     echo "  Created: ${ENV}_app.zip"
 done
-
 zip -rq "public_html_all.zip" public_html_dev/ public_html_production/ public_html_review/
 echo "  Created: public_html_all.zip"
+cd "${SRC_DIR}"
 
-cd ..
+[ "$EMBED_SECRETS" = true ] && warn "WARNING: generated deployment artifacts contain plaintext secrets."
 
 echo ""
-echo -e "${GREEN}=== Done! ===${NC}"
-echo ""
+success "=== Done! ==="
 echo "Deployment packages are ready in: ${OUTPUT_DIR}/"
-echo ""
 echo "Next steps:"
 echo "  1. Upload *_app.zip files to /home/${CPANEL_USER}/ and extract"
 echo "  2. Upload public_html contents to public_html/{dev,production,review}/"
 echo "  3. Create MySQL databases in cPanel"
-echo "  4. Verify the generated config/app_local.php files and rotate secrets if needed"
+echo "  4. Use config/app_local.template.php to generate per-environment secrets"
 echo "  5. Prefer migrations + seeds, or import academy_management_db.sql / seed_admin.sql as a fallback"
-echo ""

@@ -4,15 +4,21 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller;
 
 use App\Exception\Payments\ManualReviewWebhookException;
+use App\Exception\Payments\NonRetriableWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
 use App\Test\Support\FakePaymentConfirmationService;
 use Cake\Core\Configure;
+use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
 class StripeWebhooksControllerTest extends TestCase
 {
     use IntegrationTestTrait;
+
+    protected array $fixtures = [
+        'app.PaymentWebhookIncidents',
+    ];
 
     protected function tearDown(): void
     {
@@ -100,6 +106,81 @@ class StripeWebhooksControllerTest extends TestCase
 
         $this->assertResponseCode(200);
         $this->assertResponseContains('"received":true');
+        $incident = FactoryLocator::get('Table')->get('PaymentWebhookIncidents')
+            ->find()
+            ->where(['session_id' => 'cs_manual_review'])
+            ->first();
+        $this->assertNotNull($incident);
+        $this->assertSame('open', $incident->status);
+        $this->assertSame('error', $incident->severity);
+        $this->assertSame('cancelled_booking_paid_late', $incident->reason_code);
+    }
+
+    public function testWebhookReturns200ForNonRetriableFailureAndCreatesIncident(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        FakePaymentConfirmationService::$handler = static function (): string {
+            throw new NonRetriableWebhookException('Stripe amount mismatch.', [
+                'session_id' => 'cs_non_retriable',
+                'payment_id' => 1,
+                'booking_id' => 1,
+                'reason_code' => 'amount_mismatch',
+            ]);
+        };
+
+        $payload = $this->completedSessionPayload('cs_non_retriable');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(200);
+        $incident = FactoryLocator::get('Table')->get('PaymentWebhookIncidents')
+            ->find()
+            ->where(['session_id' => 'cs_non_retriable'])
+            ->first();
+        $this->assertNotNull($incident);
+        $this->assertSame('open', $incident->status);
+        $this->assertSame('warning', $incident->severity);
+        $this->assertSame('amount_mismatch', $incident->reason_code);
+    }
+
+    public function testRetriableWebhookFailureDoesNotCreateIncident(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+        Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
+
+        FakePaymentConfirmationService::$handler = static function (): string {
+            throw new RetriableWebhookException('Temporary database issue.', [
+                'session_id' => 'cs_retry_again',
+                'reason_code' => 'temporary_db_failure',
+            ]);
+        };
+
+        $payload = $this->completedSessionPayload('cs_retry_again');
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseCode(500);
+        $count = FactoryLocator::get('Table')->get('PaymentWebhookIncidents')
+            ->find()
+            ->where(['session_id' => 'cs_retry_again'])
+            ->count();
+        $this->assertSame(0, $count);
     }
 
     private function completedSessionPayload(string $sessionId): string

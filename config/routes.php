@@ -76,6 +76,15 @@ return function (RouteBuilder $routes): void {
 
     $routes->prefix('Admin', function (RouteBuilder $routes): void {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
+        $routes->connect('/payment-webhook-incidents', ['controller' => 'PaymentWebhookIncidents', 'action' => 'index']);
+        $routes
+            ->connect('/payment-webhook-incidents/resolve/{id}', ['controller' => 'PaymentWebhookIncidents', 'action' => 'resolve'])
+            ->setPass(['id'])
+            ->setMethods(['POST']);
+        $routes
+            ->connect('/payment-webhook-incidents/ignore/{id}', ['controller' => 'PaymentWebhookIncidents', 'action' => 'ignore'])
+            ->setPass(['id'])
+            ->setMethods(['POST']);
         $routes->fallbacks(DashedRoute::class);
     });
 
