@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use Migrations\BaseMigration;
 
-class HardenStripeWebhookEventsLedger extends BaseMigration
+class RepairStripeWebhookEventLedgerBusinessKeys extends BaseMigration
 {
     public function up(): void
     {
@@ -56,25 +56,8 @@ class HardenStripeWebhookEventsLedger extends BaseMigration
 
     public function down(): void
     {
-        if (!$this->hasTable('stripe_webhook_events')) {
-            return;
-        }
-
-        $table = $this->table('stripe_webhook_events');
-
-        if ($table->hasIndex(['business_event_key'])) {
-            $table->removeIndexByName('uk_stripe_webhook_events_business_event_key');
-        }
-
-        if ($table->hasColumn('business_event_key')) {
-            $table->removeColumn('business_event_key');
-        }
-
-        if ($table->hasColumn('processing_started_at')) {
-            $table->removeColumn('processing_started_at');
-        }
-
-        $table->update();
+        // The repair migration is intentionally irreversible because it may
+        // detach duplicate business_event_key values from legacy rows.
     }
 
     private function backfillBusinessEventKeys(): void

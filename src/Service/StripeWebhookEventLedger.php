@@ -122,7 +122,13 @@ class StripeWebhookEventLedger
             return;
         }
 
+        $businessEventKey = $this->buildBusinessEventKey($eventType, $sessionId);
+        $matchedByEventId = true;
         $event = $this->findByEventId($eventId);
+        if ($event === null && $businessEventKey !== null) {
+            $event = $this->findByBusinessEventKey($businessEventKey);
+            $matchedByEventId = false;
+        }
         $now = DateTime::now();
 
         if ($event === null) {
@@ -130,12 +136,17 @@ class StripeWebhookEventLedger
             $event->event_id = $eventId;
             $event->first_seen_at = $now;
             $event->processing_started_at = $now;
+            $matchedByEventId = true;
         }
 
         $event->event_type = $eventType;
         $event->session_id = $sessionId;
-        $event->business_event_key = $this->buildBusinessEventKey($eventType, $sessionId);
-        $this->preservePayloadHash($event, hash('sha256', $payload));
+        $event->business_event_key = $businessEventKey;
+        if ($matchedByEventId) {
+            $this->preservePayloadHash($event, hash('sha256', $payload));
+        } else {
+            $this->logBusinessEventReplay($event, $eventId, 'status_update');
+        }
         $event->processing_status = $status;
         $event->last_seen_at = $now;
 
@@ -255,7 +266,30 @@ class StripeWebhookEventLedger
 
     private function touchExistingEvent(object $event, DateTime $now, string $payloadHash): void
     {
-        $this->logPayloadHashMismatch($event, $payloadHash, 'duplicate');
+        $this->touchExistingEventInternal($event, $now, $payloadHash, 'duplicate', true);
+    }
+
+    private function touchBusinessDuplicateEvent(
+        object $event,
+        string $incomingEventId,
+        DateTime $now,
+        string $payloadHash,
+        string $context,
+    ): void {
+        $this->logBusinessEventReplay($event, $incomingEventId, $context);
+        $this->touchExistingEventInternal($event, $now, $payloadHash, $context, false);
+    }
+
+    private function touchExistingEventInternal(
+        object $event,
+        DateTime $now,
+        string $payloadHash,
+        string $context,
+        bool $logPayloadMismatch,
+    ): void {
+        if ($logPayloadMismatch) {
+            $this->logPayloadHashMismatch($event, $payloadHash, $context);
+        }
 
         $event->last_seen_at = $now;
         $this->eventsTable->saveOrFail($event);
@@ -278,7 +312,7 @@ class StripeWebhookEventLedger
                 return $this->claimBusinessEvent($event, $incomingEventId, $payloadHash, $now);
             }
 
-            $this->touchExistingEvent($event, $now, $payloadHash);
+            $this->touchBusinessDuplicateEvent($event, $incomingEventId, $now, $payloadHash, 'business_duplicate');
 
             return self::RESULT_IN_PROGRESS;
         }
@@ -287,7 +321,7 @@ class StripeWebhookEventLedger
             return $this->claimBusinessEvent($event, $incomingEventId, $payloadHash, $now);
         }
 
-        $this->touchExistingEvent($event, $now, $payloadHash);
+        $this->touchBusinessDuplicateEvent($event, $incomingEventId, $now, $payloadHash, 'business_duplicate');
 
         return self::RESULT_DUPLICATE;
     }
@@ -307,21 +341,20 @@ class StripeWebhookEventLedger
         }
 
         $updated = $this->eventsTable->updateAll([
-            'event_id' => $incomingEventId,
             'processing_status' => 'processing',
             'processing_started_at' => $now,
             'last_seen_at' => $now,
         ], $conditions);
 
         if ($updated > 0) {
-            $this->logPayloadHashMismatch($event, $payloadHash, 'business_retry');
+            $this->logBusinessEventReplay($event, $incomingEventId, 'business_retry');
 
             return self::RESULT_CLAIMED;
         }
 
         $reloaded = $this->findByBusinessEventKey((string)$event->business_event_key);
         if ($reloaded !== null) {
-            $this->touchExistingEvent($reloaded, $now, $payloadHash);
+            $this->touchBusinessDuplicateEvent($reloaded, $incomingEventId, $now, $payloadHash, 'business_retry');
         }
 
         return self::RESULT_IN_PROGRESS;
@@ -363,6 +396,20 @@ class StripeWebhookEventLedger
 
         Log::warning('Stripe webhook payload hash mismatch.', [
             'event_id' => (string)$event->event_id,
+            'context' => $context,
+        ]);
+    }
+
+    private function logBusinessEventReplay(object $event, string $incomingEventId, string $context): void
+    {
+        if ($incomingEventId === '' || (string)$event->event_id === $incomingEventId) {
+            return;
+        }
+
+        Log::info('Stripe webhook business duplicate reused an existing ledger row.', [
+            'canonical_event_id' => (string)$event->event_id,
+            'incoming_event_id' => $incomingEventId,
+            'business_event_key' => (string)($event->business_event_key ?? ''),
             'context' => $context,
         ]);
     }

@@ -47,15 +47,16 @@ class StripeWebhookEventLedgerTest extends TestCase
 
     public function testFreshProcessingEventIsReportedAsInProgress(): void
     {
+        $freshTime = DateTime::now()->subMinutes(5);
         $this->saveWebhookEvent([
             'event_id' => 'evt_processing',
             'event_type' => 'checkout.session.completed',
             'session_id' => 'cs_processing',
             'payload_hash' => hash('sha256', '{"id":"evt_processing"}'),
             'processing_status' => 'processing',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:09:30',
+            'first_seen_at' => $freshTime,
+            'processing_started_at' => $freshTime,
+            'last_seen_at' => $freshTime,
         ]);
 
         $claimed = $this->ledger->beginProcessing(
@@ -70,7 +71,10 @@ class StripeWebhookEventLedgerTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
-        $this->assertSame('2026-04-20 12:00:00', $event->processing_started_at->format('Y-m-d H:i:s'));
+        $this->assertSame(
+            $freshTime->format('Y-m-d H:i:s'),
+            $event->processing_started_at->format('Y-m-d H:i:s')
+        );
     }
 
     public function testStaleProcessingEventCanBeReclaimed(): void
@@ -109,15 +113,16 @@ class StripeWebhookEventLedgerTest extends TestCase
     public function testProcessedDuplicateDoesNotOverwriteOriginalPayloadHash(): void
     {
         $originalHash = hash('sha256', '{"id":"evt_processed"}');
+        $processedTime = DateTime::now()->subMinutes(5);
         $this->saveWebhookEvent([
             'event_id' => 'evt_processed',
             'event_type' => 'checkout.session.completed',
             'session_id' => 'cs_processed',
             'payload_hash' => $originalHash,
             'processing_status' => 'processed',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:00:00',
+            'first_seen_at' => $processedTime,
+            'processing_started_at' => $processedTime,
+            'last_seen_at' => $processedTime,
         ]);
 
         $claimed = $this->ledger->beginProcessing(
@@ -138,15 +143,16 @@ class StripeWebhookEventLedgerTest extends TestCase
 
     public function testDifferentEventIdForProcessedBusinessDuplicateIsIgnored(): void
     {
+        $processedTime = DateTime::now()->subMinutes(5);
         $this->saveWebhookEvent([
             'event_id' => 'evt_original',
             'event_type' => 'checkout.session.completed',
             'session_id' => 'cs_same_business_event',
             'payload_hash' => hash('sha256', '{"id":"evt_original"}'),
             'processing_status' => 'processed',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:00:00',
+            'first_seen_at' => $processedTime,
+            'processing_started_at' => $processedTime,
+            'last_seen_at' => $processedTime,
         ]);
 
         $claimed = $this->ledger->beginProcessing(
@@ -162,15 +168,16 @@ class StripeWebhookEventLedgerTest extends TestCase
 
     public function testFreshProcessingBusinessDuplicateIsReportedAsInProgress(): void
     {
+        $freshTime = DateTime::now()->subMinutes(5);
         $this->saveWebhookEvent([
             'event_id' => 'evt_business_processing',
             'event_type' => 'checkout.session.completed',
             'session_id' => 'cs_business_processing',
             'payload_hash' => hash('sha256', '{"id":"evt_business_processing"}'),
             'processing_status' => 'processing',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:05:00',
+            'first_seen_at' => $freshTime,
+            'processing_started_at' => $freshTime,
+            'last_seen_at' => $freshTime,
         ]);
 
         $claimed = $this->ledger->beginProcessing(
@@ -181,6 +188,55 @@ class StripeWebhookEventLedgerTest extends TestCase
         );
 
         $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
+    }
+
+    public function testBusinessRetryClaimPreservesCanonicalEventIdAndPayloadHash(): void
+    {
+        $failedTime = DateTime::now()->subMinutes(15);
+        $originalHash = hash('sha256', '{"id":"evt_failed"}');
+
+        $this->saveWebhookEvent([
+            'event_id' => 'evt_failed',
+            'event_type' => 'checkout.session.completed',
+            'session_id' => 'cs_claim_reuse',
+            'payload_hash' => $originalHash,
+            'processing_status' => 'failed',
+            'first_seen_at' => $failedTime,
+            'processing_started_at' => $failedTime,
+            'last_seen_at' => $failedTime,
+        ]);
+
+        $claimed = $this->ledger->beginProcessing(
+            'evt_retry',
+            'checkout.session.completed',
+            'cs_claim_reuse',
+            '{"id":"evt_retry"}'
+        );
+
+        $event = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_failed'])
+            ->firstOrFail();
+
+        $this->assertSame(StripeWebhookEventLedger::RESULT_CLAIMED, $claimed);
+        $this->assertSame('evt_failed', $event->event_id);
+        $this->assertSame($originalHash, $event->payload_hash);
+        $this->assertSame('processing', $event->processing_status);
+
+        $this->ledger->markProcessed(
+            'evt_retry',
+            'checkout.session.completed',
+            'cs_claim_reuse',
+            '{"id":"evt_retry"}'
+        );
+
+        $updated = $this->eventsTable->find()
+            ->where(['event_id' => 'evt_failed'])
+            ->firstOrFail();
+
+        $this->assertSame('processed', $updated->processing_status);
+        $this->assertSame('evt_failed', $updated->event_id);
+        $this->assertSame($originalHash, $updated->payload_hash);
+        $this->assertSame(1, $this->eventsTable->find()->count());
     }
 
     private function saveWebhookEvent(array $data): void

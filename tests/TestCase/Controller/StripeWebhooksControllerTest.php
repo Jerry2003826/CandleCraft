@@ -9,6 +9,7 @@ use App\Exception\Payments\RetriableWebhookException;
 use App\Test\Support\FakePaymentConfirmationService;
 use Cake\Core\Configure;
 use Cake\Datasource\FactoryLocator;
+use Cake\I18n\DateTime;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -89,6 +90,7 @@ class StripeWebhooksControllerTest extends TestCase
     public function testInProgressWebhookEventReturnsRetriableFailureInsteadOfDuplicateAck(): void
     {
         $secret = 'whsec_test';
+        $freshTime = DateTime::now()->subMinutes(5);
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
@@ -100,9 +102,9 @@ class StripeWebhooksControllerTest extends TestCase
             'business_event_key' => 'checkout.session.completed:cs_in_progress',
             'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_in_progress')),
             'processing_status' => 'processing',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:05:00',
+            'first_seen_at' => $freshTime,
+            'processing_started_at' => $freshTime,
+            'last_seen_at' => $freshTime,
         ]));
 
         $payload = $this->completedSessionPayload('cs_in_progress');
@@ -368,6 +370,7 @@ class StripeWebhooksControllerTest extends TestCase
     public function testResolvedIncidentWithProcessedEventIdDoesNotReopenOnDuplicateWebhook(): void
     {
         $secret = 'whsec_test';
+        $resolvedTime = DateTime::now()->subMinutes(5);
         Configure::write('Stripe.webhook_secret', $secret);
         Configure::write('Payments.confirmation_service_class', FakePaymentConfirmationService::class);
 
@@ -379,9 +382,9 @@ class StripeWebhooksControllerTest extends TestCase
             'business_event_key' => 'checkout.session.completed:cs_resolved_duplicate',
             'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_resolved_duplicate')),
             'processing_status' => 'processed',
-            'first_seen_at' => '2026-04-20 12:00:00',
-            'processing_started_at' => '2026-04-20 12:00:00',
-            'last_seen_at' => '2026-04-20 12:00:00',
+            'first_seen_at' => $resolvedTime,
+            'processing_started_at' => $resolvedTime,
+            'last_seen_at' => $resolvedTime,
         ]));
 
         $incidents = FactoryLocator::get('Table')->get('PaymentWebhookIncidents');
@@ -395,9 +398,9 @@ class StripeWebhooksControllerTest extends TestCase
             'context_json' => '{}',
             'payload_hash' => hash('sha256', $this->completedSessionPayload('cs_resolved_duplicate')),
             'notes' => 'Previously resolved incident.',
-            'created_at' => '2026-04-20 12:00:00',
-            'updated_at' => '2026-04-20 12:00:00',
-            'resolved_at' => '2026-04-20 12:05:00',
+            'created_at' => $resolvedTime,
+            'updated_at' => $resolvedTime,
+            'resolved_at' => DateTime::now(),
         ]));
 
         $payload = $this->completedSessionPayload('cs_resolved_duplicate');
