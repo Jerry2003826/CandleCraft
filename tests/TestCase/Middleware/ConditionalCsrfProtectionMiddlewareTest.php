@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Middleware;
 
 use App\Middleware\ConditionalCsrfProtectionMiddleware;
+use Cake\Core\Configure;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
@@ -28,6 +29,25 @@ class ConditionalCsrfProtectionMiddlewareTest extends TestCase
         $response = $middleware->process($request, $this->successHandler('handled'));
 
         $this->assertSame('handled', (string)$response->getBody());
+    }
+
+    public function testDebugKitBypassesCsrfWhenDebugEnabled(): void
+    {
+        $originalDebug = Configure::read('debug');
+        Configure::write('debug', true);
+
+        try {
+            $csrfMiddleware = $this->createMock(CsrfProtectionMiddleware::class);
+            $csrfMiddleware->expects($this->never())->method('process');
+
+            $middleware = new ConditionalCsrfProtectionMiddleware($csrfMiddleware);
+            $request = new ServerRequest(['url' => '/debug-kit/dashboard/reset']);
+            $response = $middleware->process($request, $this->successHandler('handled'));
+
+            $this->assertSame('handled', (string)$response->getBody());
+        } finally {
+            Configure::write('debug', $originalDebug);
+        }
     }
 
     private function successHandler(string $body): RequestHandlerInterface

@@ -51,7 +51,7 @@ class AppController extends Controller
     {
         $this->Flash->error(__($message));
 
-        return $this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login']);
+        return $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']);
     }
 
     protected function redirectAuthenticatedRoleMismatch(mixed $identity, string $message): Response
@@ -85,7 +85,7 @@ class AppController extends Controller
             'teacher' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
             'parent' => ['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index'],
             'student' => ['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'],
-            default => ['prefix' => false, 'controller' => 'Users', 'action' => 'login'],
+            default => ['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'],
         };
     }
 

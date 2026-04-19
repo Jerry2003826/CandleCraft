@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Support\DebugKitRequestMatcher;
 use App\Support\WebhookRequestMatcher;
 use Authentication\Middleware\AuthenticationMiddleware;
 use Psr\Http\Message\ResponseInterface;
@@ -19,7 +20,10 @@ class ConditionalAuthenticationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (WebhookRequestMatcher::isStripeWebhookRequest($request)) {
+        if (
+            WebhookRequestMatcher::isStripeWebhookRequest($request)
+            || DebugKitRequestMatcher::isDebugKitRequest($request)
+        ) {
             return $handler->handle($request);
         }
 

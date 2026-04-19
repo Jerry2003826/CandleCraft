@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
+use App\Support\DebugKitRequestMatcher;
 use App\Support\WebhookRequestMatcher;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Psr\Http\Message\ResponseInterface;
@@ -19,7 +20,10 @@ class ConditionalCsrfProtectionMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if (WebhookRequestMatcher::isStripeWebhookRequest($request)) {
+        if (
+            WebhookRequestMatcher::isStripeWebhookRequest($request)
+            || DebugKitRequestMatcher::isDebugKitRequest($request)
+        ) {
             return $handler->handle($request);
         }
 

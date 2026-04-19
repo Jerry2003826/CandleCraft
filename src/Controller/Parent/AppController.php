@@ -39,7 +39,7 @@ class AppController extends BaseAppController
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirect(['prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
             );
 
             return;

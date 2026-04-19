@@ -5,6 +5,7 @@ namespace App\Test\TestCase\Middleware;
 
 use App\Middleware\ConditionalAuthenticationMiddleware;
 use Authentication\Middleware\AuthenticationMiddleware;
+use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
@@ -36,6 +37,45 @@ class ConditionalAuthenticationMiddlewareTest extends TestCase
         $response = $middleware->process($request, $this->successHandler('handled'));
 
         $this->assertSame('handled', (string)$response->getBody());
+    }
+
+    public function testDebugKitBypassesAuthWhenDebugEnabled(): void
+    {
+        $originalDebug = Configure::read('debug');
+        Configure::write('debug', true);
+
+        try {
+            $authMiddleware = $this->createMock(AuthenticationMiddleware::class);
+            $authMiddleware->expects($this->never())->method('process');
+
+            $middleware = new ConditionalAuthenticationMiddleware($authMiddleware);
+            $request = new ServerRequest(['url' => '/debug-kit/toolbar/request-id']);
+            $response = $middleware->process($request, $this->successHandler('handled'));
+
+            $this->assertSame('handled', (string)$response->getBody());
+        } finally {
+            Configure::write('debug', $originalDebug);
+        }
+    }
+
+    public function testDebugKitBypassesAuthInSubdirectoryDeployment(): void
+    {
+        $originalDebug = Configure::read('debug');
+        Configure::write('debug', true);
+
+        try {
+            $authMiddleware = $this->createMock(AuthenticationMiddleware::class);
+            $authMiddleware->expects($this->never())->method('process');
+
+            $middleware = new ConditionalAuthenticationMiddleware($authMiddleware);
+            $request = (new ServerRequest(['url' => '/candlecraft/debug-kit/toolbar/request-id']))
+                ->withAttribute('base', '/candlecraft');
+            $response = $middleware->process($request, $this->successHandler('handled'));
+
+            $this->assertSame('handled', (string)$response->getBody());
+        } finally {
+            Configure::write('debug', $originalDebug);
+        }
     }
 
     private function successHandler(string $body): RequestHandlerInterface
