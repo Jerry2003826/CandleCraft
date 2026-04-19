@@ -93,6 +93,35 @@ class AppController extends Controller
         $session->write('Auth', $auth);
     }
 
+    protected function loadActiveAuthenticatedUser(
+        EventInterface $event,
+        mixed $identity,
+        string $inactiveMessage = 'Your account is no longer active. Please contact an administrator.'
+    ): ?object {
+        if (!is_object($identity) || !method_exists($identity, 'get')) {
+            return null;
+        }
+
+        $currentUser = $this->fetchTable('Users')->find()
+            ->where(['Users.user_id' => $identity->get('user_id')])
+            ->first();
+
+        if (!$currentUser || (string)$currentUser->get('account_status') !== 'active') {
+            $this->Flash->error(__($inactiveMessage));
+            $this->Authentication->logout();
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+            );
+
+            return null;
+        }
+
+        $this->syncAuthenticatedUserState($currentUser);
+
+        return $currentUser;
+    }
+
     private function identityRole(mixed $identity): string
     {
         if (!is_object($identity) || !method_exists($identity, 'get')) {

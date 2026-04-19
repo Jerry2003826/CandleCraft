@@ -22,10 +22,15 @@ class AppController extends BaseAppController
             return;
         }
 
-        if ($identity->get('user_role') !== 'admin') {
+        $currentUser = $this->loadActiveAuthenticatedUser($event, $identity);
+        if ($currentUser === null) {
+            return;
+        }
+
+        if ((string)$currentUser->get('user_role') !== 'admin') {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($identity, 'You do not have permission to access the admin area.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'You do not have permission to access the admin area.')
             );
 
             return;

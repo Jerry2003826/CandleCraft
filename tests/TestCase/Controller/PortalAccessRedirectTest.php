@@ -69,6 +69,52 @@ class PortalAccessRedirectTest extends AppIntegrationTestCase
         $this->assertSession('parent', 'Auth.user_role');
     }
 
+    public function testLiveTeacherRoleRedirectsAdminSessionOutOfAdminPortal(): void
+    {
+        $this->setUserRole(1, 'teacher');
+        $this->loginAsAdmin();
+
+        $this->get('/admin/dashboard');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/teacher');
+        $this->assertSession('teacher', 'Auth.user_role');
+    }
+
+    public function testSuspendedAdminAccountIsRedirectedToLogin(): void
+    {
+        $this->setUserAccountStatus(1, 'suspended');
+        $this->loginAsAdmin();
+
+        $this->get('/admin/dashboard');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
+    public function testLiveAdminRoleRedirectsTeacherSessionOutOfTeacherPortal(): void
+    {
+        $this->setUserRole(2, 'admin');
+        $this->loginAsTeacher();
+
+        $this->get('/teacher/resources');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/admin');
+        $this->assertSession('admin', 'Auth.user_role');
+    }
+
+    public function testSuspendedTeacherAccountIsRedirectedToLogin(): void
+    {
+        $this->setUserAccountStatus(2, 'suspended');
+        $this->loginAsTeacher();
+
+        $this->get('/teacher/resources');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
     public function testAuthenticatedParentOpeningLoginPageIsRedirectedToParentDashboard(): void
     {
         $this->loginAsParent();

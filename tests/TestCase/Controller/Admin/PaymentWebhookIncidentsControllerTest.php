@@ -46,7 +46,11 @@ class PaymentWebhookIncidentsControllerTest extends AppIntegrationTestCase
 
         $this->get('/admin/payment-webhook-incidents');
 
-        $this->assertRedirectContains('/login');
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer');
+        $this->assertRedirectNotContains('/login');
+        $this->assertSession(4, 'Auth.user_id');
+        $this->assertSession('student', 'Auth.user_role');
     }
 
     public function testAdminCanResolveIncident(): void

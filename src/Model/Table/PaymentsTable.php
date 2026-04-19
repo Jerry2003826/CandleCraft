@@ -90,7 +90,11 @@ class PaymentsTable extends Table
 
     public function beforeSave(EventInterface $event, EntityInterface $entity): void
     {
-        if (!$entity->get('payment_date')) {
+        if (
+            $entity->get('payment_status') === 'paid'
+            && $entity->get('payment_date') === null
+            && ($entity->isNew() || $entity->isDirty('payment_status'))
+        ) {
             $entity->set('payment_date', DateTime::now());
         }
 

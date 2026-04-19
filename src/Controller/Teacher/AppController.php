@@ -22,10 +22,15 @@ class AppController extends BaseAppController
             return;
         }
 
-        if ($identity->get('user_role') !== 'teacher') {
+        $currentUser = $this->loadActiveAuthenticatedUser($event, $identity);
+        if ($currentUser === null) {
+            return;
+        }
+
+        if ((string)$currentUser->get('user_role') !== 'teacher') {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a teacher account to continue.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a teacher account to continue.')
             );
 
             return;
