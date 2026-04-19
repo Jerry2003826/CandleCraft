@@ -798,7 +798,12 @@ class PaymentConfirmationService implements PaymentConfirmationServiceInterface
             throw new LogicException('Refund review requires captured funds.');
         }
 
-        if ($payment->payment_date === null) {
+        $currentStatus = (string)($payment->payment_status ?? '');
+
+        if (
+            $payment->payment_date === null
+            || in_array($currentStatus, ['pending', 'failed', 'expired', 'voided'], true)
+        ) {
             $payment->payment_date = DateTime::now();
         }
 

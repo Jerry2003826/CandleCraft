@@ -7,6 +7,7 @@ use App\Exception\Payments\ManualReviewWebhookException;
 use App\Exception\Payments\NonRetriableWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
 use App\Service\PaymentConfirmationService;
+use Cake\I18n\DateTime;
 use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\TestCase;
 
@@ -61,6 +62,39 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('refund_required', $payment->payment_status);
         $this->assertNotNull($payment->payment_date);
         $this->assertSame('cancelled', $booking->booking_status);
+    }
+
+    public function testRefundReviewOverwritesLegacyPendingPaymentDateWhenFundsAreCaptured(): void
+    {
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+
+        $legacyPendingDate = new DateTime('2026-04-10 10:00:00');
+
+        $payment = $payments->get(1);
+        $payment->payment_status = 'pending';
+        $payment->payment_date = $legacyPendingDate;
+        $payments->saveOrFail($payment);
+
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'cancelled';
+        $bookings->saveOrFail($booking);
+
+        try {
+            $this->service->confirmCheckoutSession($this->makeSession('cs_owned', 1, 5000));
+            $this->fail('Expected manual review exception was not thrown.');
+        } catch (ManualReviewWebhookException $exception) {
+            $this->assertSame('cancelled_booking_paid_late', $exception->getContext()['reason_code'] ?? null);
+        }
+
+        $payment = $payments->get(1);
+
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertNotNull($payment->payment_date);
+        $this->assertGreaterThan(
+            $legacyPendingDate->getTimestamp(),
+            $payment->payment_date->getTimestamp()
+        );
     }
 
     public function testRefundedPaymentIgnoresDuplicateCompletedWebhook(): void
