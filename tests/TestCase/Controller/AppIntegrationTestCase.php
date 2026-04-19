@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
+use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -51,6 +52,15 @@ abstract class AppIntegrationTestCase extends TestCase
     protected function loginAsParent(int $userId = 6, bool $ageVerifiedByAdmin = true): void
     {
         $this->session(['Auth' => $this->identity($userId, 'parent-one@candlecraft.com', 'parent', 'parent1', $ageVerifiedByAdmin)]);
+    }
+
+    protected function setUserAgeVerifiedByAdmin(int $userId, bool $ageVerifiedByAdmin): void
+    {
+        $users = FactoryLocator::get('Table')->get('Users');
+        $user = $users->get($userId);
+        $user->age_verified_by_admin = $ageVerifiedByAdmin;
+        $user->self_declared_adult = $ageVerifiedByAdmin;
+        $users->saveOrFail($user);
     }
 
     private function identity(int $userId, string $email, string $role, string $username, bool $ageVerifiedByAdmin = true): array

@@ -8,6 +8,35 @@ use Cake\Datasource\FactoryLocator;
 
 class BookingsControllerTest extends AppIntegrationTestCase
 {
+    public function testStaleSessionVerificationDoesNotBlockBookingWhenDatabaseIsApproved(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, true);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+
+        $this->get('/consumer/bookings/add/1');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Book Class');
+    }
+
+    public function testUnderageStudentCannotCancelBooking(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, false);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/bookings/cancel/1');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer');
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+        $this->assertSame('pending', $payment->payment_status);
+        $this->assertSame('pending', $booking->booking_status);
+    }
+
     public function testCancelVoidsPendingPayment(): void
     {
         $this->loginAsStudent();

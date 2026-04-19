@@ -7,8 +7,20 @@ use App\Test\TestCase\Controller\AppIntegrationTestCase;
 
 class PaymentsControllerTest extends AppIntegrationTestCase
 {
+    public function testStaleSessionVerificationDoesNotBlockParentPaymentPortalWhenDatabaseIsApproved(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(6, true);
+        $this->loginAsParent(ageVerifiedByAdmin: false);
+
+        $this->get('/parent/payments');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Payments');
+    }
+
     public function testUnderageParentCannotOpenPaymentPortal(): void
     {
+        $this->setUserAgeVerifiedByAdmin(6, false);
         $this->loginAsParent(ageVerifiedByAdmin: false);
 
         $this->get('/parent/payments');

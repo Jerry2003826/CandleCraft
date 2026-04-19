@@ -48,7 +48,8 @@ class AppController extends BaseAppController
             ->first();
 
         if (!$student) {
-            $this->Flash->error(__('Your student profile could not be found. Please contact an administrator.'));
+            $profileLabel = $this->userRole === 'customer' ? __('customer') : __('student');
+            $this->Flash->error(__('Your {0} profile could not be found. Please contact an administrator.', $profileLabel));
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
@@ -59,9 +60,10 @@ class AppController extends BaseAppController
         }
 
         $this->declaredAge = $this->determineDeclaredAge($student);
-        $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity);
-        $this->bookingAccessEnabled = $accessPolicy->canBook($identity);
-        $this->paymentAccessEnabled = $accessPolicy->canPay($identity);
+        $currentUser = $student->user ?? null;
+        $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity, $currentUser);
+        $this->bookingAccessEnabled = $accessPolicy->canBook($identity, $currentUser);
+        $this->paymentAccessEnabled = $accessPolicy->canPay($identity, $currentUser);
         $restrictedResponse = $this->enforceAgeRestrictions();
         if ($restrictedResponse !== null) {
             $this->shortCircuitRequest($event, $restrictedResponse);
@@ -99,20 +101,14 @@ class AppController extends BaseAppController
         $controller = $this->request->getParam('controller');
         $action = $this->request->getParam('action');
 
-        $restricted = [
-            'Bookings' => ['add'],
-            'Payments' => ['index', 'process', 'success', 'cancel', 'receipt'],
-        ];
-
-        if (!isset($restricted[$controller]) || !in_array($action, $restricted[$controller], true)) {
-            return null;
+        $blocked = false;
+        if ($controller === 'Bookings' && in_array($action, ['add', 'cancel'], true)) {
+            $blocked = !$this->bookingAccessEnabled;
         }
 
-        $blocked = match ($controller) {
-            'Bookings' => !$this->bookingAccessEnabled,
-            'Payments' => !$this->paymentAccessEnabled,
-            default => false,
-        };
+        if ($controller === 'Payments') {
+            $blocked = !$this->paymentAccessEnabled;
+        }
 
         if ($blocked) {
             $this->Flash->warning(__('Your adult verification is still pending. You can browse courses, but booking and payment stay locked until an administrator confirms you are 18 or older.'));

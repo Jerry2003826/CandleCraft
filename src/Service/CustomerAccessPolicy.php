@@ -25,19 +25,23 @@ final class CustomerAccessPolicy
         return $this->isCustomerRole($this->readString($identity, 'user_role'));
     }
 
-    public function isAdultConfirmed(mixed $identity): bool
+    public function isAdultConfirmed(mixed $identity, mixed $currentUser = null): bool
     {
-        return $this->readBool($identity, 'age_verified_by_admin');
+        $verificationSource = $this->hasField($currentUser, 'age_verified_by_admin')
+            ? $currentUser
+            : $identity;
+
+        return $this->readBool($verificationSource, 'age_verified_by_admin');
     }
 
-    public function canBook(mixed $identity): bool
+    public function canBook(mixed $identity, mixed $currentUser = null): bool
     {
-        return $this->isCustomerIdentity($identity) && $this->isAdultConfirmed($identity);
+        return $this->isCustomerIdentity($identity) && $this->isAdultConfirmed($identity, $currentUser);
     }
 
-    public function canPay(mixed $identity): bool
+    public function canPay(mixed $identity, mixed $currentUser = null): bool
     {
-        return $this->canBook($identity);
+        return $this->canBook($identity, $currentUser);
     }
 
     public function canViewResources(mixed $identity): bool
@@ -53,6 +57,23 @@ final class CustomerAccessPolicy
     public function canViewAttendance(mixed $identity): bool
     {
         return $this->isCustomerIdentity($identity);
+    }
+
+    private function hasField(mixed $record, string $field): bool
+    {
+        if ($record === null) {
+            return false;
+        }
+
+        if (is_object($record) && method_exists($record, 'get')) {
+            return true;
+        }
+
+        if (is_array($record)) {
+            return array_key_exists($field, $record);
+        }
+
+        return false;
     }
 
     private function readString(mixed $identity, string $field): string

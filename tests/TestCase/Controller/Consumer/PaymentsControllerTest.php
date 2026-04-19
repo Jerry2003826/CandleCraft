@@ -10,6 +10,60 @@ use Cake\Datasource\FactoryLocator;
 
 class PaymentsControllerTest extends AppIntegrationTestCase
 {
+    public function testStaleSessionVerificationDoesNotBlockPaymentPortalWhenDatabaseIsApproved(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, true);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+
+        $this->get('/consumer/payments');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Payment Portal');
+    }
+
+    public function testUnderageStudentCannotSavePaymentProfile(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, false);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/save-profile', [
+            'billing_name' => 'Student One',
+            'billing_email' => 'student-one@candlecraft.com',
+            'preferred_payment_method' => 'card',
+        ]);
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer');
+    }
+
+    public function testUnderageStudentCannotSetDefaultPaymentProfile(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, false);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/set-default-profile/999');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer');
+    }
+
+    public function testUnderageStudentCannotArchivePaymentProfile(): void
+    {
+        $this->setUserAgeVerifiedByAdmin(4, false);
+        $this->loginAsStudent(ageVerifiedByAdmin: false);
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/archive-profile/999');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer');
+    }
+
     protected function tearDown(): void
     {
         FakeStripeCheckoutGateway::reset();

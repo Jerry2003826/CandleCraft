@@ -48,7 +48,7 @@ class UsersController extends AppController
             }
 
             $this->Authentication->logout();
-            $this->Flash->info(__('This portal currently supports admin, teacher, student, and parent logins.'));
+            $this->Flash->info(__('This portal currently supports admin, teacher, student, parent, and customer logins.'));
 
             return $this->redirect('/');
         }
