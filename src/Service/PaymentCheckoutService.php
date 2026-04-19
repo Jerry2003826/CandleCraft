@@ -386,6 +386,13 @@ class PaymentCheckoutService
             ];
         }
 
+        if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNKNOWN_PAYMENT_STATUS) {
+            return [
+                'kind' => 'inspection_failed',
+                'error' => 'Stripe checkout session is still open with an unknown payment status.',
+            ];
+        }
+
         return ['kind' => 'stale'];
     }
 

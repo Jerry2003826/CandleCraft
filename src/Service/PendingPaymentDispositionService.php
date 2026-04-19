@@ -85,6 +85,12 @@ class PendingPaymentDispositionService
                 return ['expired' => true, 'skipped' => false];
             }
 
+            if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNKNOWN_PAYMENT_STATUS) {
+                throw new PaymentDispositionBlockedException(
+                    'The current payment session is still open with an unknown payment status. Please try again shortly.'
+                );
+            }
+
             return ['expired' => false, 'skipped' => false];
         } catch (PaymentDispositionBlockedException $exception) {
             throw $exception;

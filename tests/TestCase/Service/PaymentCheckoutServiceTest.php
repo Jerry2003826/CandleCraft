@@ -256,6 +256,50 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
     }
 
+    public function testOpenUnknownPendingSessionDoesNotExpireOrCreateReplacementCheckout(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_live_123');
+        Configure::write('Stripe.webhook_secret', 'whsec_test');
+
+        FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
+            return FakeStripeCheckoutGateway::makeSession($sessionId, [
+                'status' => 'open',
+                'payment_status' => 'processing',
+            ]);
+        };
+
+        $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+            ->contain(['Students', 'Classes' => ['Courses']])
+            ->where(['Bookings.booking_id' => 1])
+            ->firstOrFail();
+
+        $service = new PaymentCheckoutService(
+            gateway: new FakeStripeCheckoutGateway(),
+            paymentConfirmationService: new PaymentConfirmationService()
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unable to recover the current payment session. Please try again shortly.');
+
+        try {
+            $service->startCheckout($booking, [
+                'success_url' => 'http://localhost/success',
+                'cancel_url' => 'http://localhost/cancel',
+                'portal_source' => 'service_test',
+                'payer_id' => 4,
+            ]);
+        } finally {
+            $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+            $savedBooking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+            $this->assertSame('pending', $payment->payment_status);
+            $this->assertSame('pending', $savedBooking->booking_status);
+            $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+            $this->assertSame([], FakeStripeCheckoutGateway::$expiredSessionIds);
+            $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
+        }
+    }
+
     public function testZeroAmountCheckoutRechecksPriceUnderLock(): void
     {
         Configure::write('Stripe.secret_key', null);

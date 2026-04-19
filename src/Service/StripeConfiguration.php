@@ -39,10 +39,31 @@ final class StripeConfiguration
 
         foreach ((array)$requiredPrefixes as $requiredPrefix) {
             if (str_starts_with($normalized, $requiredPrefix)) {
-                return !str_contains(strtolower($normalized), 'placeholder');
+                if (str_contains(strtolower($normalized), 'placeholder')) {
+                    return false;
+                }
+
+                if (
+                    self::shouldRejectTestSecretKeys() &&
+                    in_array($requiredPrefix, ['sk_test_', 'rk_test_'], true)
+                ) {
+                    return false;
+                }
+
+                return true;
             }
         }
 
         return false;
+    }
+
+    private static function shouldRejectTestSecretKeys(): bool
+    {
+        $environment = strtolower(trim((string)(env('APP_ENV') ?: env('CAKEPHP_ENV') ?: '')));
+        if (in_array($environment, ['prod', 'production'], true)) {
+            return true;
+        }
+
+        return Configure::read('debug') === false && PHP_SAPI !== 'cli';
     }
 }

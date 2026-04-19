@@ -111,4 +111,35 @@ class PendingPaymentDispositionServiceTest extends TestCase
             $this->assertSame([], FakeStripeCheckoutGateway::$expiredSessionIds);
         }
     }
+
+    public function testOpenUnknownPaymentStatusPreventsVoidingPendingPayment(): void
+    {
+        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        FakeStripeCheckoutGateway::$retrieveHandler = static function (string $sessionId): object {
+            return FakeStripeCheckoutGateway::makeSession($sessionId, [
+                'status' => 'open',
+                'payment_status' => 'processing',
+            ]);
+        };
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $service = new PendingPaymentDispositionService(gateway: new FakeStripeCheckoutGateway());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'The current payment session is still open with an unknown payment status. Please try again shortly.'
+        );
+
+        try {
+            $service->voidPendingPayment($payment, 'booking_cancelled', [
+                'portal_source' => 'service_test',
+            ]);
+        } finally {
+            $savedPayment = $payments->get(1);
+            $this->assertSame('pending', $savedPayment->payment_status);
+            $this->assertSame(['cs_owned'], FakeStripeCheckoutGateway::$retrievedSessionIds);
+            $this->assertSame([], FakeStripeCheckoutGateway::$expiredSessionIds);
+        }
+    }
 }

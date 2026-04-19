@@ -8,6 +8,7 @@ final class StripeCheckoutSessionClassifier
     public const STATE_PAID = 'paid';
     public const STATE_AWAITING_PAYMENT = 'awaiting_payment';
     public const STATE_OPEN_NON_PAID = 'open_non_paid';
+    public const STATE_OPEN_UNKNOWN_PAYMENT_STATUS = 'open_unknown_payment_status';
     public const STATE_OPEN_UNPAID = self::STATE_OPEN_NON_PAID;
     public const STATE_EXPIRED = 'expired';
     public const STATE_STALE = 'stale';
@@ -30,7 +31,7 @@ final class StripeCheckoutSessionClassifier
         }
 
         if ($sessionStatus === 'open') {
-            return $this->result(self::STATE_STALE, $sessionStatus, $paymentStatus);
+            return $this->result(self::STATE_OPEN_UNKNOWN_PAYMENT_STATUS, $sessionStatus, $paymentStatus);
         }
 
         if ($sessionStatus === 'expired') {
