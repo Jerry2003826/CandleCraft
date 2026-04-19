@@ -29,17 +29,33 @@ class AppController extends BaseAppController
             return;
         }
 
-        if ($identity->get('user_role') !== 'parent') {
+        $currentUser = $this->fetchTable('Users')->find()
+            ->where(['Users.user_id' => $identity->get('user_id')])
+            ->first();
+
+        if (!$currentUser || (string)$currentUser->get('account_status') !== 'active') {
+            $this->Flash->error(__('Your account is no longer active. Please contact an administrator.'));
+            $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a parent account to continue.')
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+            );
+
+            return;
+        }
+
+        $this->syncAuthenticatedUserState($currentUser);
+
+        if ((string)$currentUser->get('user_role') !== 'parent') {
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a parent account to continue.')
             );
 
             return;
         }
 
         $parent = $this->fetchTable('Parents')->find()
-            ->contain(['Users'])
             ->where([
                 'Parents.user_id' => $identity->get('user_id'),
             ])
@@ -55,7 +71,6 @@ class AppController extends BaseAppController
             return;
         }
 
-        $currentUser = $parent->user ?? null;
         $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity, $currentUser);
         $this->bookingAccessEnabled = $accessPolicy->canBook($identity, $currentUser);
         $this->paymentAccessEnabled = $accessPolicy->canPay($identity, $currentUser);

@@ -63,6 +63,22 @@ abstract class AppIntegrationTestCase extends TestCase
         $users->saveOrFail($user);
     }
 
+    protected function setUserRole(int $userId, string $role): void
+    {
+        $users = FactoryLocator::get('Table')->get('Users');
+        $user = $users->get($userId);
+        $user->user_role = $role;
+        $users->saveOrFail($user);
+    }
+
+    protected function setUserAccountStatus(int $userId, string $status): void
+    {
+        $users = FactoryLocator::get('Table')->get('Users');
+        $user = $users->get($userId);
+        $user->account_status = $status;
+        $users->saveOrFail($user);
+    }
+
     private function identity(int $userId, string $email, string $role, string $username, bool $ageVerifiedByAdmin = true): array
     {
         return [

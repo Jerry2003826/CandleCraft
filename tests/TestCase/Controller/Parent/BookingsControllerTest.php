@@ -19,6 +19,29 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertResponseContains('Book Class');
     }
 
+    public function testLiveTeacherRoleRedirectsParentSessionOutOfParentPortal(): void
+    {
+        $this->setUserRole(6, 'teacher');
+        $this->loginAsParent();
+
+        $this->get('/parent/bookings');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/teacher');
+        $this->assertSession('teacher', 'Auth.user_role');
+    }
+
+    public function testSuspendedParentAccountIsRedirectedToLogin(): void
+    {
+        $this->setUserAccountStatus(6, 'suspended');
+        $this->loginAsParent();
+
+        $this->get('/parent/bookings');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
     public function testParentCanOpenBookingFormForScheduledClass(): void
     {
         $this->loginAsParent();

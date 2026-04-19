@@ -33,17 +33,34 @@ class AppController extends BaseAppController
             return;
         }
 
+        $currentUser = $this->fetchTable('Users')->find()
+            ->where(['Users.user_id' => $identity->get('user_id')])
+            ->first();
+
+        if (!$currentUser || (string)$currentUser->get('account_status') !== 'active') {
+            $this->Flash->error(__('Your account is no longer active. Please contact an administrator.'));
+            $this->Authentication->logout();
+            $this->shortCircuitRequest(
+                $event,
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+            );
+
+            return;
+        }
+
+        $this->syncAuthenticatedUserState($currentUser);
+        $this->userRole = (string)$currentUser->get('user_role');
+
         if (!in_array($this->userRole, ['student', 'customer'], true)) {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($identity, 'Please sign in with a customer account to continue.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a customer account to continue.')
             );
 
             return;
         }
 
         $student = $this->fetchTable('Students')->find()
-            ->contain(['Users'])
             ->where(['Students.user_id' => $identity->get('user_id')])
             ->first();
 
@@ -60,7 +77,6 @@ class AppController extends BaseAppController
         }
 
         $this->declaredAge = $this->determineDeclaredAge($student);
-        $currentUser = $student->user ?? null;
         $this->ageVerifiedByAdmin = $accessPolicy->isAdultConfirmed($identity, $currentUser);
         $this->bookingAccessEnabled = $accessPolicy->canBook($identity, $currentUser);
         $this->paymentAccessEnabled = $accessPolicy->canPay($identity, $currentUser);

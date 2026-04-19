@@ -41,13 +41,13 @@ class PaymentsController extends AppController
                 'Classes' => ['Courses'],
                 'Payments',
             ])
-            ->order(['Bookings.booking_date' => 'DESC'])
+            ->orderBy(['Bookings.booking_date' => 'DESC'])
             ->all();
 
         $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
         $paymentProfiles = $paymentProfilesTable->find()
             ->where(['PaymentProfiles.user_id' => $identity->get('user_id')])
-            ->order([
+            ->orderBy([
                 'PaymentProfiles.is_default' => 'DESC',
                 'PaymentProfiles.updated_at' => 'DESC',
             ])

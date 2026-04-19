@@ -53,7 +53,10 @@ class BookingsController extends AppController
 
         $class = $classesTable->find()
             ->contain(['Courses', 'Teachers'])
-            ->where(['Classes.class_id' => $classId])
+            ->where([
+                'Classes.class_id' => $classId,
+                'Classes.class_status' => 'scheduled',
+            ])
             ->firstOrFail();
 
         $bookingsCount = $bookingsTable->find()

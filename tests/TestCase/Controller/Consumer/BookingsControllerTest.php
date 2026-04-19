@@ -19,6 +19,43 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertResponseContains('Book Class');
     }
 
+    public function testLiveTeacherRoleRedirectsConsumerSessionOutOfCustomerPortal(): void
+    {
+        $this->setUserRole(4, 'teacher');
+        $this->loginAsStudent();
+
+        $this->get('/consumer/bookings');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/teacher');
+        $this->assertSession('teacher', 'Auth.user_role');
+    }
+
+    public function testSuspendedCustomerAccountIsRedirectedToLogin(): void
+    {
+        $this->setUserAccountStatus(4, 'suspended');
+        $this->loginAsStudent();
+
+        $this->get('/consumer/bookings');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/login');
+    }
+
+    public function testCannotOpenBookingFormForCancelledClass(): void
+    {
+        $classes = FactoryLocator::get('Table')->get('Classes');
+        $class = $classes->get(1);
+        $class->class_status = 'cancelled';
+        $classes->saveOrFail($class);
+
+        $this->loginAsStudent();
+
+        $this->get('/consumer/bookings/add/1');
+
+        $this->assertResponseCode(404);
+    }
+
     public function testUnderageStudentCannotCancelBooking(): void
     {
         $this->setUserAgeVerifiedByAdmin(4, false);

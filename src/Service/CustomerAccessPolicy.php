@@ -65,12 +65,16 @@ final class CustomerAccessPolicy
             return false;
         }
 
-        if (is_object($record) && method_exists($record, 'get')) {
-            return true;
-        }
-
         if (is_array($record)) {
             return array_key_exists($field, $record);
+        }
+
+        if (is_object($record) && method_exists($record, 'has')) {
+            return $record->has($field);
+        }
+
+        if (is_object($record) && method_exists($record, 'get')) {
+            return $record->get($field) !== null;
         }
 
         return false;

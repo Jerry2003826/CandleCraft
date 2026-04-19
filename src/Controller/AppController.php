@@ -66,6 +66,33 @@ class AppController extends Controller
         return $this->redirect($this->dashboardRouteForRole($role));
     }
 
+    protected function syncAuthenticatedUserState(mixed $user): void
+    {
+        if (!is_object($user) || !method_exists($user, 'get')) {
+            return;
+        }
+
+        $session = $this->request->getSession();
+        $auth = (array)$session->read('Auth');
+
+        foreach ([
+            'user_id',
+            'email',
+            'username',
+            'user_role',
+            'account_status',
+            'age_verified_by_admin',
+            'self_declared_adult',
+        ] as $field) {
+            $value = $user->get($field);
+            if ($value !== null) {
+                $auth[$field] = $value;
+            }
+        }
+
+        $session->write('Auth', $auth);
+    }
+
     private function identityRole(mixed $identity): string
     {
         if (!is_object($identity) || !method_exists($identity, 'get')) {
