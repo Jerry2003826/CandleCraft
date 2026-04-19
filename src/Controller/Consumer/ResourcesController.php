@@ -59,7 +59,10 @@ class ResourcesController extends AppController
 
         $resource = $resourcesTable->find()
             ->contain(['Classes' => ['Courses']])
-            ->where(['LearningResources.resource_id' => $resourceId])
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.resource_status' => 'active',
+            ])
             ->firstOrFail();
 
         $studentIds = $this->getStudentIds($identity);
@@ -92,7 +95,10 @@ class ResourcesController extends AppController
         $identity = $this->Authentication->getIdentity();
         $resource = $this->fetchTable('LearningResources')->find()
             ->contain(['Classes' => ['Courses']])
-            ->where(['LearningResources.resource_id' => $resourceId])
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.resource_status' => 'active',
+            ])
             ->firstOrFail();
 
         $studentIds = $this->getStudentIds($identity);

@@ -21,7 +21,7 @@ class CoursesController extends AppController
                     'Classes.class_status IN' => ['scheduled', 'ongoing'],
                 ])
                 ->contain(['Teachers'])
-                ->order(['Classes.start_datetime' => 'ASC'])
+                ->orderBy(['Classes.start_datetime' => 'ASC'])
                 ->all();
 
             $classList = [];

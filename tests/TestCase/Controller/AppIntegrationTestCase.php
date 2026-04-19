@@ -15,6 +15,8 @@ abstract class AppIntegrationTestCase extends TestCase
         'app.Admins',
         'app.Teachers',
         'app.Students',
+        'app.Parents',
+        'app.ParentStudents',
         'app.Courses',
         'app.Classes',
         'app.Bookings',
@@ -43,6 +45,11 @@ abstract class AppIntegrationTestCase extends TestCase
         $email = $userId === 5 ? 'student-two@candlecraft.com' : 'student-one@candlecraft.com';
         $username = $userId === 5 ? 'student2' : 'student1';
         $this->session(['Auth' => $this->identity($userId, $email, 'student', $username)]);
+    }
+
+    protected function loginAsParent(int $userId = 6): void
+    {
+        $this->session(['Auth' => $this->identity($userId, 'parent-one@candlecraft.com', 'parent', 'parent1')]);
     }
 
     private function identity(int $userId, string $email, string $role, string $username): array

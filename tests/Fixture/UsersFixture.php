@@ -75,6 +75,19 @@ class UsersFixture extends TestFixture
                 'created_at' => '2026-04-01 09:00:00',
                 'updated_at' => '2026-04-01 09:00:00',
             ],
+            [
+                'user_id' => 6,
+                'username' => 'parent1',
+                'email' => 'parent-one@candlecraft.com',
+                'password_hash' => 'hashed-parent-1',
+                'user_role' => 'parent',
+                'account_status' => 'active',
+                'age_verified_by_admin' => true,
+                'self_declared_adult' => true,
+                'last_login_at' => null,
+                'created_at' => '2026-04-01 09:00:00',
+                'updated_at' => '2026-04-01 09:00:00',
+            ],
         ];
         parent::init();
     }

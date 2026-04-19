@@ -43,4 +43,29 @@ class PortalAccessRedirectTest extends AppIntegrationTestCase
         $this->assertSession(2, 'Auth.user_id');
         $this->assertSession('teacher', 'Auth.user_role');
     }
+
+    public function testParentAccessingAdminAreaIsRedirectedWithoutLogout(): void
+    {
+        $this->loginAsParent();
+
+        $this->get('/admin/dashboard');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/parent');
+        $this->assertRedirectNotContains('/login');
+        $this->assertSession(6, 'Auth.user_id');
+        $this->assertSession('parent', 'Auth.user_role');
+    }
+
+    public function testParentDashboardLoadsWithoutConsumerRedirectLoop(): void
+    {
+        $this->loginAsParent();
+
+        $this->get('/parent/dashboard');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Parent Dashboard');
+        $this->assertSession(6, 'Auth.user_id');
+        $this->assertSession('parent', 'Auth.user_role');
+    }
 }

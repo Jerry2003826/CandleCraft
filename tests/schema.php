@@ -380,4 +380,138 @@ if (!isset($schema['stripe_webhook_events'])) {
     ];
 }
 
+if (!isset($schema['parents'])) {
+    $schema['parents'] = [
+        'table' => 'parents',
+        'columns' => [
+            'parent_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+                'autoIncrement' => true,
+            ],
+            'user_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+            ],
+            'parent_name' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => false,
+                'default' => null,
+            ],
+            'phone_number' => [
+                'type' => 'string',
+                'length' => 30,
+                'null' => false,
+                'default' => null,
+            ],
+            'emergency_contact_name' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'emergency_contact_phone' => [
+                'type' => 'string',
+                'length' => 30,
+                'null' => true,
+                'default' => null,
+            ],
+            'address' => [
+                'type' => 'string',
+                'length' => 255,
+                'null' => true,
+                'default' => null,
+            ],
+            'created_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+            'updated_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'idx_parents_phone_number' => [
+                'type' => 'index',
+                'columns' => ['phone_number'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['parent_id'],
+            ],
+            'uk_parents_user_id' => [
+                'type' => 'unique',
+                'columns' => ['user_id'],
+            ],
+        ],
+    ];
+}
+
+if (!isset($schema['parent_students'])) {
+    $schema['parent_students'] = [
+        'table' => 'parent_students',
+        'columns' => [
+            'parent_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+            ],
+            'student_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+            ],
+            'relationship_to_student' => [
+                'type' => 'string',
+                'length' => 50,
+                'null' => false,
+                'default' => null,
+            ],
+            'is_primary_guardian' => [
+                'type' => 'boolean',
+                'null' => false,
+                'default' => false,
+            ],
+            'can_pick_up' => [
+                'type' => 'boolean',
+                'null' => false,
+                'default' => true,
+            ],
+            'created_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'idx_parent_students_student_id' => [
+                'type' => 'index',
+                'columns' => ['student_id'],
+            ],
+            'idx_parent_students_relationship' => [
+                'type' => 'index',
+                'columns' => ['relationship_to_student'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['parent_id', 'student_id'],
+            ],
+        ],
+    ];
+}
+
 return $schema;

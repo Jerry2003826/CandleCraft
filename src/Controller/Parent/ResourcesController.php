@@ -75,7 +75,10 @@ class ResourcesController extends AppController
             ->toArray();
 
         $resource = $this->fetchTable('LearningResources')->find()
-            ->where(['LearningResources.resource_id' => $resourceId])
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.resource_status' => 'active',
+            ])
             ->firstOrFail();
 
         $hasAccess = $studentIds !== [] && $this->fetchTable('Bookings')->exists([

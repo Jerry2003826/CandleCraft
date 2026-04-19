@@ -530,6 +530,16 @@ for ENV in dev production review; do
     mkdir -p "${PUB_DIR}"
     cp -r webroot/css webroot/js webroot/img "${PUB_DIR}/" 2>/dev/null || true
     mkdir -p "${PUB_DIR}/uploads"
+    mkdir -p "${PUB_DIR}/uploads/resources"
+    cat > "${PUB_DIR}/uploads/resources/.htaccess" <<'APACHEPROTECT'
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>
+Options -Indexes
+APACHEPROTECT
     cp webroot/favicon.ico "${PUB_DIR}/" 2>/dev/null || true
 
     cat > "${PUB_DIR}/index.php" <<PHPEOF

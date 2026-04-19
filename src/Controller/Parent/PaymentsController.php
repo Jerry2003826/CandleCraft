@@ -62,7 +62,7 @@ class PaymentsController extends AppController
                     'Classes' => ['Courses'],
                     'Payments',
                 ])
-                ->order(['Bookings.booking_date' => 'DESC'])
+                ->orderBy(['Bookings.booking_date' => 'DESC'])
                 ->all();
         }
 

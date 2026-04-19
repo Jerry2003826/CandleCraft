@@ -177,12 +177,7 @@ class ResourcesController extends AppController
     public function download(?int $resourceId = null): Response
     {
         $teacher = $this->getTeacher();
-        $resource = $this->fetchTable('LearningResources')->find()
-            ->where([
-                'LearningResources.resource_id' => $resourceId,
-                'LearningResources.uploaded_by_teacher_id' => $teacher->teacher_id,
-            ])
-            ->firstOrFail();
+        $resource = $this->getTeacherOwnedClassResource((int)$resourceId, (int)$teacher->teacher_id);
 
         if (!$resource->file_path) {
             throw new NotFoundException('No uploaded file is available for this resource.');
@@ -237,6 +232,17 @@ class ResourcesController extends AppController
         if (!$ownsClass) {
             throw new ForbiddenException('Class does not belong to this teacher.');
         }
+    }
+
+    private function getTeacherOwnedClassResource(int $resourceId, int $teacherId)
+    {
+        return $this->fetchTable('LearningResources')->find()
+            ->contain(['Classes'])
+            ->matching('Classes', function ($query) use ($teacherId) {
+                return $query->where(['Classes.teacher_id' => $teacherId]);
+            })
+            ->where(['LearningResources.resource_id' => $resourceId])
+            ->firstOrFail();
     }
 
     private function buildTeacherPayload(array $data): array

@@ -52,6 +52,7 @@ class DeploymentScriptsTest extends TestCase
         }
 
         $this->assertFileDoesNotExist($outputDir . '/database.sql');
+        $this->assertStringContainsString('Require all denied', (string)file_get_contents($outputDir . '/public_dev/uploads/resources/.htaccess'));
     }
 
     public function testDeployOneclickEmbedSecretsHandlesSpecialCharacterPasswords(): void
@@ -142,6 +143,7 @@ class DeploymentScriptsTest extends TestCase
         $this->assertStringContainsString('config/app_local.template.php', $deploymentReadme);
         $this->assertStringContainsString("/home/cpaneluser/dev_app/storage/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
         $this->assertStringContainsString("/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
+        $this->assertStringContainsString('Require all denied', (string)file_get_contents($outputDir . '/public_html_dev/uploads/resources/.htaccess'));
     }
 
     public function testCpanelDeployEmbedSecretsHandlesSpecialCharacterPasswords(): void

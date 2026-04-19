@@ -62,6 +62,48 @@ class ResourcesControllerTest extends AppIntegrationTestCase
         $this->assertStringContainsString('attachment', $this->_response->getHeaderLine('Content-Disposition'));
     }
 
+    public function testArchivedResourceCannotBeAccessedByDirectViewOrDownloadLinks(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $resources = FactoryLocator::get('Table')->get('LearningResources');
+        $resource = $resources->get(1);
+        $resource->resource_status = 'archived';
+        $resources->saveOrFail($resource);
+
+        $this->loginAsStudent();
+
+        $this->get('/consumer/resources/view/1');
+        $this->assertResponseCode(404);
+
+        $this->get('/consumer/resources/download/1');
+        $this->assertResponseCode(404);
+    }
+
+    public function testLinkResourceDownloadReturnsNotFound(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $resources = FactoryLocator::get('Table')->get('LearningResources');
+        $resource = $resources->get(1);
+        $resource->file_path = null;
+        $resource->resource_type = 'link';
+        $resource->resource_url = 'https://example.com/resource';
+        $resources->saveOrFail($resource);
+
+        $this->loginAsStudent();
+
+        $this->get('/consumer/resources/download/1');
+
+        $this->assertResponseCode(404);
+    }
+
     private function prepareResourceFile(string $fileName): void
     {
         file_put_contents($this->storageRoot . DIRECTORY_SEPARATOR . $fileName, "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n");
