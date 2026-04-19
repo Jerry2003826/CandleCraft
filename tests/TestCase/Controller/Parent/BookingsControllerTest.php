@@ -167,4 +167,23 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->assertSame('pending', $payment->payment_status);
         $this->assertSame('pending', $booking->booking_status);
     }
+
+    public function testParentDuplicateBookingMessageWinsOverFullClassOnPost(): void
+    {
+        $classes = FactoryLocator::get('Table')->get('Classes');
+        $class = $classes->get(1);
+        $class->capacity = 1;
+        $classes->saveOrFail($class);
+
+        $this->loginAsParent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/parent/bookings/add/1/1', [
+            'student_id' => 1,
+        ]);
+
+        $this->assertResponseCode(200);
+        $this->assertResponseContains('This student is already booked for this class.');
+    }
 }

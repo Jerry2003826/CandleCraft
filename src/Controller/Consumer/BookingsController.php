@@ -67,7 +67,7 @@ class BookingsController extends AppController
             ->count();
         $availableSlots = $class->capacity - $bookingsCount;
 
-        if ($availableSlots <= 0) {
+        if (!$this->request->is('post') && $availableSlots <= 0) {
             $this->Flash->error(__('This class is fully booked.'));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']);

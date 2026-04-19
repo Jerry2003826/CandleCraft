@@ -6,6 +6,7 @@ namespace App\Test\TestCase\Service;
 use App\Service\BookingService;
 use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\TestCase;
+use InvalidArgumentException;
 use RuntimeException;
 
 class BookingServiceTest extends TestCase
@@ -55,5 +56,17 @@ class BookingServiceTest extends TestCase
         $this->assertSame(1, $booking->booking_id);
         $this->assertSame('pending', $booking->booking_status);
         $this->assertSame(1, $booking->parent_id);
+    }
+
+    public function testExplicitInvalidAllowedStatusesFailFast(): void
+    {
+        $service = new BookingService();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('No valid class statuses were provided.');
+
+        $service->createBookingForStudent(1, 2, null, [
+            'allowedClassStatuses' => ['completed'],
+        ]);
     }
 }

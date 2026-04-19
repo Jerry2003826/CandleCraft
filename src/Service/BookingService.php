@@ -7,6 +7,7 @@ use Cake\Database\Driver\Mysql;
 use Cake\Datasource\FactoryLocator;
 use Cake\I18n\DateTime;
 use Cake\ORM\Locator\LocatorInterface;
+use InvalidArgumentException;
 use RuntimeException;
 
 class BookingService
@@ -29,11 +30,16 @@ class BookingService
     public function createBookingForStudent(int $classId, int $studentId, ?int $parentId = null, array $options = []): array
     {
         $connection = $this->bookingsTable->getConnection();
+        $hasExplicitAllowedStatuses = array_key_exists('allowedClassStatuses', $options);
         $allowedClassStatuses = array_values(array_intersect(
             array_map('strval', (array)($options['allowedClassStatuses'] ?? self::DEFAULT_ALLOWED_CLASS_STATUSES)),
             self::BOOKABLE_CLASS_STATUSES
         ));
         if ($allowedClassStatuses === []) {
+            if ($hasExplicitAllowedStatuses) {
+                throw new InvalidArgumentException('No valid class statuses were provided.');
+            }
+
             $allowedClassStatuses = self::DEFAULT_ALLOWED_CLASS_STATUSES;
         }
 
