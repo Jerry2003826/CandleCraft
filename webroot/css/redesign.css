@@ -834,6 +834,10 @@ body.redesign #portalSidebar .nav-link.active i {
     margin-top: auto;
 }
 
+.admin-nav-bottom .sidebar-action-form {
+    width: 100%;
+}
+
 .admin-nav-bottom .nav-link.logout {
     color: #EF4444;
 }

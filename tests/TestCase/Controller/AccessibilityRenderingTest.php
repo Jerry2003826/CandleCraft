@@ -68,7 +68,19 @@ class AccessibilityRenderingTest extends AppIntegrationTestCase
         $this->assertResponseContains('aria-pressed="false"');
         $this->assertResponseContains('aria-controls="adminSidebar"');
         $this->assertResponseContains('aria-label="Open admin navigation"');
+        $this->assertResponseContains('<span>Logout</span>');
+        $this->assertResponseNotContains('&lt;i class=&quot;bi bi-box-arrow-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;');
         $this->assertResponseNotContains('settingsPlaceholder');
+    }
+
+    public function testConsumerDashboardRendersUnescapedLogoutButtonMarkup(): void
+    {
+        $this->loginAsStudent();
+        $this->get('/consumer/dashboard');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('<span>Logout</span>');
+        $this->assertResponseNotContains('&lt;i class=&quot;bi bi-box-arrow-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;');
     }
 
     public function testAdminCoursesRemovesDeadViewToggleAndLabelsActions(): void

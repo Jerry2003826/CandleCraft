@@ -104,11 +104,11 @@ $this->Paginator->setTemplates([
                 </button>
                 <?= $this->Form->create(null, [
                     'url' => ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
-                    'class' => 'm-0',
+                    'class' => 'm-0 sidebar-action-form',
                 ]) ?>
                     <?= $this->Form->button('<i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>', [
                         'type' => 'submit',
-                        'escape' => false,
+                        'escapeTitle' => false,
                         'class' => 'nav-link nav-link--button logout',
                     ]) ?>
                 <?= $this->Form->end() ?>
