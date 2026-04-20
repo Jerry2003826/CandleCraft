@@ -285,25 +285,48 @@ run_cake() {
 
 database_table_exists() {
     local table_name="$1"
-    local db_name_literal table_name_literal result
-    db_name_literal="$(mysql_string_literal "$DB_NAME")"
-    table_name_literal="$(mysql_string_literal "$table_name")"
-    result="$(
-        MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
-            --host="$DB_HOST" \
-            --port="$DB_PORT" \
-            --user="$DB_USER" \
-            --batch \
-            --skip-column-names \
-            --execute="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${db_name_literal}' AND table_name = '${table_name_literal}'" \
-            2>/dev/null || true
-    )"
+    local result
+
+    if command_exists "$MYSQL_BIN"; then
+        local db_name_literal table_name_literal
+        db_name_literal="$(mysql_string_literal "$DB_NAME")"
+        table_name_literal="$(mysql_string_literal "$table_name")"
+        result="$(
+            MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
+                --host="$DB_HOST" \
+                --port="$DB_PORT" \
+                --user="$DB_USER" \
+                --batch \
+                --skip-column-names \
+                --execute="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${db_name_literal}' AND table_name = '${table_name_literal}'" \
+                2>/dev/null || true
+        )"
+    else
+        result="$(
+            "$PHP_BIN" -r '
+                [$host, $port, $dbName, $dbUser, $dbPass, $tableName] = array_slice($argv, 1);
+                $dsn = sprintf("mysql:host=%s;port=%s;dbname=information_schema;charset=utf8mb4", $host, $port);
+                $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]);
+                $statement = $pdo->prepare(
+                    "SELECT COUNT(*) FROM tables WHERE table_schema = :database AND table_name = :table"
+                );
+                $statement->execute([
+                    "database" => $dbName,
+                    "table" => $tableName,
+                ]);
+                echo (string)$statement->fetchColumn();
+            ' "$DB_HOST" "$DB_PORT" "$DB_NAME" "$DB_USER" "$DB_PASS" "$table_name" 2>/dev/null || true
+        )"
+    fi
 
     [ "$result" = "1" ]
 }
 
 bootstrap_base_schema_if_required() {
-    local schema_file db_name_identifier tmp_schema
+    local schema_file tmp_schema
 
     if ! is_true "$BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB"; then
         warn "Skipping base schema bootstrap because BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB=false"
@@ -314,8 +337,6 @@ bootstrap_base_schema_if_required() {
         info "Base schema already present; skipping empty-database bootstrap"
         return
     fi
-
-    command_exists "$MYSQL_BIN" || die "MySQL client not found: $MYSQL_BIN"
 
     schema_file="$APP_DIR/config/schema/academy_management_db.sql"
     [ -f "$schema_file" ] || die "Base schema snapshot not found: $schema_file"
@@ -331,12 +352,62 @@ bootstrap_base_schema_if_required() {
     ' "$schema_file" "$tmp_schema" "$DB_NAME"
 
     info "Bootstrapping empty database from config/schema/academy_management_db.sql"
-    MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
-        --host="$DB_HOST" \
-        --port="$DB_PORT" \
-        --user="$DB_USER" \
-        --database="$DB_NAME" \
-        < "$tmp_schema"
+
+    if command_exists "$MYSQL_BIN"; then
+        MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
+            --host="$DB_HOST" \
+            --port="$DB_PORT" \
+            --user="$DB_USER" \
+            --database="$DB_NAME" \
+            < "$tmp_schema"
+    else
+        "$PHP_BIN" -r '
+            [$schemaFile, $dbName, $dbHost, $dbPort, $dbUser, $dbPass] = array_slice($argv, 1);
+            $sql = file_get_contents($schemaFile);
+            if ($sql === false) {
+                fwrite(STDERR, "Could not read schema file.\n");
+                exit(1);
+            }
+
+            if (extension_loaded("mysqli")) {
+                mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+                $mysqli = mysqli_init();
+                $mysqli->real_connect($dbHost, $dbUser, $dbPass, $dbName, (int)$dbPort);
+                $mysqli->set_charset("utf8mb4");
+                $mysqli->multi_query($sql);
+                do {
+                    if ($result = $mysqli->store_result()) {
+                        $result->free();
+                    }
+                } while ($mysqli->more_results() && $mysqli->next_result());
+                $mysqli->close();
+                exit(0);
+            }
+
+            $pdo = new PDO(
+                sprintf("mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4", $dbHost, $dbPort, $dbName),
+                $dbUser,
+                $dbPass,
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                ]
+            );
+
+            $sql = preg_replace("/^\\s*--.*$/m", "", $sql);
+            $sql = preg_replace("/^\\s*#.*$/m", "", $sql);
+            $statements = preg_split("/;\\s*(?:\\r?\\n|$)/", $sql);
+
+            foreach ($statements as $statement) {
+                $statement = trim($statement);
+                if ($statement === "") {
+                    continue;
+                }
+                $pdo->exec($statement);
+            }
+        ' "$tmp_schema" "$DB_NAME" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASS"
+    fi
+
     rm -f "$tmp_schema"
     success "Base schema imported into ${DB_NAME}"
 }
