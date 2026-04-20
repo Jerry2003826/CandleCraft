@@ -362,9 +362,10 @@ sync_app_base_config() {
     resolved_base="$(resolve_app_base_path "$APP_BASE" "$APP_URL")"
 
     if [ -n "$resolved_base" ]; then
-        "$PHP_BIN" -r '
-            $file = $argv[1];
-            $base = $argv[2];
+        APP_CONFIG_FILE="$app_php_path" APP_CONFIG_BASE="$resolved_base" "$PHP_BIN" <<'PHP'
+<?php
+            $file = getenv('APP_CONFIG_FILE');
+            $base = getenv('APP_CONFIG_BASE');
             $contents = file_get_contents($file);
             if ($contents === false) {
                 fwrite(STDERR, "Could not read config/app.php\n");
@@ -373,9 +374,9 @@ sync_app_base_config() {
 
             $quote = chr(39);
             $replacement = $quote . "base" . $quote . " => " . var_export($base, true) . ",";
-            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*false\\s*,/", $replacement, $contents, 1, $count);
+            $updated = preg_replace("/'base'\\s*=>\\s*false\\s*,/", $replacement, $contents, 1, $count);
             if ($count === 0) {
-                $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1, $count);
+                $updated = preg_replace("/'base'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1, $count);
             }
 
             if ($count === 0) {
@@ -384,11 +385,12 @@ sync_app_base_config() {
             }
 
             file_put_contents($file, $updated);
-        ' "$app_php_path" "$resolved_base"
+PHP
         success "Set App.base to ${resolved_base} in config/app.php"
     else
-        "$PHP_BIN" -r '
-            $file = $argv[1];
+        APP_CONFIG_FILE="$app_php_path" "$PHP_BIN" <<'PHP'
+<?php
+            $file = getenv('APP_CONFIG_FILE');
             $contents = file_get_contents($file);
             if ($contents === false) {
                 fwrite(STDERR, "Could not read config/app.php\n");
@@ -397,14 +399,14 @@ sync_app_base_config() {
 
             $quote = chr(39);
             $replacement = $quote . "base" . $quote . " => false,";
-            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1);
+            $updated = preg_replace("/'base'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1);
             if ($updated === null) {
                 fwrite(STDERR, "Could not reset App.base in config/app.php\n");
                 exit(1);
             }
 
             file_put_contents($file, $updated);
-        ' "$app_php_path"
+PHP
         success "Set App.base to false in config/app.php"
     fi
 }
