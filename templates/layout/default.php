@@ -60,7 +60,6 @@ $appTitle = 'CandleCraft Academy';
             <p>&copy; <?= date('Y') ?> - CandleCraft Academy. All rights reserved.</p>
         </footer>
     </div>
-    <script src="/js/site-accessibility.js"></script>
-    <script src="/js/public-site.js"></script>
+    <?= $this->Html->script(['site-accessibility', 'public-site']) ?>
 </body>
 </html>

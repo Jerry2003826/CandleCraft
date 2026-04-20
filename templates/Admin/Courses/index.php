@@ -89,7 +89,7 @@ $courseList = is_object($courses) && method_exists($courses, 'items')
                                 'title' => 'Delete',
                                 'aria-label' => 'Delete ' . $course->course_name,
                                 'onclick' => "return confirm('Are you sure you want to delete this course?');",
-                                'escape' => false,
+                                'escapeTitle' => false,
                             ]) ?>
                         <?= $this->Form->end() ?>
                     </div>

@@ -8,6 +8,10 @@ $adminName = 'Admin';
 if ($identity) {
     $adminName = h($identity->get('username'));
 }
+$redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
+    ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
+    : (string)time();
+$redesignCssUrl = $this->Url->assetUrl('css/redesign.css') . '?v=' . $redesignCssVersion;
 
 // Bootstrap FormHelper templates
 $this->Form->setTemplates([
@@ -51,7 +55,7 @@ $this->Paginator->setTemplates([
     </script>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['admin-bootstrap', 'bootstrap-icons', 'admin']) ?>
-    <link rel="stylesheet" href="/css/redesign.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="<?= h($redesignCssUrl) ?>">
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
 </head>
@@ -170,9 +174,7 @@ $this->Paginator->setTemplates([
         </main>
     </div>
 
-    <script src="/js/site-accessibility.js"></script>
-    <script src="/js/admin-bootstrap.js"></script>
-    <script src="/js/admin-app.js"></script>
+    <?= $this->Html->script(['site-accessibility', 'admin-bootstrap', 'admin-app']) ?>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {

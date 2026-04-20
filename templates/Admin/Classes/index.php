@@ -90,7 +90,7 @@ $this->assign('title', 'Classes');
 	                                    'title' => 'Delete',
 	                                    'aria-label' => 'Delete class ' . $class->class_code,
 	                                    'onclick' => "return confirm('Delete this class?');",
-	                                    'escape' => false,
+	                                    'escapeTitle' => false,
 	                                ]) ?>
 	                            <?= $this->Form->end() ?>
 	                        </div>

@@ -14,7 +14,7 @@ $notificationList = is_object($notifications) && method_exists($notifications, '
     <?= $this->Form->create(null, ['url' => ['action' => 'markAllRead'], 'class' => 'm-0']) ?>
         <?= $this->Form->button(
             '<i class="bi bi-check2-all me-1"></i> Mark All Read',
-            ['class' => 'admin-btn-secondary', 'escape' => false]
+            ['class' => 'admin-btn-secondary', 'escapeTitle' => false]
         ) ?>
     <?= $this->Form->end() ?>
 </div>
@@ -57,7 +57,7 @@ $notificationList = is_object($notifications) && method_exists($notifications, '
                                 <?= $this->Form->create(null, ['url' => ['action' => 'markRead', $notification->id], 'class' => 'm-0']) ?>
                                     <?= $this->Form->button(
                                         '<i class="bi bi-check2"></i> Mark Read',
-                                        ['class' => 'admin-action-link view', 'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;', 'escape' => false, 'title' => 'Mark Read']
+                                        ['class' => 'admin-action-link view', 'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;', 'escapeTitle' => false, 'title' => 'Mark Read']
                                     ) ?>
                                 <?= $this->Form->end() ?>
                             </div>

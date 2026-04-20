@@ -85,7 +85,7 @@ $this->assign('title', 'Customers');
                                     'title' => 'Delete',
                                     'aria-label' => 'Delete ' . $student->student_name,
                                     'onclick' => "return confirm('Delete this customer?');",
-                                    'escape' => false,
+                                    'escapeTitle' => false,
                                 ]) ?>
                             <?= $this->Form->end() ?>
                         </div>

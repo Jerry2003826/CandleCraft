@@ -79,7 +79,7 @@ $this->assign('title', 'Teachers');
                                     'title' => 'Delete',
                                     'aria-label' => 'Delete ' . $teacher->teacher_name,
                                     'onclick' => "return confirm('Delete this teacher?');",
-                                    'escape' => false,
+                                    'escapeTitle' => false,
                                 ]) ?>
                             <?= $this->Form->end() ?>
                         </div>

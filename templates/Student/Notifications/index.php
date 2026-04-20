@@ -13,7 +13,7 @@ $notificationList = is_object($notifications) && method_exists($notifications, '
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Notifications</h5>
         <?= $this->Form->create(null, ['url' => ['action' => 'markAllRead'], 'class' => 'm-0']) ?>
-            <?= $this->Form->button('<i class="bi bi-check2-all me-1"></i> Mark All Read', ['class' => 'btn btn-sm btn-outline-primary', 'escape' => false]) ?>
+            <?= $this->Form->button('<i class="bi bi-check2-all me-1"></i> Mark All Read', ['class' => 'btn btn-sm btn-outline-primary', 'escapeTitle' => false]) ?>
         <?= $this->Form->end() ?>
     </div>
     <?php if ($notificationList === []): ?>
@@ -40,7 +40,7 @@ $notificationList = is_object($notifications) && method_exists($notifications, '
                         <?php if (!$notification->is_read): ?>
                             <div class="ms-3">
                                 <?= $this->Form->create(null, ['url' => ['action' => 'markRead', $notification->id], 'class' => 'm-0']) ?>
-                                    <?= $this->Form->button('<i class="bi bi-check2"></i>', ['class' => 'btn btn-sm btn-outline-secondary', 'escape' => false, 'title' => 'Mark Read', 'aria-label' => 'Mark notification "' . $notification->title . '" as read']) ?>
+                                    <?= $this->Form->button('<i class="bi bi-check2"></i>', ['class' => 'btn btn-sm btn-outline-secondary', 'escapeTitle' => false, 'title' => 'Mark Read', 'aria-label' => 'Mark notification "' . $notification->title . '" as read']) ?>
                                 <?= $this->Form->end() ?>
                             </div>
                         <?php endif; ?>

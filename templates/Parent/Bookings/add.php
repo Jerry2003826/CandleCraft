@@ -61,7 +61,7 @@ $this->assign('title', 'Book Class');
             ]) ?>
         </fieldset>
         <div class="d-flex gap-2 mt-3">
-            <?= $this->Form->button('<i class="bi bi-check-circle me-1"></i> Confirm Booking', ['class' => 'btn btn-primary', 'escape' => false]) ?>
+            <?= $this->Form->button('<i class="bi bi-check-circle me-1"></i> Confirm Booking', ['class' => 'btn btn-primary', 'escapeTitle' => false]) ?>
             <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-outline-secondary">Cancel</a>
         </div>
         <?= $this->Form->end() ?>

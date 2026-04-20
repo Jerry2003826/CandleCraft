@@ -91,7 +91,7 @@ $resourceList = is_object($resources) && method_exists($resources, 'items')
                                         'title' => 'Delete',
                                         'aria-label' => 'Delete ' . $resource->resource_name,
                                         'onclick' => "return confirm('Are you sure you want to delete this resource?');",
-                                        'escape' => false,
+                                        'escapeTitle' => false,
                                     ]) ?>
                                 <?= $this->Form->end() ?>
                             </div>

@@ -101,7 +101,7 @@ $this->assign('title', 'Enquiries');
                                         'title' => 'Delete',
                                         'aria-label' => 'Delete enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
                                         'onclick' => "return confirm('Are you sure you want to delete this enquiry?');",
-                                        'escape' => false,
+                                        'escapeTitle' => false,
                                     ]) ?>
                                 <?= $this->Form->end() ?>
                             </div>

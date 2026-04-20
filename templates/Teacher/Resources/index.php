@@ -79,7 +79,7 @@ $this->assign('title', 'Manage Learning Resources');
                                             'title' => 'Delete',
                                             'aria-label' => 'Delete ' . $resource->resource_name,
                                             'onclick' => "return confirm('Are you sure you want to delete this resource?');",
-                                            'escape' => false,
+                                            'escapeTitle' => false,
                                         ]) ?>
                                     <?= $this->Form->end() ?>
                                 </div>

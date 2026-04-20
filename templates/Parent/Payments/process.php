@@ -49,7 +49,7 @@ $this->assign('title', 'Payment');
         <?php if (!empty($stripeReady)): ?>
             <p class="text-muted mb-3">You will be redirected to Stripe's secure payment page.</p>
             <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
-            <?= $this->Form->button('<i class="bi bi-lock me-2"></i>Proceed to Secure Payment', ['class' => 'btn btn-primary w-100 py-2', 'escape' => false]) ?>
+            <?= $this->Form->button('<i class="bi bi-lock me-2"></i>Proceed to Secure Payment', ['class' => 'btn btn-primary w-100 py-2', 'escapeTitle' => false]) ?>
             <?= $this->Form->end() ?>
         <?php elseif (!empty($demoModeEnabled)): ?>
             <div class="alert alert-warning d-flex align-items-center">
@@ -57,7 +57,7 @@ $this->assign('title', 'Payment');
                 <div><strong>Demo Mode</strong> — Stripe is not configured for this environment, so the payment form is using an explicit local demo flow.</div>
             </div>
             <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
-            <?= $this->Form->button('<i class="bi bi-check-circle me-2"></i>Complete Demo Payment', ['class' => 'btn btn-primary w-100 py-2', 'escape' => false]) ?>
+            <?= $this->Form->button('<i class="bi bi-check-circle me-2"></i>Complete Demo Payment', ['class' => 'btn btn-primary w-100 py-2', 'escapeTitle' => false]) ?>
             <?= $this->Form->end() ?>
         <?php else: ?>
             <div class="alert alert-warning d-flex align-items-center mb-0">
