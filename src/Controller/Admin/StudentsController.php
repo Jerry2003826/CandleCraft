@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use Cake\Chronos\ChronosDate;
 use RuntimeException;
 
 class StudentsController extends AppController
@@ -181,6 +182,13 @@ class StudentsController extends AppController
             return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
 
+        $ageCheck = $this->evaluateAdultEligibility($student);
+        if (!$ageCheck['eligible']) {
+            $this->Flash->error($ageCheck['message']);
+
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
+        }
+
         $user = $usersTable->get($student->user->user_id);
         $user->age_verified_by_admin = true;
 
@@ -188,6 +196,40 @@ class StudentsController extends AppController
             $this->Flash->success(__('Adult verification recorded for {0}. Booking and payment features are now enabled.', $student->student_name));
         } else {
             $this->Flash->error(__('Could not verify age. Please try again.'));
+        }
+
+        return $this->redirect($this->referer(['action' => 'view', $id], true));
+    }
+
+    public function unverifyAge(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $studentsTable = $this->fetchTable('Students');
+        $usersTable = $this->fetchTable('Users');
+
+        $student = $studentsTable->get($id, contain: ['Users']);
+
+        if (!$student->user) {
+            $this->Flash->error(__('This student has no linked user account.'));
+
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
+        }
+
+        $user = $usersTable->get($student->user->user_id);
+
+        if (!$user->age_verified_by_admin) {
+            $this->Flash->warning(__('Adult verification is already cleared for {0}.', $student->student_name));
+
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
+        }
+
+        $user->age_verified_by_admin = false;
+
+        if ($usersTable->save($user)) {
+            $this->Flash->success(__('Adult verification has been removed for {0}. Booking and payment access are locked again.', $student->student_name));
+        } else {
+            $this->Flash->error(__('Could not remove adult verification. Please try again.'));
         }
 
         return $this->redirect($this->referer(['action' => 'view', $id], true));
@@ -223,5 +265,45 @@ class StudentsController extends AppController
         }
 
         return $fallback;
+    }
+
+    /**
+     * @param object $student
+     * @return array{eligible: bool, age: ?int, source: ?string, message: string}
+     */
+    private function evaluateAdultEligibility(object $student): array
+    {
+        if (!empty($student->date_of_birth)) {
+            $age = (int)$student->date_of_birth->diff(new ChronosDate())->y;
+
+            return [
+                'eligible' => $age >= 18,
+                'age' => $age,
+                'source' => 'date_of_birth',
+                'message' => $age >= 18
+                    ? ''
+                    : __('This customer cannot be verified as an adult because their date of birth shows they are only {0}.', $age),
+            ];
+        }
+
+        if ($student->declared_age !== null) {
+            $age = (int)$student->declared_age;
+
+            return [
+                'eligible' => $age >= 18,
+                'age' => $age,
+                'source' => 'declared_age',
+                'message' => $age >= 18
+                    ? ''
+                    : __('This customer cannot be verified as an adult because their declared age is {0}.', $age),
+            ];
+        }
+
+        return [
+            'eligible' => false,
+            'age' => null,
+            'source' => null,
+            'message' => __('This customer cannot be verified as an adult until a date of birth or declared age is recorded.'),
+        ];
     }
 }

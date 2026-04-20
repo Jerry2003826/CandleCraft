@@ -34,6 +34,8 @@ use Cake\View\Exception\MissingTemplateException;
  */
 class PagesController extends AppController
 {
+    private const RECAPTCHA_TEST_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
+
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -64,6 +66,7 @@ class PagesController extends AppController
             $messageText = trim((string)$this->request->getData('message_text'));
             $subject = trim((string)$this->request->getData('subject'));
             $messageSourcePage = $sourcePage;
+            $submittedAt = DateTime::now();
             $declaredAge = $this->normaliseDeclaredAge($this->request->getData('declared_age'));
             $selfDeclaredAdult = $requestAccount && !empty($this->request->getData('self_declared_adult'));
 
@@ -86,7 +89,8 @@ class PagesController extends AppController
                 'message_text' => $messageText,
                 'message_type' => 'contact_form',
                 'message_status' => 'unread',
-                'sent_at' => DateTime::now(),
+                'sent_at' => $submittedAt,
+                'updated_at' => $submittedAt,
             ];
             $enquiry = $messagesTable->newEntity($enquiryData, ['validate' => 'contactForm']);
 
@@ -213,6 +217,12 @@ class PagesController extends AppController
         $secretKey = (string)Configure::read('Recaptcha.secret_key');
         if ($secretKey === '') {
             return false;
+        }
+
+        // Google's published v2 test secret should short-circuit locally and in
+        // automated tests so enquiry submissions remain deterministic.
+        if (hash_equals(self::RECAPTCHA_TEST_SECRET_KEY, $secretKey)) {
+            return true;
         }
 
         try {

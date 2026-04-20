@@ -5,6 +5,18 @@
  */
 $this->assign('title', 'Student Details');
 $messageId = $this->request->getQuery('message');
+$calculatedAge = null;
+
+if ($student->date_of_birth) {
+    $calculatedAge = (int)$student->date_of_birth->diff(new \Cake\Chronos\ChronosDate())->y;
+}
+
+$effectiveAge = $calculatedAge ?? ($student->declared_age !== null ? (int)$student->declared_age : null);
+$canVerifyAdult = $effectiveAge !== null && $effectiveAge >= 18;
+$ageEvidenceLabel = $student->date_of_birth ? 'date of birth' : 'declared age';
+$verificationBlockedMessage = $effectiveAge === null
+    ? 'Admin verification is only available once a date of birth or declared age has been recorded for this customer.'
+    : 'Admin verification is only available when the recorded age is 18 or older. The current ' . $ageEvidenceLabel . ' indicates this customer is not eligible yet.';
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
@@ -148,7 +160,7 @@ $messageId = $this->request->getQuery('message');
             <?php if ($student->date_of_birth): ?>
                 <?php
                 $dob = $student->date_of_birth;
-                $age = (int)$dob->diff(new \Cake\Chronos\ChronosDate())->y;
+                $age = $calculatedAge;
                 ?>
                 <div class="d-flex align-items-center gap-2">
                     <span style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">Date of birth:</span>
@@ -164,14 +176,49 @@ $messageId = $this->request->getQuery('message');
             By clicking the button below, you confirm that you have verified this student is 18 years or older. This will <strong>enable booking and payment features</strong> for this user.
         </p>
 
+        <?php if ($canVerifyAdult): ?>
+            <?= $this->Form->postLink(
+                '<i class="bi bi-shield-check me-2"></i> Verify Adult Status & Enable Access',
+                ['action' => 'verifyAge', $student->student_id],
+                [
+                    'escape' => false,
+                    'class' => 'admin-btn-primary',
+                    'style' => 'background-color: #10B981; color: #FFFFFF; font-size: 15px; padding: 12px 24px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);',
+                    'confirm' => 'Are you sure you want to verify this student is 18+ and enable their booking and payment access?',
+                ]
+            ) ?>
+        <?php else: ?>
+            <div style="border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.28); background: rgba(239, 68, 68, 0.08); padding: 16px 18px; color: var(--admin-text-primary);">
+                <strong style="display: block; margin-bottom: 8px; color: #DC2626;">Verification blocked</strong>
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5;">
+                    <?= h($verificationBlockedMessage) ?>
+                </span>
+            </div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($student->user && $student->user->age_verified_by_admin): ?>
+    <div class="admin-form-card" style="max-width: 100%; padding: 32px; border: 1px solid rgba(16, 185, 129, 0.28); background-color: rgba(16, 185, 129, 0.06);">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background-color: rgba(16, 185, 129, 0.12); display: flex; justify-content: center; align-items: center;">
+                <i class="bi bi-shield-check" style="font-size: 20px; color: #10B981;"></i>
+            </div>
+            <h3 class="admin-form-title m-0" style="color: #047857; font-size: 18px;">Adult Verification Active</h3>
+        </div>
+
+        <p style="font-family: 'Inter', sans-serif; font-size: 15px; color: var(--admin-text-primary); line-height: 1.6; margin-bottom: 20px;">
+            Booking and payment are currently unlocked for this customer. Use the action below if the verification was recorded by mistake or needs to be removed.
+        </p>
+
         <?= $this->Form->postLink(
-            '<i class="bi bi-shield-check me-2"></i> Verify Adult Status & Enable Access',
-            ['action' => 'verifyAge', $student->student_id],
+            '<i class="bi bi-shield-x me-2"></i> Remove Adult Verification',
+            ['action' => 'unverifyAge', $student->student_id],
             [
                 'escape' => false,
-                'class' => 'admin-btn-primary',
-                'style' => 'background-color: #10B981; color: #FFFFFF; font-size: 15px; padding: 12px 24px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);',
-                'confirm' => 'Are you sure you want to verify this student is 18+ and enable their booking and payment access?',
+                'class' => 'admin-btn-secondary',
+                'style' => 'color: #B45309; border-color: rgba(180, 83, 9, 0.22); background-color: rgba(255, 255, 255, 0.7); font-size: 15px; padding: 12px 24px;',
+                'confirm' => 'Are you sure you want to remove adult verification and lock booking/payment access again?',
             ]
         ) ?>
     </div>

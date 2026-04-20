@@ -8,6 +8,45 @@ use Cake\Datasource\FactoryLocator;
 
 class PagesControllerCaptchaTest extends AppIntegrationTestCase
 {
+    public function testValidContactEnquiryWithTestRecaptchaAppearsInAdmin(): void
+    {
+        $messagesTable = FactoryLocator::get('Table')->get('Messages');
+        $before = $messagesTable->find()->count();
+
+        $this->enableCsrfToken();
+        $this->post('/contact', [
+            'sender_name' => 'Fresh Enquiry',
+            'sender_email' => 'fresh-enquiry@example.com',
+            'sender_phone' => '0400001234',
+            'subject' => 'General enquiry',
+            'message_text' => 'Can I book a pottery trial session?',
+            'source_page' => 'homepage',
+            'g-recaptcha-response' => 'test-token',
+            'website' => '',
+        ]);
+
+        $this->assertResponseCode(302);
+        $this->assertSame($before + 1, $messagesTable->find()->count());
+
+        $message = $messagesTable->find()
+            ->select(['message_type', 'message_status', 'source_page'])
+            ->where(['Messages.sender_email' => 'fresh-enquiry@example.com'])
+            ->orderBy(['Messages.message_id' => 'DESC'])
+            ->disableHydration()
+            ->firstOrFail();
+
+        $this->assertSame('contact_form', $message['message_type']);
+        $this->assertSame('unread', $message['message_status']);
+        $this->assertSame('homepage', $message['source_page']);
+
+        $this->loginAsAdmin();
+        $this->get('/admin/messages');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Fresh Enquiry');
+        $this->assertResponseContains('General enquiry');
+    }
+
     public function testMissingRecaptchaConfigDoesNotSaveMessage(): void
     {
         Configure::write('Recaptcha.secret_key', '');

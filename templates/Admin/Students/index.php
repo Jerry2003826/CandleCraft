@@ -72,6 +72,9 @@ $this->assign('title', 'Customers');
                     </td>
 	                    <td>
 	                        <div class="admin-action-links justify-content-end">
+                            <a href="<?= $this->Url->build(['action' => 'view', $student->student_id]) ?>" class="admin-action-link view" title="View" aria-label="View <?= h($student->student_name) ?>">
+                                <i class="bi bi-eye"></i>
+                            </a>
 	                            <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit <?= h($student->student_name) ?>">
 	                                <i class="bi bi-pencil"></i>
 	                            </a>

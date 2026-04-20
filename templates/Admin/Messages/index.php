@@ -5,6 +5,7 @@
  * @var string|null $status
  */
 $this->assign('title', 'Enquiries');
+$messageItems = method_exists($messages, 'items') ? $messages->items() : $messages;
 ?>
 
 <div class="admin-page-header">
@@ -33,10 +34,10 @@ $this->assign('title', 'Enquiries');
                 </tr>
             </thead>
             <tbody>
-                <?php if ($messages->isEmpty()): ?>
+                <?php if ($messageItems->isEmpty()): ?>
                     <tr><td colspan="8" class="text-center text-muted py-4">No enquiries found.</td></tr>
                 <?php else: ?>
-                    <?php foreach ($messages as $message): ?>
+                    <?php foreach ($messageItems as $message): ?>
                     <?php $isAccountRequest = $message->source_page === 'account-request'; ?>
                     <tr>
                         <td>
