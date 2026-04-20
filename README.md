@@ -55,6 +55,18 @@ Visit [http://localhost:8765](http://localhost:8765) and login:
 
 Change seeded credentials outside local development. Production deployments must provide a unique `SECURITY_SALT`, database password, Stripe secrets, reCAPTCHA secrets, and a non-default admin password.
 
+## Deployment
+
+For full production and shared-hosting deployment instructions, see:
+
+- [`docs/DEPLOYMENT_GUIDE_EN.md`](docs/DEPLOYMENT_GUIDE_EN.md)
+
+This guide covers:
+
+- standard Linux / VPS deployment with `scripts/server-deploy.sh`
+- cPanel deployment with `scripts/deploy-oneclick.sh` or `scripts/cpanel-deploy.sh`
+- post-deployment verification and troubleshooting
+
 ## One-Click Setup (Auto Detect OS)
 
 Use one cross-platform script for both macOS and Windows (also works on Linux).
