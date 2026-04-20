@@ -38,15 +38,15 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
 ?>
 
 <!-- Toolbar -->
-<div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
+<div class="admin-page-header d-flex justify-content-between align-items-center mb-4" data-view-toggle-managed="custom">
         <!-- Left: Date Nav -->
         <div id="calendarNav" class="d-flex align-items-center gap-3">
             <div class="d-flex align-items-center gap-2">
-                <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="admin-action-link view"><i class="bi bi-chevron-left"></i></a>
+                <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="admin-action-link view" aria-label="Show previous week"><i class="bi bi-chevron-left"></i></a>
                 <?php if (!$isCurrentWeek): ?>
                     <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $todayWeek]]) ?>" class="admin-tab" style="padding: 4px 12px; font-size: 13px;">Today</a>
                 <?php endif; ?>
-                <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="admin-action-link view"><i class="bi bi-chevron-right"></i></a>
+                <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="admin-action-link view" aria-label="Show next week"><i class="bi bi-chevron-right"></i></a>
             </div>
             <h2 class="admin-form-title m-0" style="font-size: 16px;"><?= h($weekStart->format('M j')) ?> — <?= h($weekEnd->format('M j, Y')) ?></h2>
         </div>
@@ -54,8 +54,12 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
         <!-- Right: View Toggle & Book Class -->
         <div class="d-flex align-items-center gap-3">
             <div class="admin-tabs">
-                <a href="#" class="admin-tab active sp-view-btn" data-view="calendar"><i class="bi bi-calendar-week"></i> Calendar</a>
-                <a href="#" class="admin-tab sp-view-btn" data-view="list"><i class="bi bi-list-ul"></i> List</a>
+                <button type="button" class="admin-tab active sp-view-btn" data-view="calendar" aria-pressed="true" aria-controls="calendarView">
+                    <i class="bi bi-calendar-week"></i> Calendar
+                </button>
+                <button type="button" class="admin-tab sp-view-btn" data-view="list" aria-pressed="false" aria-controls="listView">
+                    <i class="bi bi-list-ul"></i> List
+                </button>
             </div>
             <?php if ($bookingAccessEnabled): ?>
                 <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary" style="padding: 8px 16px; font-size: 13px;"><i class="bi bi-plus-circle me-1"></i> Open Booking System</a>
@@ -64,7 +68,7 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
     </div>
 
     <!-- ============ CALENDAR VIEW ============ -->
-    <div class="sp-view sp-view--calendar" id="calendarView">
+    <div class="sp-view sp-view--calendar" id="calendarView" tabindex="-1">
         <div class="wc-wrapper">
             <div class="wc-header">
                 <div class="wc-gutter-header"></div>
@@ -97,11 +101,21 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                 if ($durMin < 30) $durMin = 30;
                                 $startFmt = sprintf('%d:%02d', $ev['start_hour'], $ev['start_minute']);
                                 $endFmt = sprintf('%d:%02d', $ev['end_hour'], $ev['end_minute']);
+                                $eventLabelParts = [
+                                    $ev['title'],
+                                    $startFmt . ' to ' . $endFmt,
+                                    $ev['location'] ?? null,
+                                ];
+                                if (!empty($ev['attendance_status'])) {
+                                    $eventLabelParts[] = 'Attendance ' . ucfirst((string)$ev['attendance_status']);
+                                } elseif (!empty($ev['reminder_sent_at'])) {
+                                    $eventLabelParts[] = 'Reminder sent';
+                                }
                             ?>
                                 <a class="wc-evt"
                                    style="top: calc(<?= $topMin ?> * var(--wc-min-h)); height: calc(<?= $durMin ?> * var(--wc-min-h)); --evt-color: <?= h($ev['color']) ?>;"
                                    href="#booking-<?= $ev['booking_id'] ?>"
-                                   title="<?= h($ev['title']) ?>">
+                                   aria-label="<?= h(implode('. ', array_filter($eventLabelParts))) ?>">
                                     <strong class="wc-evt__title"><?= h($ev['title']) ?></strong>
                                     <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
                                     <span class="wc-evt__loc"><?= h($ev['location'] ?? '') ?></span>
@@ -129,7 +143,7 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
     </div>
 
     <!-- ============ LIST VIEW ============ -->
-    <div class="sp-view sp-view--list d-none" id="listView">
+    <div class="sp-view sp-view--list" id="listView" tabindex="-1" hidden>
         <?php if (empty($bookingList)): ?>
             <div class="admin-form-card text-center py-5 flex-grow-1 d-flex flex-column justify-content-center" style="max-width: 100%;">
                 <i class="bi bi-calendar-event text-muted" style="font-size: 48px;"></i>
@@ -239,7 +253,17 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                             <?php endif; ?>
                                         <?php endif; ?>
                                         <?php if (in_array($booking->booking_status, ['pending', 'confirmed'], true)): ?>
-                                            <?= $this->Form->postLink('Cancel', ['action' => 'cancel', $booking->booking_id], ['class' => 'admin-action-link delete', 'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;', 'confirm' => 'Cancel this booking?']) ?>
+                                            <?= $this->Form->create(null, [
+                                                'url' => ['action' => 'cancel', $booking->booking_id],
+                                                'class' => 'd-inline m-0',
+                                            ]) ?>
+                                                <?= $this->Form->button('Cancel', [
+                                                    'class' => 'admin-action-link delete',
+                                                    'style' => 'padding: 6px 12px; height: auto; width: auto; font-size: 12px;',
+                                                    'type' => 'submit',
+                                                    'onclick' => "return confirm('Cancel this booking?');",
+                                                ]) ?>
+                                            <?= $this->Form->end() ?>
                                         <?php endif; ?>
                                         <?php if ($isPaid): ?>
                                             <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'receipt', collection($booking->payments)->last()->payment_id]) ?>" class="admin-action-link view" style="padding: 6px 12px; height: auto; width: auto; font-size: 12px;">Receipt</a>
@@ -258,39 +282,48 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // View Toggle
     var viewBtns = document.querySelectorAll('.sp-view-btn');
     var listView = document.getElementById('listView');
     var calendarView = document.getElementById('calendarView');
     var calendarNav = document.getElementById('calendarNav');
+    var activeView = 'calendar';
+
+    function setView(view, shouldFocus) {
+        activeView = view;
+
+        viewBtns.forEach(function(btn) {
+            var isActive = btn.getAttribute('data-view') === view;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        var showCalendar = view === 'calendar';
+        calendarView.hidden = !showCalendar;
+        listView.hidden = showCalendar;
+
+        if (calendarNav) {
+            calendarNav.hidden = !showCalendar;
+        }
+
+        if (view === 'list') {
+            var url = new URL(window.location);
+            url.searchParams.delete('week_start');
+            window.history.replaceState({}, '', url);
+        }
+
+        if (shouldFocus) {
+            (showCalendar ? calendarView : listView).focus();
+        }
+    }
 
     viewBtns.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var view = this.getAttribute('data-view');
-            
-            // Update buttons
-            viewBtns.forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('.sp-view-btn[data-view="' + view + '"]').forEach(function(b) { b.classList.add('active'); });
-            
-            // Update views
-            if (view === 'list') {
-                listView.classList.remove('d-none');
-                calendarView.classList.add('d-none');
-                if (calendarNav) calendarNav.classList.add('d-none');
-                // Remove week_start from URL to make list view default on refresh
-                var url = new URL(window.location);
-                url.searchParams.delete('week_start');
-                window.history.replaceState({}, '', url);
-            } else {
-                listView.classList.add('d-none');
-                calendarView.classList.remove('d-none');
-                if (calendarNav) calendarNav.classList.remove('d-none');
-            }
+        btn.addEventListener('click', function() {
+            setView(this.getAttribute('data-view'), true);
         });
     });
 
-    // Scroll calendar to 8am
+    setView(activeView, false);
+
     var wcScroll = document.getElementById('wcScroll');
     if (wcScroll) {
         wcScroll.scrollTop = 0;

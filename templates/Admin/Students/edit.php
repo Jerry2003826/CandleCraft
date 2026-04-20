@@ -82,7 +82,7 @@ $this->assign('title', 'Edit Student');
             ?>
             <?php if ($linkedUser): ?>
                 <div class="admin-form-group mt-4 p-4" style="background-color: var(--admin-search-bg); border-radius: 12px;">
-                    <label class="admin-form-label" style="font-weight: 600;">Account & Age Verification</label>
+                    <h3 class="admin-form-label" style="font-weight: 600; margin-bottom: 12px;">Account & Age Verification</h3>
                     <div style="margin-bottom: 8px;">
                         <span style="color: var(--admin-text-secondary); font-size: 14px;">Account Status:</span> 
                         <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= h($linkedUser->account_status) ?></strong>

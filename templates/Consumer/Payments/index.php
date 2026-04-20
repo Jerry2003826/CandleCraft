@@ -45,9 +45,9 @@ foreach ($bookingList as $booking) {
     <div class="z-billing-header">
         <h1 class="z-billing-title">Billing</h1>
         <div class="z-billing-tabs">
-            <a href="#overview" class="z-billing-tab active" data-tab="overview">Overview</a>
-            <a href="#history" class="z-billing-tab" data-tab="history">Payment History</a>
-            <a href="#details" class="z-billing-tab" data-tab="details">Saved Details</a>
+            <button type="button" class="z-billing-tab active" data-tab="overview" aria-pressed="true" aria-controls="overview">Overview</button>
+            <button type="button" class="z-billing-tab" data-tab="history" aria-pressed="false" aria-controls="history">Payment History</button>
+            <button type="button" class="z-billing-tab" data-tab="details" aria-pressed="false" aria-controls="details">Saved Details</button>
         </div>
     </div>
 
@@ -68,28 +68,30 @@ foreach ($bookingList as $booking) {
                 </div>
             </div>
             <div class="z-billing-balance-actions">
-                <a href="#details" class="z-billing-btn-primary" onclick="document.querySelector('[data-tab=\'details\']').click()">Add payment details</a>
-                <a href="#history" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); text-decoration: none; margin-left: 16px;" onclick="document.querySelector('[data-tab=\'history\']').click()">View History</a>
+                <button type="button" class="z-billing-btn-primary" data-tab-trigger="details">Add payment details</button>
+                <button type="button" data-tab-trigger="history" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); text-decoration: none; margin-left: 16px; border: 0; background: transparent; padding: 0;">
+                    View History
+                </button>
             </div>
         </div>
 
         <div class="z-billing-grid">
-            <a href="#history" class="z-billing-grid-card" onclick="document.querySelector('[data-tab=\'history\']').click()">
+            <button type="button" class="z-billing-grid-card" data-tab-trigger="history">
                 <div class="z-billing-grid-icon"><i class="bi bi-clock-history"></i></div>
                 <div class="z-billing-grid-content">
                     <h3>Billing History</h3>
                     <p>View past and current bills</p>
                 </div>
                 <i class="bi bi-chevron-right z-billing-grid-arrow"></i>
-            </a>
-            <a href="#details" class="z-billing-grid-card" onclick="document.querySelector('[data-tab=\'details\']').click()">
+            </button>
+            <button type="button" class="z-billing-grid-card" data-tab-trigger="details">
                 <div class="z-billing-grid-icon"><i class="bi bi-credit-card"></i></div>
                 <div class="z-billing-grid-content">
                     <h3>Payment Methods</h3>
                     <p>Add or change payment method</p>
                 </div>
                 <i class="bi bi-chevron-right z-billing-grid-arrow"></i>
-            </a>
+            </button>
             <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="z-billing-grid-card">
                 <div class="z-billing-grid-icon"><i class="bi bi-journal-text"></i></div>
                 <div class="z-billing-grid-content">
@@ -101,7 +103,7 @@ foreach ($bookingList as $booking) {
         </div>
     </div>
 
-    <div id="history" class="z-billing-section">
+    <div id="history" class="z-billing-section" hidden>
         <h2 class="z-billing-section-title">Payment History</h2>
         
         <?php if ($bookingList === []): ?>
@@ -157,7 +159,7 @@ foreach ($bookingList as $booking) {
         <?php endif; ?>
     </div>
 
-    <div id="details" class="z-billing-section">
+    <div id="details" class="z-billing-section" hidden>
         <h2 class="z-billing-section-title">Saved Payment Methods</h2>
         
         <div class="row g-4">
@@ -197,21 +199,28 @@ foreach ($bookingList as $booking) {
                                 <div class="d-flex gap-3 mt-auto pt-3" style="border-top: 1px solid var(--admin-card-border);">
                                     <a href="<?= $this->Url->build(['action' => 'index', '?' => ['profile' => $profile->payment_profile_id]]) ?>#payment-details-form" class="admin-action-link edit" style="text-decoration: none; font-size: 13px;">Edit</a>
                                     <?php if (!$profile->is_default): ?>
-                                        <?= $this->Form->postLink(
-                                            'Set Default',
-                                            ['action' => 'setDefaultProfile', $profile->payment_profile_id],
-                                            ['class' => 'admin-action-link view', 'style' => 'text-decoration: none; font-size: 13px;']
-                                        ) ?>
+                                        <?= $this->Form->create(null, [
+                                            'url' => ['action' => 'setDefaultProfile', $profile->payment_profile_id],
+                                            'class' => 'd-inline m-0',
+                                        ]) ?>
+                                            <?= $this->Form->button('Set Default', [
+                                                'class' => 'admin-action-link view',
+                                                'style' => 'text-decoration: none; font-size: 13px;',
+                                                'type' => 'submit',
+                                            ]) ?>
+                                        <?= $this->Form->end() ?>
                                     <?php endif; ?>
-                                    <?= $this->Form->postLink(
-                                        'Archive',
-                                        ['action' => 'archiveProfile', $profile->payment_profile_id],
-                                        [
+                                    <?= $this->Form->create(null, [
+                                        'url' => ['action' => 'archiveProfile', $profile->payment_profile_id],
+                                        'class' => 'd-inline m-0',
+                                    ]) ?>
+                                        <?= $this->Form->button('Archive', [
                                             'class' => 'admin-action-link delete',
                                             'style' => 'text-decoration: none; font-size: 13px;',
-                                            'confirm' => 'Archive these payment details?',
-                                        ]
-                                    ) ?>
+                                            'type' => 'submit',
+                                            'onclick' => "return confirm('Archive these payment details?');",
+                                        ]) ?>
+                                    <?= $this->Form->end() ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -227,48 +236,49 @@ foreach ($bookingList as $booking) {
                     
                     <?= $this->Form->create($paymentProfile, [
                         'url' => $profileSaveUrl,
-                        'templates' => ['inputContainer' => '{{content}}'],
+                            'templates' => ['inputContainer' => '{{content}}'],
                     ]) ?>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">Billing Name</label>
-                                <?= $this->Form->control('billing_name', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-name">Billing Name</label>
+                                <?= $this->Form->control('billing_name', ['label' => false, 'id' => 'billing-name', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">Billing Email</label>
-                                <?= $this->Form->control('billing_email', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-email">Billing Email</label>
+                                <?= $this->Form->control('billing_email', ['label' => false, 'id' => 'billing-email', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-12">
-                                <label class="admin-form-label" style="font-size: 13px;">Preferred Payment Method</label>
+                                <label class="admin-form-label" style="font-size: 13px;" for="preferred-payment-method">Preferred Payment Method</label>
                                 <?= $this->Form->control('preferred_payment_method', [
                                     'label' => false,
+                                    'id' => 'preferred-payment-method',
                                     'options' => $preferredPaymentMethods,
                                     'class' => 'admin-form-select',
                                 ]) ?>
                             </div>
                             <div class="col-12">
-                                <label class="admin-form-label" style="font-size: 13px;">Billing Address Line 1</label>
-                                <?= $this->Form->control('billing_address_line1', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-address-line1">Billing Address Line 1</label>
+                                <?= $this->Form->control('billing_address_line1', ['label' => false, 'id' => 'billing-address-line1', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">City</label>
-                                <?= $this->Form->control('billing_city', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-city">City</label>
+                                <?= $this->Form->control('billing_city', ['label' => false, 'id' => 'billing-city', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">State</label>
-                                <?= $this->Form->control('billing_state', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-state">State</label>
+                                <?= $this->Form->control('billing_state', ['label' => false, 'id' => 'billing-state', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">Postcode</label>
-                                <?= $this->Form->control('billing_postcode', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-postcode">Postcode</label>
+                                <?= $this->Form->control('billing_postcode', ['label' => false, 'id' => 'billing-postcode', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;">Country</label>
-                                <?= $this->Form->control('billing_country', ['label' => false, 'class' => 'admin-form-input']) ?>
+                                <label class="admin-form-label" style="font-size: 13px;" for="billing-country">Country</label>
+                                <?= $this->Form->control('billing_country', ['label' => false, 'id' => 'billing-country', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-12 mt-3">
-                                <label style="display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer;">
-                                    <?= $this->Form->checkbox('is_default', ['hiddenField' => true, 'style' => 'accent-color: var(--admin-brand-icon);']) ?>
+                                <label for="is-default-profile" style="display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer;">
+                                    <?= $this->Form->checkbox('is_default', ['id' => 'is-default-profile', 'hiddenField' => true, 'style' => 'accent-color: var(--admin-brand-icon);']) ?>
                                     <span>Set as default payment details</span>
                                 </label>
                             </div>
@@ -292,21 +302,28 @@ foreach ($bookingList as $booking) {
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.z-billing-tab');
     const sections = document.querySelectorAll('.z-billing-section');
+    const tabTriggers = document.querySelectorAll('[data-tab-trigger]');
 
     function switchTab(tabId) {
         // Update tabs
-        tabs.forEach(t => t.classList.remove('active'));
+        tabs.forEach(t => {
+            t.classList.remove('active');
+            t.setAttribute('aria-pressed', 'false');
+        });
         const activeTab = document.querySelector(`.z-billing-tab[data-tab="${tabId}"]`);
-        if (activeTab) activeTab.classList.add('active');
+        if (activeTab) {
+            activeTab.classList.add('active');
+            activeTab.setAttribute('aria-pressed', 'true');
+        }
 
         // Update sections
         sections.forEach(s => {
-            s.style.display = 'none';
+            s.hidden = true;
             s.classList.remove('active-section');
         });
         const activeSection = document.getElementById(tabId);
         if (activeSection) {
-            activeSection.style.display = 'block';
+            activeSection.hidden = false;
             activeSection.classList.add('active-section');
         }
         
@@ -317,9 +334,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle tab clicks
     tabs.forEach(tab => {
         tab.addEventListener('click', function(e) {
-            e.preventDefault();
             const tabId = this.getAttribute('data-tab');
             switchTab(tabId);
+        });
+    });
+
+    tabTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab-trigger');
+            switchTab(tabId);
+            const targetTab = document.querySelector(`.z-billing-tab[data-tab="${tabId}"]`);
+            if (targetTab) {
+                targetTab.focus();
+            }
         });
     });
 
@@ -332,4 +359,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-

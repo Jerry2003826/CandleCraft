@@ -61,8 +61,8 @@ $originalDisplayText = trim((string)$originalDisplayText);
     
     <?= $this->Form->create(null, ['templates' => ['inputContainer' => '{{content}}']]) ?>
         <div style="margin-bottom: 24px;">
-            <label style="display: block; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: var(--admin-text-primary); margin-bottom: 8px;">Subject</label>
-            <input type="text" value="Re: <?= h($originalMessage->subject) ?>" disabled class="admin-form-input" style="background-color: var(--admin-search-bg); color: var(--admin-text-secondary); cursor: not-allowed; opacity: 0.8;">
+            <label for="reply-subject-display" style="display: block; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: var(--admin-text-primary); margin-bottom: 8px;">Subject</label>
+            <input id="reply-subject-display" type="text" value="Re: <?= h($originalMessage->subject) ?>" disabled class="admin-form-input" style="background-color: var(--admin-search-bg); color: var(--admin-text-secondary); cursor: not-allowed; opacity: 0.8;">
         </div>
         
         <div style="margin-bottom: 32px;">

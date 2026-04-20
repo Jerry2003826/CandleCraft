@@ -77,15 +77,22 @@ $this->assign('title', 'Classes');
                     </td>
 	                    <td>
 	                        <div class="admin-action-links justify-content-end">
-	                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-action-link edit" title="Edit">
+	                            <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit class <?= h($class->class_code) ?>">
 	                                <i class="bi bi-pencil"></i>
 	                            </a>
-	                            <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $class->class_id], [
-	                                'confirm' => __('Are you sure you want to delete {0}?', $class->class_code),
-	                                'class' => 'admin-action-link delete',
-	                                'title' => 'Delete',
-	                                'escape' => false
+	                            <?= $this->Form->create(null, [
+	                                'url' => ['action' => 'delete', $class->class_id],
+	                                'class' => 'd-inline m-0',
 	                            ]) ?>
+	                                <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+	                                    'class' => 'admin-action-link delete',
+	                                    'type' => 'submit',
+	                                    'title' => 'Delete',
+	                                    'aria-label' => 'Delete class ' . $class->class_code,
+	                                    'onclick' => "return confirm('Delete this class?');",
+	                                    'escape' => false,
+	                                ]) ?>
+	                            <?= $this->Form->end() ?>
 	                        </div>
 	                    </td>
                 </tr>
@@ -95,8 +102,8 @@ $this->assign('title', 'Classes');
     </div>
     
     <div class="admin-pagination">
-        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false, 'aria-label' => 'Previous page']) ?>
         <?= $this->Paginator->numbers(['escape' => false]) ?>
-        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>

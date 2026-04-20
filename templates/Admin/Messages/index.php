@@ -80,23 +80,30 @@ $this->assign('title', 'Enquiries');
                         </td>
                         <td>
                             <div class="admin-action-links justify-content-end">
-                                <a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="admin-action-link view" title="View">
+                                <a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="admin-action-link view" title="View" aria-label="View enquiry from <?= h($message->sender_name ?: $message->sender_email ?: 'customer') ?>">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 <?php if ($isAccountRequest): ?>
-                                    <a href="<?= $this->Url->build(['action' => 'createAccount', $message->message_id]) ?>" class="admin-action-link edit" title="Create Account">
+                                    <a href="<?= $this->Url->build(['action' => 'createAccount', $message->message_id]) ?>" class="admin-action-link edit" title="Create Account" aria-label="Create account from enquiry by <?= h($message->sender_name ?: $message->sender_email ?: 'customer') ?>">
                                         <i class="bi bi-person-plus"></i>
                                     </a>
                                 <?php endif; ?>
-                                <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply">
+                                <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply" aria-label="Reply to enquiry from <?= h($message->sender_name ?: $message->sender_email ?: 'customer') ?>">
                                     <i class="bi bi-reply"></i>
                                 </a>
-                                <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $message->message_id], [
-                                    'class' => 'admin-action-link delete',
-                                    'confirm' => __('Are you sure you want to delete this enquiry?'),
-                                    'title' => 'Delete',
-                                    'escape' => false
+                                <?= $this->Form->create(null, [
+                                    'url' => ['action' => 'delete', $message->message_id],
+                                    'class' => 'd-inline m-0',
                                 ]) ?>
+                                    <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+                                        'class' => 'admin-action-link delete',
+                                        'type' => 'submit',
+                                        'title' => 'Delete',
+                                        'aria-label' => 'Delete enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
+                                        'onclick' => "return confirm('Are you sure you want to delete this enquiry?');",
+                                        'escape' => false,
+                                    ]) ?>
+                                <?= $this->Form->end() ?>
                             </div>
                         </td>
                     </tr>
@@ -107,8 +114,8 @@ $this->assign('title', 'Enquiries');
     </div>
     
     <div class="admin-pagination">
-        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false, 'aria-label' => 'Previous page']) ?>
         <?= $this->Paginator->numbers(['escape' => false]) ?>
-        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>

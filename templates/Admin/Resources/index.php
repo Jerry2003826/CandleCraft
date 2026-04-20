@@ -6,13 +6,17 @@
  * @var string|null $filter
  */
 $this->assign('title', 'Learning Resources');
+$resourceList = is_object($resources) && method_exists($resources, 'items')
+    ? $resources->items()
+    : (is_array($resources) ? $resources : iterator_to_array($resources));
 ?>
 
 <div class="admin-page-header">
     <form method="get" class="d-flex gap-3 align-items-center flex-wrap">
         <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border);">
             <i class="bi bi-filter"></i>
-            <select name="class_id" onchange="this.form.submit()" style="border: none; background: transparent; outline: none; color: var(--admin-text-primary); font-family: 'Inter', sans-serif; font-size: 14px;">
+            <label for="resource-class-filter" class="visually-hidden">Filter resources by class</label>
+            <select id="resource-class-filter" name="class_id" onchange="this.form.submit()">
                 <option value="">All Classes</option>
                 <?php foreach ($classes as $class): ?>
                     <option value="<?= h($class->class_id) ?>" <?= $filter == $class->class_id ? 'selected' : '' ?>>
@@ -44,10 +48,10 @@ $this->assign('title', 'Learning Resources');
                 </tr>
             </thead>
             <tbody>
-                <?php if ($resources->isEmpty()): ?>
+                <?php if ($resourceList === []): ?>
                     <tr><td colspan="6" class="text-center text-muted py-4">No resources found.</td></tr>
                 <?php else: ?>
-                    <?php foreach ($resources as $resource): ?>
+                    <?php foreach ($resourceList as $resource): ?>
                     <tr>
                         <td>
                             <p class="admin-table-primary-text"><?= h($resource->resource_name) ?></p>
@@ -74,15 +78,22 @@ $this->assign('title', 'Learning Resources');
                         </td>
                         <td>
                             <div class="admin-action-links justify-content-end">
-                                <a href="<?= $this->Url->build(['action' => 'edit', $resource->resource_id]) ?>" class="admin-action-link edit" title="Edit">
+                                <a href="<?= $this->Url->build(['action' => 'edit', $resource->resource_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit <?= h($resource->resource_name) ?>">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $resource->resource_id], [
-                                    'class' => 'admin-action-link delete',
-                                    'confirm' => 'Are you sure you want to delete this resource?',
-                                    'title' => 'Delete',
-                                    'escape' => false
+                                <?= $this->Form->create(null, [
+                                    'url' => ['action' => 'delete', $resource->resource_id],
+                                    'class' => 'd-inline m-0',
                                 ]) ?>
+                                    <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+                                        'class' => 'admin-action-link delete',
+                                        'type' => 'submit',
+                                        'title' => 'Delete',
+                                        'aria-label' => 'Delete ' . $resource->resource_name,
+                                        'onclick' => "return confirm('Are you sure you want to delete this resource?');",
+                                        'escape' => false,
+                                    ]) ?>
+                                <?= $this->Form->end() ?>
                             </div>
                         </td>
                     </tr>

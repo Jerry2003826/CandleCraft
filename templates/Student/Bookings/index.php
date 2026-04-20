@@ -38,16 +38,16 @@ $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
     <div class="sp-toolbar">
         <div class="sp-toolbar__left">
             <div class="btn-group" role="group">
-                <button class="btn btn-sm btn-outline-secondary sp-view-btn active" data-view="calendar"><i class="bi bi-calendar-week"></i> Calendar</button>
-                <button class="btn btn-sm btn-outline-secondary sp-view-btn" data-view="list"><i class="bi bi-list-ul"></i> List</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary sp-view-btn active" data-view="calendar" aria-pressed="true" aria-controls="calendarView"><i class="bi bi-calendar-week"></i> Calendar</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary sp-view-btn" data-view="list" aria-pressed="false" aria-controls="listView"><i class="bi bi-list-ul"></i> List</button>
             </div>
         </div>
         <div class="sp-toolbar__center">
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></a>
+            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="btn btn-sm btn-outline-secondary" aria-label="Show previous week"><i class="bi bi-chevron-left"></i></a>
             <?php if (!$isCurrentWeek): ?>
                 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-sm btn-outline-primary">Today</a>
             <?php endif; ?>
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></a>
+            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="btn btn-sm btn-outline-secondary" aria-label="Show next week"><i class="bi bi-chevron-right"></i></a>
             <span class="sp-toolbar__title"><?= h($weekStart->format('M j')) ?> — <?= h($weekEnd->format('M j, Y')) ?></span>
         </div>
         <div class="sp-toolbar__right">
@@ -185,7 +185,16 @@ $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
                                         <span class="badge badge-read">Parent</span>
                                     <?php endif; ?>
                                     <?php if (in_array($booking->booking_status, ['pending', 'confirmed'])): ?>
-                                        <?= $this->Form->postLink('Cancel', ['action' => 'cancel', $booking->booking_id], ['class' => 'btn btn-sm btn-outline-danger', 'confirm' => 'Cancel this booking?']) ?>
+                                        <?= $this->Form->create(null, [
+                                            'url' => ['action' => 'cancel', $booking->booking_id],
+                                            'class' => 'd-inline m-0',
+                                        ]) ?>
+                                            <?= $this->Form->button('Cancel', [
+                                                'class' => 'btn btn-sm btn-outline-danger',
+                                                'type' => 'submit',
+                                                'onclick' => "return confirm('Cancel this booking?');",
+                                            ]) ?>
+                                        <?= $this->Form->end() ?>
                                     <?php endif; ?>
                                     <?php if ($isPaid): ?>
                                         <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'receipt', collection($booking->payments)->last()->payment_id]) ?>" class="btn btn-sm btn-outline-secondary">Receipt</a>

@@ -23,27 +23,18 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <div class="home-shell">
         <header class="hero-home">
-            <nav class="hero-nav" aria-label="Primary">
-                <a href="<?= h($homeUrl) ?>" class="brand-mark">
-                    <span class="brand-mark__title">CandleCraft Academy</span>
-                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Tutoring</span>
-                </a>
-                <div class="hero-nav__links">
-                    <a href="#overview">About</a>
-                    <div class="nav-dropdown">
-                        <a href="<?= h($coursesUrl) ?>">Courses</a>
-                        <div class="nav-dropdown__menu">
-                            <div class="nav-dropdown__menu-inner">
-                                <a href="<?= h($coursesUrl) ?>?type=pottery">Pottery</a>
-                                <a href="<?= h($coursesUrl) ?>?type=knitting">Knitting</a>
-                            </div>
-                        </div>
-                    </div>
-                    <a href="<?= h($contactUrl) ?>">Enquiry Form</a>
-                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
-                </div>
-            </nav>
+            <?= $this->element('public_nav', [
+                'homeUrl' => $homeUrl,
+                'coursesUrl' => $coursesUrl,
+                'contactUrl' => $contactUrl,
+                'loginUrl' => $loginUrl,
+                'showHomeLink' => false,
+                'contactLabel' => 'Enquiry Form',
+                'menuId' => 'home-courses-menu',
+            ]) ?>
+        </header>
 
+        <main id="main-content">
             <section class="hero-stage" aria-labelledby="landing-title">
                 <div class="hero-stage__grain" aria-hidden="true"></div>
                 <div class="hero-stage__halo hero-stage__halo--left" aria-hidden="true"></div>
@@ -57,11 +48,13 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                     </div>
                 </div>
             </section>
-        </header>
+        </main>
 
         <footer class="home-footer" role="contentinfo">
             <p>&copy; <?= date('Y') ?> CandleCraft Academy. All rights reserved.</p>
         </footer>
     </div>
+    <script src="/js/site-accessibility.js"></script>
+    <script src="/js/public-site.js"></script>
 </body>
 </html>

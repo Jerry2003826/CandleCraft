@@ -130,10 +130,10 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                         </td>
                         <td>
                             <div class="admin-action-links justify-content-end">
-                                <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-action-link view" title="View">
+                                <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-action-link view" title="View" aria-label="View booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="<?= $this->Url->build(['action' => 'edit', $booking->booking_id]) ?>" class="admin-action-link edit" title="Edit">
+                                <a href="<?= $this->Url->build(['action' => 'edit', $booking->booking_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             </div>
@@ -146,8 +146,8 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
     </div>
     
     <div class="admin-pagination">
-        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->prev('<i class="bi bi-chevron-left"></i>', ['escape' => false, 'aria-label' => 'Previous page']) ?>
         <?= $this->Paginator->numbers(['escape' => false]) ?>
-        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false]) ?>
+        <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>

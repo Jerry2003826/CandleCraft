@@ -66,15 +66,22 @@ $this->assign('title', 'Manage Learning Resources');
                             </td>
                             <td>
                                 <div class="admin-action-links justify-content-end">
-                                    <a href="<?= $this->Url->build(['action' => 'edit', $resource->resource_id]) ?>" class="admin-action-link edit" title="Edit">
+                                    <a href="<?= $this->Url->build(['action' => 'edit', $resource->resource_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit <?= h($resource->resource_name) ?>">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $resource->resource_id], [
-                                        'class' => 'admin-action-link delete',
-                                        'confirm' => 'Are you sure you want to delete this resource?',
-                                        'title' => 'Delete',
-                                        'escape' => false
+                                    <?= $this->Form->create(null, [
+                                        'url' => ['action' => 'delete', $resource->resource_id],
+                                        'class' => 'd-inline m-0',
                                     ]) ?>
+                                        <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+                                            'class' => 'admin-action-link delete',
+                                            'type' => 'submit',
+                                            'title' => 'Delete',
+                                            'aria-label' => 'Delete ' . $resource->resource_name,
+                                            'onclick' => "return confirm('Are you sure you want to delete this resource?');",
+                                            'escape' => false,
+                                        ]) ?>
+                                    <?= $this->Form->end() ?>
                                 </div>
                             </td>
                         </tr>

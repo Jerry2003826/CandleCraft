@@ -46,22 +46,24 @@ $this->Html->css('redesign.css?v=' . time(), ['block' => true]);
                 ]) ?>
 
                 <div class="login-field">
-                    <label class="login-label">Academy Email</label>
+                    <label class="login-label" for="email">Academy Email</label>
                     <?= $this->Form->email('email', [
                         'id' => 'email',
                         'placeholder' => 'email@candlecraft.com',
                         'required' => true,
-                        'class' => 'login-input'
+                        'class' => 'login-input',
+                        'autocomplete' => 'email',
                     ]) ?>
                 </div>
 
                 <div class="login-field">
-                    <label class="login-label">Password</label>
+                    <label class="login-label" for="password">Password</label>
                     <?= $this->Form->password('password', [
                         'id' => 'password',
                         'placeholder' => '••••••••',
                         'required' => true,
-                        'class' => 'login-input'
+                        'class' => 'login-input',
+                        'autocomplete' => 'current-password',
                     ]) ?>
                 </div>
 
@@ -69,7 +71,7 @@ $this->Html->css('redesign.css?v=' . time(), ['block' => true]);
                     <a href="<?= h($homeUrl) ?>" class="login-return-link">
                         Return to homepage
                     </a>
-                    <?= $this->Form->button(__('Sign In'), ['class' => 'login-submit-btn']) ?>
+                    <?= $this->Form->button(__('Sign In'), ['class' => 'login-submit-btn', 'type' => 'submit']) ?>
                 </div>
 
                 <?= $this->Form->end() ?>

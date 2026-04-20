@@ -5,7 +5,7 @@
 
 @font-face {
     font-family: 'Grown';
-    src: url('/fonts/Grown.ttf') format('truetype');
+    src: url('/font/Grown.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
@@ -172,11 +172,15 @@ textarea:focus-visible {
 }
 
 .hero-nav__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: rgba(245, 236, 223, 0.82);
     transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.hero-nav__links a:hover {
+.hero-nav__links a:hover,
+.hero-nav__links a:focus-visible {
     color: var(--home-text);
     transform: translateY(-1px);
 }
@@ -191,16 +195,56 @@ textarea:focus-visible {
     position: relative;
 }
 
+.nav-dropdown__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-dropdown__primary-link {
+    display: inline-flex;
+    align-items: center;
+}
+
+.nav-dropdown__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid rgba(240, 207, 156, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(245, 236, 223, 0.82);
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.nav-dropdown__toggle:hover,
+.nav-dropdown__toggle:focus-visible,
+.nav-dropdown__toggle[aria-expanded="true"] {
+    color: var(--home-text);
+    border-color: rgba(240, 207, 156, 0.62);
+    background: rgba(240, 207, 156, 0.12);
+    transform: translateY(-1px);
+}
+
+.nav-dropdown__toggle-icon {
+    font-size: 0.86rem;
+    line-height: 1;
+}
+
 .nav-dropdown__menu {
-    display: none;
     position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding-top: 12px;
-    min-width: 160px;
+    top: calc(100% + 12px);
+    left: 0;
+    min-width: 190px;
     z-index: 200;
-    white-space: nowrap;
+}
+
+.nav-dropdown__menu[hidden] {
+    display: none;
 }
 
 .nav-dropdown__menu-inner {
@@ -209,10 +253,6 @@ textarea:focus-visible {
     border-radius: 12px;
     padding: 8px 0;
     backdrop-filter: blur(12px);
-}
-
-.nav-dropdown:hover .nav-dropdown__menu {
-    display: block;
 }
 
 .nav-dropdown__menu-inner a {
@@ -224,9 +264,11 @@ textarea:focus-visible {
     text-transform: uppercase;
     text-align: center;
     transform: none !important;
+    border-radius: 8px;
 }
 
-.nav-dropdown__menu-inner a:hover {
+.nav-dropdown__menu-inner a:hover,
+.nav-dropdown__menu-inner a:focus-visible {
     color: var(--home-accent) !important;
     background: rgba(210, 154, 88, 0.1);
     transform: none !important;
@@ -352,6 +394,11 @@ textarea:focus-visible {
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
 }
 
+.button:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
 .button--solid {
     background: linear-gradient(135deg, var(--home-accent-soft) 0%, var(--home-accent) 100%);
     color: #2d190e;
@@ -378,6 +425,11 @@ textarea:focus-visible {
 }
 
 .btn-primary:hover {
+    background: var(--home-accent);
+    color: #2d190e;
+}
+
+.btn-primary:focus-visible {
     background: var(--home-accent);
     color: #2d190e;
 }
@@ -710,6 +762,28 @@ textarea:focus-visible {
     line-height: 1.7;
 }
 
+.course-category-link {
+    display: block;
+    text-decoration: none;
+}
+
+.course-category-card {
+    background: rgba(47, 34, 25, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    border: 1px solid rgba(210, 154, 88, 0.3);
+    padding: 56px 40px;
+    text-align: center;
+    box-shadow: var(--home-shadow);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.course-category-link:hover .course-category-card,
+.course-category-link:focus-visible .course-category-card {
+    border-color: rgba(210, 154, 88, 0.7);
+    transform: translateY(-4px);
+}
+
 
 /* ------------------------------------------------------------
    15. FLIP CARDS (COURSES)
@@ -729,51 +803,30 @@ textarea:focus-visible {
 .flip-card {
     width: 100%;
     max-width: 350px;
-    aspect-ratio: 1 / 1;
-    perspective: 1000px;
+    display: flex;
 }
 
-.flip-card-inner {
-    position: relative;
+.flip-card__content {
     width: 100%;
-    height: 100%;
-    transition: transform 0.6s ease;
-    transform-style: preserve-3d;
-}
-
-.flip-card:hover .flip-card-inner {
-    transform: rotateY(180deg);
-}
-
-.flip-card:hover .flip-card-front {
-    border-color: var(--home-accent-soft);
-    box-shadow: 0 0 30px rgba(210, 154, 88, 0.15);
-    transform: translateY(-5px);
-    transition: all 0.3s ease;
-}
-
-.flip-card-front,
-.flip-card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
     padding: 28px;
     border-radius: 16px;
     border: 2px solid rgba(210, 154, 88, 0.8);
     background: rgba(47, 34, 25, 0.85);
     backdrop-filter: blur(8px);
-    backface-visibility: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    min-height: 100%;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.flip-card-front {
-    background: rgba(47, 34, 25, 0.9);
-    font-family: var(--font-grown);
+.flip-card:hover .flip-card__content,
+.flip-card:focus-within .flip-card__content {
+    border-color: var(--home-accent-soft);
+    box-shadow: 0 0 30px rgba(210, 154, 88, 0.15);
+    transform: translateY(-5px);
 }
 
-.flip-card-front h3 {
+.flip-card__content h3 {
     font-family: var(--font-grown);
     font-size: 1.8rem;
     margin-bottom: 12px;
@@ -781,31 +834,48 @@ textarea:focus-visible {
     letter-spacing: 0.05em;
 }
 
-.flip-card-front p,
-.flip-card-front span {
-    font-family: var(--font-grown);
-    color: #d29a58 !important;
-    font-weight: 700;
-}
-
-.flip-card-front .overline {
+.flip-card__content .overline {
     color: var(--home-accent-soft) !important;
     font-weight: 700;
     letter-spacing: 0.2em;
 }
 
-.flip-card-back {
-    background: rgba(210, 154, 88, 0.15);
-    border-color: rgba(210, 154, 88, 1);
-    transform: rotateY(180deg);
-    text-align: center;
-    align-items: center;
-}
-
-.flip-card-back p {
+.flip-card__description {
+    margin: 0 0 24px;
     font-family: var(--font-grown);
     color: #f5ecdf;
-    line-height: 1.6;
+    line-height: 1.7;
+    flex: 1;
+}
+
+.flip-card__meta {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    border-top: 1px solid rgba(245, 236, 223, 0.2);
+    padding-top: 20px;
+}
+
+.flip-card__meta-label {
+    font-family: var(--font-grown);
+    font-size: 0.9rem;
+    color: #f5ecdf;
+    font-weight: 400;
+}
+
+.flip-card__meta-value {
+    font-family: var(--font-grown);
+    font-weight: 700;
+    color: var(--home-accent-soft);
+    font-size: 1.1rem;
+}
+
+.flip-card__actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-start;
 }
 
 

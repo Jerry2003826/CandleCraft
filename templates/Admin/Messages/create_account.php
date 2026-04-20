@@ -196,7 +196,7 @@ $this->assign('title', 'Create Account');
             </div>
             <div class="col-12">
                 <div class="admin-form-group mb-0">
-                    <label class="admin-form-label">Adult Verification Rule</label>
+                    <h4 class="admin-form-label" style="margin-bottom: 12px;">Adult Verification Rule</h4>
                     <div style="padding: 16px 18px; background-color: var(--admin-search-bg); border-radius: 12px;">
                         Customers created from requests can browse courses immediately, but booking and payment stay locked until an administrator confirms they are 18 or older from the linked student profile.
                     </div>

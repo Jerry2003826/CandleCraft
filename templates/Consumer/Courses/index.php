@@ -36,32 +36,36 @@ $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
 $showCalendar = $this->request->getQuery('week_start') !== null;
 ?>
 
-<div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
+<div class="admin-page-header d-flex justify-content-between align-items-center mb-4" data-view-toggle-managed="custom">
     <!-- Left: Date Nav (Calendar Only) or Title (List Only) -->
-    <div id="calendarNav" class="d-flex align-items-center gap-3 <?= !$showCalendar ? 'd-none' : '' ?>">
+    <div id="calendarNav" class="d-flex align-items-center gap-3" <?= $showCalendar ? '' : 'hidden' ?>>
         <div class="d-flex align-items-center gap-2">
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="admin-action-link view"><i class="bi bi-chevron-left"></i></a>
+            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="admin-action-link view" aria-label="Show previous week"><i class="bi bi-chevron-left"></i></a>
             <?php if (!$isCurrentWeek): ?>
                 <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $todayWeek]]) ?>" class="admin-tab" style="padding: 4px 12px; font-size: 13px;">Today</a>
             <?php endif; ?>
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="admin-action-link view"><i class="bi bi-chevron-right"></i></a>
+            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="admin-action-link view" aria-label="Show next week"><i class="bi bi-chevron-right"></i></a>
         </div>
         <h2 class="admin-form-title m-0" style="font-size: 16px;"><?= h($weekStart->format('M j')) ?> — <?= h($weekEnd->format('M j, Y')) ?></h2>
     </div>
     
-    <div id="listNav" class="<?= $showCalendar ? 'd-none' : '' ?>">
+    <div id="listNav" <?= $showCalendar ? 'hidden' : '' ?>>
         <h2 class="admin-form-title m-0" style="font-size: 18px;">Available Classes</h2>
     </div>
 
     <!-- Right: View Toggle -->
     <div class="admin-tabs">
-        <a href="#" class="admin-tab sp-view-btn <?= !$showCalendar ? 'active' : '' ?>" data-view="list"><i class="bi bi-list-ul"></i> List</a>
-        <a href="#" class="admin-tab sp-view-btn <?= $showCalendar ? 'active' : '' ?>" data-view="calendar"><i class="bi bi-calendar-week"></i> Calendar</a>
+        <button type="button" class="admin-tab sp-view-btn <?= !$showCalendar ? 'active' : '' ?>" data-view="list" aria-pressed="<?= !$showCalendar ? 'true' : 'false' ?>" aria-controls="listView">
+            <i class="bi bi-list-ul"></i> List
+        </button>
+        <button type="button" class="admin-tab sp-view-btn <?= $showCalendar ? 'active' : '' ?>" data-view="calendar" aria-pressed="<?= $showCalendar ? 'true' : 'false' ?>" aria-controls="calendarView">
+            <i class="bi bi-calendar-week"></i> Calendar
+        </button>
     </div>
 </div>
 
 <!-- ============ LIST VIEW ============ -->
-<div id="listView" class="<?= $showCalendar ? 'd-none' : '' ?>">
+<div id="listView" tabindex="-1" <?= $showCalendar ? 'hidden' : '' ?>>
     <?php if (empty($courseData)): ?>
         <div class="admin-form-card text-center py-5" style="max-width: 100%;">
             <i class="bi bi-palette text-muted" style="font-size: 48px;"></i>
@@ -185,7 +189,7 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
 </div>
 
 <!-- ============ CALENDAR VIEW ============ -->
-<div id="calendarView" class="<?= !$showCalendar ? 'd-none' : '' ?>">
+<div id="calendarView" tabindex="-1" <?= !$showCalendar ? 'hidden' : '' ?>>
     <div class="wc-wrapper">
         <div class="wc-header">
             <div class="wc-gutter-header"></div>
@@ -223,7 +227,9 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
                                 <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
                                 <span class="wc-evt__loc"><?= h($ev['available_slots']) ?> spots left</span>
                                 <?php if ($bookingAccessEnabled && $ev['available_slots'] > 0): ?>
-                                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'add', $ev['class_id']]) ?>" class="admin-btn-primary" style="padding: 2px 8px; font-size: 11px; width: fit-content; margin-top: 4px;">Book</a>
+                                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'add', $ev['class_id']]) ?>" class="admin-btn-primary" style="padding: 2px 8px; font-size: 11px; width: fit-content; margin-top: 4px;" aria-label="Book <?= h($ev['title']) ?> at <?= h($startFmt) ?>">
+                                        Book
+                                    </a>
                                 <?php elseif (!$bookingAccessEnabled): ?>
                                     <span style="font-size: 10px; color: #EF4444; margin-top: 4px;">Verification pending</span>
                                 <?php else: ?>
@@ -246,44 +252,53 @@ $showCalendar = $this->request->getQuery('week_start') !== null;
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // View Toggle
     var viewBtns = document.querySelectorAll('.sp-view-btn');
     var listView = document.getElementById('listView');
     var calendarView = document.getElementById('calendarView');
+    var calendarNav = document.getElementById('calendarNav');
+    var listNav = document.getElementById('listNav');
+    var activeView = <?= $showCalendar ? "'calendar'" : "'list'" ?>;
+
+    function setView(view, shouldFocus) {
+        activeView = view;
+
+        viewBtns.forEach(function(btn) {
+            var isActive = btn.getAttribute('data-view') === view;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        var showCalendarView = view === 'calendar';
+        listView.hidden = showCalendarView;
+        calendarView.hidden = !showCalendarView;
+
+        if (calendarNav) {
+            calendarNav.hidden = !showCalendarView;
+        }
+
+        if (listNav) {
+            listNav.hidden = showCalendarView;
+        }
+
+        if (view === 'list') {
+            var url = new URL(window.location);
+            url.searchParams.delete('week_start');
+            window.history.replaceState({}, '', url);
+        }
+
+        if (shouldFocus) {
+            (showCalendarView ? calendarView : listView).focus();
+        }
+    }
 
     viewBtns.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var view = this.getAttribute('data-view');
-            
-            // Update buttons
-            viewBtns.forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('.sp-view-btn[data-view="' + view + '"]').forEach(function(b) { b.classList.add('active'); });
-            
-            // Update views
-            var calendarNav = document.getElementById('calendarNav');
-            var listNav = document.getElementById('listNav');
-
-            if (view === 'list') {
-                listView.classList.remove('d-none');
-                calendarView.classList.add('d-none');
-                calendarNav.classList.add('d-none');
-                listNav.classList.remove('d-none');
-                
-                // Remove week_start from URL to make list view default on refresh
-                var url = new URL(window.location);
-                url.searchParams.delete('week_start');
-                window.history.replaceState({}, '', url);
-            } else {
-                listView.classList.add('d-none');
-                calendarView.classList.remove('d-none');
-                calendarNav.classList.remove('d-none');
-                listNav.classList.add('d-none');
-            }
+        btn.addEventListener('click', function() {
+            setView(this.getAttribute('data-view'), true);
         });
     });
 
-    // Scroll calendar to 8am
+    setView(activeView, false);
+
     var wcScroll = document.getElementById('wcScroll');
     if (wcScroll) {
         wcScroll.scrollTop = 0;

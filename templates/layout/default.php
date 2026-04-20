@@ -21,46 +21,37 @@ $appTitle = 'CandleCraft Academy';
 </head>
 <body class="site-home">
     <div class="home-shell">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
         <header class="hero-home hero-home--compact">
-            <nav class="hero-nav" aria-label="Primary">
-                <a href="<?= $this->Url->build('/') ?>" class="brand-mark">
-                    <span class="brand-mark__title">CandleCraft Academy</span>
-                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Tutoring</span>
-                </a>
-                <div class="hero-nav__links">
-                    <a href="<?= $this->Url->build('/') ?>">Home</a>
-                    <div class="nav-dropdown">
-                        <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>">Courses</a>
-                        <div class="nav-dropdown__menu">
-                            <div class="nav-dropdown__menu-inner">
-                                <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'pottery']]) ?>">Pottery</a>
-                                <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'knitting']]) ?>">Knitting</a>
-                            </div>
-                        </div>
-                    </div>
-                    <a href="<?= $this->Url->build(['controller' => 'Pages', 'action' => 'contact']) ?>">Enquire</a>
-                    <?php
-                    $identity = $this->request->getAttribute('identity');
-                    if ($identity):
-                        $role = $identity->get('user_role');
-                        $portalPrefix = match ($role) {
-                            'admin' => 'Admin',
-                            'teacher' => 'Teacher',
-                            'student' => 'Consumer',
-                            default => null,
-                        };
-                    ?>
-                        <?php if ($portalPrefix): ?>
-                            <a href="<?= $this->Url->build(['prefix' => $portalPrefix, 'controller' => 'Dashboard', 'action' => 'index']) ?>" class="hero-nav__login">My Portal</a>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="hero-nav__login">Log In</a>
-                    <?php endif; ?>
-                </div>
-            </nav>
+            <?php
+            $identity = $this->request->getAttribute('identity');
+            $portalUrl = null;
+            if ($identity) {
+                $role = $identity->get('user_role');
+                $portalPrefix = match ($role) {
+                    'admin' => 'Admin',
+                    'teacher' => 'Teacher',
+                    'student' => 'Consumer',
+                    default => null,
+                };
+                if ($portalPrefix) {
+                    $portalUrl = $this->Url->build(['prefix' => $portalPrefix, 'controller' => 'Dashboard', 'action' => 'index']);
+                }
+            }
+            echo $this->element('public_nav', [
+                'homeUrl' => $this->Url->build('/'),
+                'coursesUrl' => $this->Url->build(['controller' => 'Courses', 'action' => 'index']),
+                'contactUrl' => $this->Url->build(['controller' => 'Pages', 'action' => 'contact']),
+                'loginUrl' => $this->Url->build(['controller' => 'Users', 'action' => 'login']),
+                'portalUrl' => $portalUrl,
+                'showHomeLink' => true,
+                'contactLabel' => 'Enquire',
+                'menuId' => 'default-courses-menu',
+            ]);
+            ?>
         </header>
 
-        <main style="max-width: 1400px; margin: auto; padding: 0;">
+        <main id="main-content" style="max-width: 1400px; margin: auto; padding: 0;">
             <?= $this->Flash->render() ?>
             <?= $this->fetch('content') ?>
         </main>
@@ -69,5 +60,7 @@ $appTitle = 'CandleCraft Academy';
             <p>&copy; <?= date('Y') ?> - CandleCraft Academy. All rights reserved.</p>
         </footer>
     </div>
+    <script src="/js/site-accessibility.js"></script>
+    <script src="/js/public-site.js"></script>
 </body>
 </html>

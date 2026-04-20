@@ -81,7 +81,7 @@ $this->Paginator->setTemplates([
                 </div>
 
                 <!-- Navigation -->
-                <nav class="admin-nav">
+                <nav class="admin-nav" aria-label="<?= h($portalContext['title']) ?> sections">
                     <?php foreach ($portalContext['nav'] as $item): ?>
                         <?php
                         $isActive = $controller === $item['controller'];
@@ -91,7 +91,7 @@ $this->Paginator->setTemplates([
                         ?>
                         <a href="<?= $this->Url->build($item['url']) ?>"
                            class="nav-link <?= $isActive ? 'active' : '' ?>">
-                            <i class="<?= $item['icon'] ?>"></i><span><?= h($item['label']) ?></span>
+                            <i class="<?= $item['icon'] ?>" aria-hidden="true"></i><span><?= h($item['label']) ?></span>
                         </a>
                     <?php endforeach; ?>
                 </nav>
@@ -99,17 +99,19 @@ $this->Paginator->setTemplates([
 
             <!-- Footer -->
             <div class="admin-nav-bottom mt-auto pt-4">
-                <a href="#" class="nav-link" id="themeToggle">
-                    <i class="bi bi-moon"></i><span id="themeToggleText">Dark Mode</span>
-                </a>
-                <a href="#" class="nav-link" id="settingsPlaceholder">
-                    <i class="bi bi-gear"></i><span>Settings</span>
-                </a>
-                <?= $this->Form->postLink(
-                    '<i class="bi bi-box-arrow-right"></i><span>Logout</span>',
-                    ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
-                    ['escape' => false, 'class' => 'nav-link logout']
-                ) ?>
+                <button type="button" class="nav-link nav-link--button" id="themeToggle" aria-pressed="false">
+                    <i class="bi bi-moon" aria-hidden="true"></i><span id="themeToggleText">Dark Mode</span>
+                </button>
+                <?= $this->Form->create(null, [
+                    'url' => ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                    'class' => 'm-0',
+                ]) ?>
+                    <?= $this->Form->button('<i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>', [
+                        'type' => 'submit',
+                        'escape' => false,
+                        'class' => 'nav-link nav-link--button logout',
+                    ]) ?>
+                <?= $this->Form->end() ?>
             </div>
         </div>
     </aside>
@@ -119,14 +121,23 @@ $this->Paginator->setTemplates([
         <!-- Navbar -->
         <nav class="sidebar-navbar d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center gap-3">
-                <button class="sidebar-toggle-btn btn btn-sm btn-outline-secondary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#portalSidebar">
-                    <i class="bi bi-list"></i>
+                <button
+                    class="sidebar-toggle-btn btn btn-sm btn-outline-secondary d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#portalSidebar"
+                    aria-controls="portalSidebar"
+                    aria-expanded="false"
+                    aria-label="Open portal navigation"
+                >
+                    <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
                 <h1 class="page-title"><?= $this->fetch('title') ?></h1>
             </div>
             <div class="admin-header-actions">
                 <div class="d-flex align-items-center gap-3">
-                    <i class="bi bi-bell text-muted" style="font-size: 20px;"></i>
+                    <i class="bi bi-bell text-muted" style="font-size: 20px;" aria-hidden="true"></i>
+                    <span class="admin-user-label"><?= $displayName ?></span>
                     <div class="admin-avatar" title="<?= $displayName ?>"></div>
                 </div>
             </div>
@@ -139,14 +150,16 @@ $this->Paginator->setTemplates([
         </main>
     </div>
 
+    <script src="/js/site-accessibility.js"></script>
     <script src="/js/admin-bootstrap.js"></script>
     <script src="/js/admin-app.js"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const themeToggle = document.getElementById('themeToggle');
-        const settingsPlaceholder = document.getElementById('settingsPlaceholder');
         const sidebarScrollContainer = document.querySelector('[data-sidebar-scroll-key="portal-sidebar-scroll"]');
+        const sidebarToggle = document.querySelector('[data-bs-target="#portalSidebar"]');
+        const sidebarElement = document.getElementById('portalSidebar');
         if (themeToggle) {
             const themeToggleText = document.getElementById('themeToggleText');
             const themeToggleIcon = themeToggle.querySelector('i');
@@ -158,22 +171,20 @@ $this->Paginator->setTemplates([
                     themeToggleIcon.classList.remove('bi-moon');
                     themeToggleIcon.classList.add('bi-sun');
                     localStorage.setItem('admin-theme', 'dark');
+                    themeToggle.setAttribute('aria-pressed', 'true');
                 } else {
                     document.documentElement.removeAttribute('data-theme');
                     themeToggleText.textContent = 'Dark Mode';
                     themeToggleIcon.classList.remove('bi-sun');
                     themeToggleIcon.classList.add('bi-moon');
                     localStorage.setItem('admin-theme', 'light');
+                    themeToggle.setAttribute('aria-pressed', 'false');
                 }
             }
 
             // Initialize toggle state based on current theme
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            if (isDark) {
-                themeToggleText.textContent = 'Light Mode';
-                themeToggleIcon.classList.remove('bi-moon');
-                themeToggleIcon.classList.add('bi-sun');
-            }
+            setTheme(isDark);
 
             themeToggle.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -182,9 +193,12 @@ $this->Paginator->setTemplates([
             });
         }
 
-        if (settingsPlaceholder) {
-            settingsPlaceholder.addEventListener('click', (e) => {
-                e.preventDefault();
+        if (sidebarToggle && sidebarElement && window.bootstrap?.Offcanvas) {
+            sidebarElement.addEventListener('shown.bs.offcanvas', () => {
+                sidebarToggle.setAttribute('aria-expanded', 'true');
+            });
+            sidebarElement.addEventListener('hidden.bs.offcanvas', () => {
+                sidebarToggle.setAttribute('aria-expanded', 'false');
             });
         }
 

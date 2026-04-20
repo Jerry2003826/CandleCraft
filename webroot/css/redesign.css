@@ -8,10 +8,10 @@
 /* ---- Design System Tokens ---- */
 :root {
     /* Primary */
-    --rd-primary: #C0873A;
-    --rd-primary-hover: #A06E2A;
+    --rd-primary: #8A5A16;
+    --rd-primary-hover: #6F4710;
     --rd-primary-light: #FFF7ED;
-    --rd-primary-15: rgba(192, 135, 58, 0.15);
+    --rd-primary-15: rgba(138, 90, 22, 0.15);
 
     /* Neutral */
     --rd-bg: #FAFAFA;
@@ -38,7 +38,7 @@
     --rd-info-bg: #E6F7FF;
 
     /* Category: Pottery */
-    --rd-pottery: #C0873A;
+    --rd-pottery: #8A5A16;
     --rd-pottery-bg: #FFF7ED;
 
     /* Category: Knitting */
@@ -78,6 +78,42 @@ body.redesign {
     margin: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+body.redesign a:focus-visible,
+body.redesign button:focus-visible,
+body.redesign input:focus-visible,
+body.redesign select:focus-visible,
+body.redesign textarea:focus-visible {
+    outline: 3px solid rgba(138, 90, 22, 0.35);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* ---- Typography ---- */
@@ -194,6 +230,22 @@ body.redesign .rd-avatar {
     border-radius: 50%;
     background: var(--rd-primary);
     display: inline-block;
+}
+
+.admin-user-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--admin-text-primary);
+}
+
+.nav-link--button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    appearance: none;
 }
 
 /* ========================================
@@ -607,6 +659,7 @@ body.redesign .sidebar-main > main {
 
 .login-input:focus {
     border-color: var(--rd-primary);
+    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
 }
 
 .login-actions {
@@ -664,7 +717,7 @@ body.redesign .sidebar-main > main {
     --admin-sidebar-active: #374151;
     --admin-sidebar-text: #D1D5DB;
     --admin-sidebar-text-active: #FFFFFF;
-    --admin-brand-icon: #FBBF24;
+    --admin-brand-icon: #8A5A16;
     
     --admin-header-bg: #FFFFFF;
     --admin-header-border: #E5E7EB;
@@ -817,6 +870,8 @@ body.redesign .sidebar-navbar .page-title {
     background-color: var(--admin-search-bg);
     padding: 10px 16px;
     border-radius: 20px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .admin-search i {
@@ -831,10 +886,26 @@ body.redesign .sidebar-navbar .page-title {
     font-size: 14px;
     color: var(--admin-text-primary);
     outline: none;
+    min-width: 0;
+}
+
+.admin-search select {
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    outline: none;
+    min-width: 0;
 }
 
 .admin-search input::placeholder {
     color: var(--admin-search-text);
+}
+
+.admin-search:focus-within {
+    border-color: var(--rd-primary);
+    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
 }
 
 .admin-avatar {
@@ -1334,7 +1405,7 @@ body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar-thumb {
 .admin-form-select:focus,
 .admin-form-textarea:focus {
     border-color: var(--admin-brand-icon);
-    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
 }
 
 .admin-form-textarea {
@@ -1919,8 +1990,8 @@ body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar-thumb {
 }
 
 [data-theme="dark"] .admin-search:focus-within {
-    border-color: #F59E0B;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+    border-color: #C58A39;
+    box-shadow: 0 0 0 3px rgba(197, 138, 57, 0.2);
 }
 
 [data-theme="dark"] .admin-stat-icon {
@@ -3586,6 +3657,9 @@ body.redesign .wc-wrapper {
     text-decoration: none;
     position: relative;
     transition: color 0.2s;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
 }
 
 .z-billing-tab:hover {
@@ -3677,8 +3751,10 @@ body.redesign .wc-wrapper {
     font-size: 14px;
     font-weight: 500;
     border-radius: 24px;
+    border: 0;
     text-decoration: none;
     transition: opacity 0.2s;
+    cursor: pointer;
 }
 
 .z-billing-btn-primary:hover {
@@ -3702,6 +3778,9 @@ body.redesign .wc-wrapper {
     gap: 16px;
     text-decoration: none;
     transition: border-color 0.2s, background-color 0.2s;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
 }
 
 .z-billing-grid-card:hover {

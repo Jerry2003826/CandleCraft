@@ -11,18 +11,18 @@ $categoryColors = [
     'candle_making' => 'default',
     'candle making' => 'default',
 ];
+$courseList = is_object($courses) && method_exists($courses, 'items')
+    ? $courses->items()
+    : (is_array($courses) ? $courses : iterator_to_array($courses));
 ?>
 
 <div class="admin-page-header">
     <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border); max-width: 400px; width: 100%;">
         <i class="bi bi-search"></i>
-        <input type="text" placeholder="Search courses..." id="courseSearch" style="width: 100%;">
+        <label for="courseSearch" class="visually-hidden">Search courses</label>
+        <input type="text" placeholder="Search courses..." id="courseSearch" style="width: 100%;" aria-label="Search courses">
     </div>
     <div class="d-flex gap-3 align-items-center">
-        <div class="admin-tabs">
-            <a href="#" class="admin-tab active" id="gridViewBtn"><i class="bi bi-grid"></i> Grid</a>
-            <a href="#" class="admin-tab" id="listViewBtn"><i class="bi bi-list-ul"></i> List</a>
-        </div>
         <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
             <i class="bi bi-plus-lg"></i> Add Course
         </a>
@@ -30,7 +30,7 @@ $categoryColors = [
 </div>
 
 <div class="rd-course-grid" id="courseGrid">
-    <?php if (empty($courses) || (is_object($courses) && $courses->isEmpty())): ?>
+    <?php if ($courseList === []): ?>
         <div class="w-100 text-center py-5 text-muted">
             <p>No courses found.</p>
             <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary mt-2">
@@ -38,7 +38,7 @@ $categoryColors = [
             </a>
         </div>
     <?php else: ?>
-        <?php foreach ($courses as $course): ?>
+        <?php foreach ($courseList as $course): ?>
             <?php
             $type = strtolower($course->course_type ?? 'default');
             $colorKey = $categoryColors[$type] ?? 'default';
@@ -76,15 +76,22 @@ $categoryColors = [
                         </div>
                     </div>
                     <div class="admin-action-links mt-auto pt-3 border-top">
-                        <a href="<?= $this->Url->build(['action' => 'edit', $course->course_id]) ?>" class="admin-action-link edit" title="Edit">
+                        <a href="<?= $this->Url->build(['action' => 'edit', $course->course_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit <?= h($course->course_name) ?>">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <?= $this->Form->postLink('<i class="bi bi-trash"></i>', ['action' => 'delete', $course->course_id], [
-                            'class' => 'admin-action-link delete',
-                            'confirm' => 'Are you sure you want to delete this course?',
-                            'title' => 'Delete',
-                            'escape' => false
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'delete', $course->course_id],
+                            'class' => 'd-inline m-0',
                         ]) ?>
+                            <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+                                'class' => 'admin-action-link delete',
+                                'type' => 'submit',
+                                'title' => 'Delete',
+                                'aria-label' => 'Delete ' . $course->course_name,
+                                'onclick' => "return confirm('Are you sure you want to delete this course?');",
+                                'escape' => false,
+                            ]) ?>
+                        <?= $this->Form->end() ?>
                     </div>
                 </div>
             </div>

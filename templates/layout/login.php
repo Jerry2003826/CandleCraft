@@ -21,30 +21,20 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
 </head>
 <body class="site-home">
     <div class="home-shell">
+        <a href="#main-content" class="skip-link">Skip to main content</a>
         <header class="hero-home hero-home--compact">
-            <nav class="hero-nav" aria-label="Primary">
-                <a href="<?= h($homeUrl) ?>" class="brand-mark">
-                    <span class="brand-mark__title">CandleCraft Academy</span>
-                    <span class="brand-mark__subtitle">Pottery &amp; Knitting Tutoring</span>
-                </a>
-                <div class="hero-nav__links">
-                    <a href="<?= h($homeUrl) ?>">Home</a>
-                    <div class="nav-dropdown">
-                        <a href="<?= h($coursesUrl) ?>">Courses</a>
-                        <div class="nav-dropdown__menu">
-                            <div class="nav-dropdown__menu-inner">
-                                <a href="<?= h($coursesUrl) ?>?type=pottery">Pottery</a>
-                                <a href="<?= h($coursesUrl) ?>?type=knitting">Knitting</a>
-                            </div>
-                        </div>
-                    </div>
-                    <a href="<?= h($contactUrl) ?>">Enquire</a>
-                    <a href="<?= h($loginUrl) ?>" class="hero-nav__login">Login</a>
-                </div>
-            </nav>
+            <?= $this->element('public_nav', [
+                'homeUrl' => $homeUrl,
+                'coursesUrl' => $coursesUrl,
+                'contactUrl' => $contactUrl,
+                'loginUrl' => $loginUrl,
+                'showHomeLink' => true,
+                'contactLabel' => 'Enquire',
+                'menuId' => 'login-courses-menu',
+            ]) ?>
         </header>
 
-        <main style="max-width: 1100px; margin: 30px auto; padding: 0 20px;">
+        <main id="main-content" style="max-width: 1100px; margin: 30px auto; padding: 0 20px;">
             <?= $this->Flash->render() ?>
             <?= $this->fetch('content') ?>
         </main>
@@ -53,5 +43,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
             <p>&copy; <?= date('Y') ?> - CandleCraft Academy. All rights reserved.</p>
         </footer>
     </div>
+    <script src="/js/site-accessibility.js"></script>
+    <script src="/js/public-site.js"></script>
 </body>
 </html>

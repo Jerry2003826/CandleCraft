@@ -1,23 +1,21 @@
 /* CandleCraft Academy - Admin & Portal JS */
 document.addEventListener('DOMContentLoaded', function () {
-
-    /* Auto-hide flash alerts */
-    document.querySelectorAll('.alert[data-autohide]').forEach(function (el) {
-        setTimeout(function () {
-            var alert = bootstrap.Alert.getOrCreateInstance(el);
-            if (alert) alert.close();
-        }, 5000);
-    });
+    window.CandleCraftA11y?.init(document);
 
     /* ===== Schedule Page — View Toggle ===== */
     var viewBtns = document.querySelectorAll('.sp-view-btn');
     var calView = document.getElementById('calendarView');
     var listView = document.getElementById('listView');
 
-    if (viewBtns.length && calView && listView) {
+    if (document.querySelector('[data-view-toggle-managed="custom"]')) {
+        // Page-specific scripts handle these toggles.
+    } else if (viewBtns.length && calView && listView) {
         var savedView = localStorage.getItem('schedule_view');
+        initialiseViewButtons();
         if (savedView === 'list') {
             switchView('list');
+        } else {
+            switchView('calendar');
         }
 
         viewBtns.forEach(function (btn) {
@@ -29,17 +27,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function switchView(view) {
         if (!calView || !listView) return;
-        viewBtns.forEach(function (b) { b.classList.remove('active'); });
+        viewBtns.forEach(function (b) {
+            var isActive = b.dataset.view === view;
+            b.classList.toggle('active', isActive);
+            b.setAttribute('aria-pressed', String(isActive));
+        });
         if (view === 'list') {
             calView.classList.add('d-none');
             listView.classList.remove('d-none');
-            document.querySelector('[data-view="list"]')?.classList.add('active');
+            calView.hidden = true;
+            listView.hidden = false;
         } else {
             listView.classList.add('d-none');
             calView.classList.remove('d-none');
-            document.querySelector('[data-view="calendar"]')?.classList.add('active');
+            listView.hidden = true;
+            calView.hidden = false;
         }
         localStorage.setItem('schedule_view', view);
+    }
+
+    function initialiseViewButtons() {
+        viewBtns.forEach(function (btn) {
+            var targetId = btn.dataset.view === 'list' ? 'listView' : 'calendarView';
+            btn.setAttribute('aria-controls', targetId);
+            btn.setAttribute('aria-pressed', String(btn.classList.contains('active')));
+            if (btn.tagName === 'BUTTON' && !btn.getAttribute('type')) {
+                btn.setAttribute('type', 'button');
+            }
+        });
+
+        if (calView) {
+            calView.hidden = calView.classList.contains('d-none');
+        }
+        if (listView) {
+            listView.hidden = listView.classList.contains('d-none');
+        }
     }
 
     /* ===== Week Calendar — Scroll to current time / first event ===== */
@@ -61,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.wc-evt[title]').forEach(function (el) {
         new bootstrap.Tooltip(el, {
             placement: 'top',
-            trigger: 'hover',
+            trigger: 'hover focus',
         });
     });
 
