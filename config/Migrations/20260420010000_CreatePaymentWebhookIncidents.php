@@ -11,14 +11,16 @@ class CreatePaymentWebhookIncidents extends BaseMigration
             return;
         }
 
-        $table = $this->table('payment_webhook_incidents');
+        $table = $this->table('payment_webhook_incidents', [
+            'id' => 'incident_id',
+        ]);
         $table
             ->addColumn('event_type', 'string', [
                 'limit' => 100,
                 'null' => false,
             ])
             ->addColumn('session_id', 'string', [
-                'limit' => 120,
+                'limit' => 100,
                 'null' => false,
             ])
             ->addColumn('payment_id', 'biginteger', [

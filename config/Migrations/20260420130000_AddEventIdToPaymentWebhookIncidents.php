@@ -17,7 +17,6 @@ class AddEventIdToPaymentWebhookIncidents extends BaseMigration
             $table->addColumn('event_id', 'string', [
                 'limit' => 100,
                 'null' => true,
-                'after' => 'incident_id',
             ]);
         }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Service;
 
 use App\Service\StripeWebhookEventLedger;
-use Cake\Datasource\FactoryLocator;
 use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
 
@@ -20,8 +19,9 @@ class StripeWebhookEventLedgerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->ledger = new StripeWebhookEventLedger();
-        $this->eventsTable = FactoryLocator::get('Table')->get('StripeWebhookEvents');
+        $tableLocator = $this->getTableLocator();
+        $this->ledger = new StripeWebhookEventLedger($tableLocator);
+        $this->eventsTable = $tableLocator->get('StripeWebhookEvents');
     }
 
     public function testBeginProcessingCreatesNewProcessingRecord(): void
