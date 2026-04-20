@@ -320,7 +320,8 @@ sync_app_base_config() {
                 exit(1);
             }
 
-            $replacement = "'"'"'base'"'"' => " . var_export($base, true) . ",";
+            $quote = chr(39);
+            $replacement = $quote . "base" . $quote . " => " . var_export($base, true) . ",";
             $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*false\\s*,/", $replacement, $contents, 1, $count);
             if ($count === 0) {
                 $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1, $count);
@@ -343,7 +344,9 @@ sync_app_base_config() {
                 exit(1);
             }
 
-            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", "'"'"'base'"'"' => false,", $contents, 1);
+            $quote = chr(39);
+            $replacement = $quote . "base" . $quote . " => false,";
+            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1);
             if ($updated === null) {
                 fwrite(STDERR, "Could not reset App.base in config/app.php\n");
                 exit(1);
