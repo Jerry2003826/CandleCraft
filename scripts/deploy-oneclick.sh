@@ -666,6 +666,48 @@ EOF
     printf '%s' "$file_path"
 }
 
+database_has_users_table() {
+    local db_name="$1"
+    local db_name_literal result
+    db_name_literal="$(php -r "echo str_replace(\"'\", \"''\", \$argv[1]);" "$db_name")"
+    result="$(
+        mysql --defaults-extra-file="$defaults_file" --batch --skip-column-names \
+            --execute="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${db_name_literal}' AND table_name = 'users'" \
+            2>/dev/null || true
+    )"
+
+    [ "$result" = "1" ]
+}
+
+bootstrap_base_schema_if_needed() {
+    local env_name="$1"
+    local db_name="$2"
+    local schema_file tmp_schema
+
+    if database_has_users_table "$db_name"; then
+        return
+    fi
+
+    schema_file="${remote_home}/${env_name}_app/config/schema/academy_management_db.sql"
+    [ -f "$schema_file" ] || {
+        echo "Missing base schema snapshot: $schema_file" >&2
+        exit 1
+    }
+
+    tmp_schema="$(mktemp "${TMPDIR:-/tmp}/candlecraft-remote-schema.XXXXXX")"
+    php -r '
+        $schema = file_get_contents($argv[1]);
+        $dbName = str_replace("`", "``", $argv[3]);
+        $search = "CREATE DATABASE IF NOT EXISTS academy_management_db\n  CHARACTER SET utf8mb4\n  COLLATE utf8mb4_unicode_ci;\n\nUSE academy_management_db;";
+        $replace = "-- Database creation managed externally for deployment scripts\n\nUSE `{$dbName}`;";
+        $schema = str_replace($search, $replace, $schema);
+        file_put_contents($argv[2], $schema);
+    ' "$schema_file" "$tmp_schema" "$db_name"
+
+    mysql --defaults-extra-file="$defaults_file" "$db_name" < "$tmp_schema"
+    rm -f "$tmp_schema"
+}
+
 defaults_file="$(create_defaults_file)"
 trap 'rm -f "$defaults_file"' EXIT
 
@@ -675,6 +717,8 @@ for env in dev production review; do
 done
 
 for env in dev production review; do
+    db_name="${cpanel_user}_${env}_db"
+    bootstrap_base_schema_if_needed "$env" "$db_name"
     (cd "${remote_home}/${env}_app" && php bin/cake.php migrations migrate)
 done
 REMOTE_SCRIPT
@@ -682,7 +726,7 @@ success "Remote databases prepared and migrations applied"
 
 if [ "$CLONE_LOCAL_DATA" = true ]; then
     step "Step 6/7: Cloning local database into selected remote targets"
-    DUMP_FILE="$(mktemp "${TMPDIR:-/tmp}/candlecraft-clone-data.XXXXXX.sql")"
+    DUMP_FILE="$(mktemp "${TMPDIR:-/tmp}/candlecraft-clone-data.XXXXXX")"
     register_temp_path "${DUMP_FILE}"
     export_local_database_dump "${DUMP_FILE}"
     scp_upload "${DUMP_FILE}" "${REMOTE_HOME}/clone-data.sql"

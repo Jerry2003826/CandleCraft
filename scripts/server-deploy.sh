@@ -25,11 +25,14 @@ set -Eeuo pipefail
 #   STRIPE_WEBHOOK_SECRET='whsec_xxx' \
 #   RECAPTCHA_SITE_KEY='site-key' \
 #   RECAPTCHA_SECRET_KEY='secret-key' \
+#   RUN_DEMO_DATA_SEED=true \
+#   DEMO_SEED_PASSWORD='admin123' \
 #   bash scripts/server-deploy.sh
 
 APP_DIR="${APP_DIR:-$(pwd)}"
 PHP_BIN="${PHP_BIN:-php}"
 COMPOSER_BIN="${COMPOSER_BIN:-composer}"
+MYSQL_BIN="${MYSQL_BIN:-mysql}"
 
 APP_URL="${APP_URL:-https://example.com}"
 DEBUG_DEFAULT="${DEBUG_DEFAULT:-false}"
@@ -64,9 +67,13 @@ RUN_COMPOSER_INSTALL="${RUN_COMPOSER_INSTALL:-true}"
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 RUN_ADMIN_SEED="${RUN_ADMIN_SEED:-false}"
 ADMIN_SEED_PASSWORD="${ADMIN_SEED_PASSWORD:-}"
+RUN_DEMO_DATA_SEED="${RUN_DEMO_DATA_SEED:-false}"
+DEMO_SEED_PASSWORD="${DEMO_SEED_PASSWORD:-}"
+DEMO_SEED_RESET_EXISTING="${DEMO_SEED_RESET_EXISTING:-false}"
 
 CLEAR_CACHE_DIRECTORIES="${CLEAR_CACHE_DIRECTORIES:-true}"
 BACKUP_EXISTING_CONFIG="${BACKUP_EXISTING_CONFIG:-true}"
+BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB="${BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB:-true}"
 
 APP_OWNER="${APP_OWNER:-}"
 APP_GROUP="${APP_GROUP:-}"
@@ -100,7 +107,7 @@ command_exists() {
 }
 
 is_true() {
-    case "${1,,}" in
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
         1|true|yes|y|on) return 0 ;;
         *) return 1 ;;
     esac
@@ -139,6 +146,14 @@ generate_salt() {
     fi
 
     "$PHP_BIN" -r 'echo bin2hex(random_bytes(32));'
+}
+
+mysql_string_literal() {
+    "$PHP_BIN" -r "echo str_replace(\"'\", \"''\", \$argv[1]);" "$1"
+}
+
+mysql_identifier_literal() {
+    "$PHP_BIN" -r 'echo str_replace("`", "``", $argv[1]);' "$1"
 }
 
 ensure_directory() {
@@ -268,6 +283,64 @@ run_cake() {
     "$PHP_BIN" "$APP_DIR/bin/cake.php" "$@"
 }
 
+database_table_exists() {
+    local table_name="$1"
+    local db_name_literal table_name_literal result
+    db_name_literal="$(mysql_string_literal "$DB_NAME")"
+    table_name_literal="$(mysql_string_literal "$table_name")"
+    result="$(
+        MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
+            --host="$DB_HOST" \
+            --port="$DB_PORT" \
+            --user="$DB_USER" \
+            --batch \
+            --skip-column-names \
+            --execute="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${db_name_literal}' AND table_name = '${table_name_literal}'" \
+            2>/dev/null || true
+    )"
+
+    [ "$result" = "1" ]
+}
+
+bootstrap_base_schema_if_required() {
+    local schema_file db_name_identifier tmp_schema
+
+    if ! is_true "$BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB"; then
+        warn "Skipping base schema bootstrap because BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB=false"
+        return
+    fi
+
+    if database_table_exists "users"; then
+        info "Base schema already present; skipping empty-database bootstrap"
+        return
+    fi
+
+    command_exists "$MYSQL_BIN" || die "MySQL client not found: $MYSQL_BIN"
+
+    schema_file="$APP_DIR/config/schema/academy_management_db.sql"
+    [ -f "$schema_file" ] || die "Base schema snapshot not found: $schema_file"
+
+    tmp_schema="$(mktemp "${TMPDIR:-/tmp}/candlecraft-base-schema.XXXXXX")"
+    "$PHP_BIN" -r '
+        $schema = file_get_contents($argv[1]);
+        $dbName = str_replace("`", "``", $argv[3]);
+        $search = "CREATE DATABASE IF NOT EXISTS academy_management_db\n  CHARACTER SET utf8mb4\n  COLLATE utf8mb4_unicode_ci;\n\nUSE academy_management_db;";
+        $replace = "-- Database creation managed externally for deployment scripts\n\nUSE `{$dbName}`;";
+        $schema = str_replace($search, $replace, $schema);
+        file_put_contents($argv[2], $schema);
+    ' "$schema_file" "$tmp_schema" "$DB_NAME"
+
+    info "Bootstrapping empty database from config/schema/academy_management_db.sql"
+    MYSQL_PWD="$DB_PASS" "$MYSQL_BIN" \
+        --host="$DB_HOST" \
+        --port="$DB_PORT" \
+        --user="$DB_USER" \
+        --database="$DB_NAME" \
+        < "$tmp_schema"
+    rm -f "$tmp_schema"
+    success "Base schema imported into ${DB_NAME}"
+}
+
 main() {
     [ -d "$APP_DIR" ] || die "APP_DIR does not exist: $APP_DIR"
     cd "$APP_DIR"
@@ -333,6 +406,7 @@ main() {
     success "Updated writable directory permissions"
 
     if is_true "$RUN_MIGRATIONS"; then
+        bootstrap_base_schema_if_required
         info "Running database migrations"
         run_cake migrations migrate
         success "Database migrations completed"
@@ -340,7 +414,24 @@ main() {
         warn "Skipping migrations because RUN_MIGRATIONS=false"
     fi
 
-    if is_true "$RUN_ADMIN_SEED"; then
+    if is_true "$RUN_DEMO_DATA_SEED"; then
+        local demo_seed_password
+        demo_seed_password="${DEMO_SEED_PASSWORD:-$ADMIN_SEED_PASSWORD}"
+
+        if is_true "$RUN_ADMIN_SEED"; then
+            warn "RUN_ADMIN_SEED is ignored because RUN_DEMO_DATA_SEED=true already seeds the admin account."
+        fi
+
+        if [ -z "$demo_seed_password" ]; then
+            warn "DEMO_SEED_PASSWORD is not set. DemoDataSeed will use the default demo password: admin123"
+        fi
+
+        info "Running DemoDataSeed"
+        DEMO_SEED_PASSWORD="$demo_seed_password" \
+            DEMO_SEED_RESET_EXISTING="$DEMO_SEED_RESET_EXISTING" \
+            run_cake seeds run DemoDataSeed -q
+        success "DemoDataSeed completed"
+    elif is_true "$RUN_ADMIN_SEED"; then
         require_value "ADMIN_SEED_PASSWORD" "$ADMIN_SEED_PASSWORD"
         info "Running AdminSeed"
         ADMIN_SEED_PASSWORD="$ADMIN_SEED_PASSWORD" run_cake seeds run AdminSeed -q

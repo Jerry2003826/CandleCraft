@@ -81,12 +81,21 @@ class AlignLearningResourcesSchema extends BaseMigration
 
         $fallbackTimestamp = $this->quoteLiteral(date('Y-m-d H:i:s'));
         if ($table->hasColumn('uploaded_at')) {
+            $coalesceParts = ['uploaded_at'];
+            if ($table->hasColumn('created')) {
+                $coalesceParts[] = 'created';
+            }
+            if ($table->hasColumn('modified')) {
+                $coalesceParts[] = 'modified';
+            }
+            $coalesceParts[] = $fallbackTimestamp;
+
             $this->execute(
                 sprintf(
                     "UPDATE learning_resources
-                     SET uploaded_at = COALESCE(uploaded_at, created, modified, %s)
+                     SET uploaded_at = COALESCE(%s)
                      WHERE uploaded_at IS NULL",
-                    $fallbackTimestamp
+                    implode(', ', $coalesceParts)
                 )
             );
         }

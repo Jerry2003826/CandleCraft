@@ -493,7 +493,7 @@ Visit:
 - Set PHP version to 8.2+ in MultiPHP Manager
 - Ensure \`mod_rewrite\` is enabled
 - Update \`APP_FULL_BASE_URL\` if you encounter Host header errors
-- For database setup, prefer CakePHP migrations + seeds. Legacy SQL references live in \`database/academy_management_db.sql\` and \`database/seed_admin.sql\`.
+- For database setup, use the current deployment scripts to bootstrap the base schema and then run migrations. Manual SQL fallbacks still live in \`database/academy_management_db.sql\` and \`database/seed_admin.sql\`.
 MDEOF
 
 echo ""

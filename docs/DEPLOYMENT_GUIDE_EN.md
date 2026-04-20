@@ -77,7 +77,9 @@ If the public contact form will use reCAPTCHA in production, also prepare:
 
 ### 3.1 Migrations Are the Source of Truth
 
-Do not rely on manually edited legacy tables or old SQL dumps for current production schema.
+Do not rely on manually edited legacy tables or stale hand-maintained SQL dumps for current production schema.
+
+For brand-new empty databases, the deployment scripts bootstrap from `config/schema/academy_management_db.sql` first, then apply the current migrations on top.
 
 For current versions of the app, schema updates should be applied with:
 
@@ -173,6 +175,7 @@ What this script does:
 - creates required writable directories if missing
 - clears temporary cache directories
 - fixes file permissions for `tmp`, `logs`, and `storage`
+- bootstraps the base schema snapshot if the target database is empty
 - runs database migrations
 
 ### 4.4 Optional First-Time Admin Seed
@@ -187,7 +190,47 @@ bash scripts/server-deploy.sh
 
 Do not use demo credentials in a shared or public environment.
 
-### 4.5 Optional Routine Update Command
+### 4.5 Optional Full Demo Data Seed
+
+If this environment is for demo, review, marking, or teammate verification, and you want the app to include sample logins, sample students, teachers, courses, classes, bookings, and messages, run:
+
+```bash
+RUN_DEMO_DATA_SEED=true \
+DEMO_SEED_PASSWORD='admin123' \
+bash scripts/server-deploy.sh
+```
+
+If the database already contains partial demo rows from a previous broken setup and you want to replace them, run:
+
+```bash
+RUN_DEMO_DATA_SEED=true \
+DEMO_SEED_PASSWORD='admin123' \
+DEMO_SEED_RESET_EXISTING=true \
+bash scripts/server-deploy.sh
+```
+
+Important notes:
+
+- `DemoDataSeed` is for demo or test environments only
+- it includes the admin account, so you do not need `RUN_ADMIN_SEED=true` at the same time
+- when `DEMO_SEED_RESET_EXISTING=true`, existing application demo data is cleared and replaced
+
+Seeded demo accounts:
+
+- `admin@candlecraft.com` - admin
+- `emma.clay@candlecraft.com` - teacher
+- `james.knit@candlecraft.com` - teacher
+- `alice.wong@candlecraft.com` - verified consumer/student
+- `ava.park@candlecraft.com` - unverified consumer/customer
+- `olivia.lee@candlecraft.com` - verified parent
+
+Default demo password for all of the above:
+
+```text
+admin123
+```
+
+### 4.6 Optional Routine Update Command
 
 After the initial install, a typical update flow is:
 
@@ -344,8 +387,12 @@ The server-side deployment script accepts these important variables:
 - `UPLOAD_RESOURCES_URL_PREFIX`: public URL prefix for resource routing
 - `RUN_COMPOSER_INSTALL`: set `false` to skip Composer install
 - `RUN_MIGRATIONS`: set `false` to skip migrations
+- `BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB`: set `false` only if your database is already initialized
 - `RUN_ADMIN_SEED`: set `true` to create a seeded admin
 - `ADMIN_SEED_PASSWORD`: required if `RUN_ADMIN_SEED=true`
+- `RUN_DEMO_DATA_SEED`: set `true` to load the full demo dataset
+- `DEMO_SEED_PASSWORD`: password used for all demo accounts, defaults to `admin123`
+- `DEMO_SEED_RESET_EXISTING`: set `true` to replace partial or old demo data
 - `APP_OWNER`: optional filesystem owner for writable directories
 - `APP_GROUP`: optional filesystem group for writable directories
 
@@ -450,6 +497,43 @@ php bin/cake.php migrations migrate
 
 This repository includes a repair migration for affected environments.
 
+### Problem: migrations fail on a brand-new empty database
+
+Cause:
+
+- the environment skipped the base schema bootstrap step
+- or an older deployment flow tried to run incremental migrations against a fully empty database
+
+Fix:
+
+- rerun the latest `scripts/server-deploy.sh`
+- make sure `BOOTSTRAP_BASE_SCHEMA_ON_EMPTY_DB` is not disabled
+- for manual setups, import `config/schema/academy_management_db.sql` into the target database first, then rerun migrations
+
+### Problem: the site works, but the demo users are missing
+
+Cause:
+
+- `scripts/server-deploy.sh` ran migrations only
+- or only `AdminSeed` was run, which creates the admin account but not the full demo dataset
+
+Fix:
+
+```bash
+DEMO_SEED_PASSWORD='admin123' \
+DEMO_SEED_RESET_EXISTING=true \
+php bin/cake.php seeds run DemoDataSeed
+```
+
+Or rerun the deployment script with:
+
+```bash
+RUN_DEMO_DATA_SEED=true \
+DEMO_SEED_PASSWORD='admin123' \
+DEMO_SEED_RESET_EXISTING=true \
+bash scripts/server-deploy.sh
+```
+
 ### Problem: Stripe payments stay in demo mode
 
 Cause:
@@ -506,6 +590,13 @@ If you are deploying to a normal Linux server:
 2. point the public document root to `webroot/`
 3. run `scripts/server-deploy.sh`
 4. run smoke tests
+
+If you need a fully populated demo environment instead of an empty production-style install:
+
+1. deploy the code normally
+2. run `scripts/server-deploy.sh` with `RUN_DEMO_DATA_SEED=true`
+3. use `DEMO_SEED_RESET_EXISTING=true` only when replacing broken or partial demo data
+4. sign in with one of the seeded demo accounts
 
 If you are deploying to cPanel for the first time:
 

@@ -83,7 +83,36 @@ This command will:
 - Email: `admin@candlecraft.com`
 - Password: `admin123` (local demo default from `ADMIN_SEED_PASSWORD`)
 
-This project now uses CakePHP migrations and seeds as the database source of truth. `config/schema/*.sql` is kept only as legacy reference data.
+This project applies the base schema snapshot for empty databases, then uses CakePHP migrations and seeds for the current application state.
+
+## 5) Optional Full Demo Accounts
+
+If you need the full demo dataset instead of only the admin account, run:
+
+```bash
+DEMO_SEED_PASSWORD=admin123 php bin/cake.php seeds run DemoDataSeed
+```
+
+If you already created partial or broken local data and want to replace it:
+
+```bash
+DEMO_SEED_PASSWORD=admin123 DEMO_SEED_RESET_EXISTING=true php bin/cake.php seeds run DemoDataSeed
+```
+
+Demo logins:
+
+- `admin@candlecraft.com`
+- `emma.clay@candlecraft.com`
+- `james.knit@candlecraft.com`
+- `alice.wong@candlecraft.com`
+- `ava.park@candlecraft.com`
+- `olivia.lee@candlecraft.com`
+
+Default password for all demo accounts:
+
+```text
+admin123
+```
 
 ## Optional: Custom Database Credentials
 

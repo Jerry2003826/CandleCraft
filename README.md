@@ -38,7 +38,7 @@ $env:ADMIN_SEED_PASSWORD = "admin123"
 bin/cake seeds run AdminSeed -q
 ```
 
-> `config/schema/academy_management_db.sql` and `config/schema/seed_admin.sql` are kept as legacy reference files only. New environments should use migrations + seeds. The legacy `payments` reference is still maintained to match the current state machine, including zero-amount bookings being confirmed locally without Stripe.
+> `config/schema/academy_management_db.sql` is still used as the base schema bootstrap for empty databases, after which current migrations should be applied. `config/schema/seed_admin.sql` remains a legacy SQL seed reference. The legacy `payments` reference is still maintained to match the current state machine, including zero-amount bookings being confirmed locally without Stripe.
 
 ### Step 3: Configure & Run
 
@@ -65,6 +65,7 @@ This guide covers:
 
 - standard Linux / VPS deployment with `scripts/server-deploy.sh`
 - cPanel deployment with `scripts/deploy-oneclick.sh` or `scripts/cpanel-deploy.sh`
+- optional full demo-account seeding with `DemoDataSeed`
 - post-deployment verification and troubleshooting
 
 ## One-Click Setup (Auto Detect OS)

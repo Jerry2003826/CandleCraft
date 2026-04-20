@@ -179,6 +179,31 @@ def import_sql_file(
     )
 
 
+def import_bootstrap_schema(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    database: str,
+    sql_path: Path,
+) -> None:
+    """Import the base schema snapshot into the selected database."""
+    sql_content = sql_path.read_text(encoding="utf-8")
+    sql_content = sql_content.replace(
+        "CREATE DATABASE IF NOT EXISTS academy_management_db\n"
+        "  CHARACTER SET utf8mb4\n"
+        "  COLLATE utf8mb4_unicode_ci;\n\n"
+        "USE academy_management_db;",
+        f"-- Database creation managed externally for local setup\n\nUSE `{database}`;",
+        1,
+    )
+    run_command(
+        mysql_args(mysql_cmd, host, port, user, password) + [database],
+        input_bytes=sql_content.encode("utf-8"),
+    )
+
+
 def create_database(
     mysql_cmd: str,
     host: str,
@@ -193,6 +218,32 @@ def create_database(
         "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     ).encode("utf-8")
     run_command(mysql_args(mysql_cmd, host, port, user, password), input_bytes=sql)
+
+
+def database_has_table(
+    mysql_cmd: str,
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    database: str,
+    table: str,
+) -> bool:
+    """Return whether the given table exists in the target database."""
+    safe_database = database.replace("'", "''")
+    safe_table = table.replace("'", "''")
+    query = (
+        "SELECT COUNT(*) "
+        "FROM information_schema.tables "
+        f"WHERE table_schema='{safe_database}' AND table_name='{safe_table}';"
+    ).encode("utf-8")
+    result = run_command(
+        mysql_args(mysql_cmd, host, port, user, password) + ["--batch", "--skip-column-names"],
+        input_bytes=query,
+        capture_output=True,
+    )
+
+    return result.stdout.strip() == b"1"
 
 
 def verify_admin_account(
@@ -419,6 +470,26 @@ def setup_run(args: argparse.Namespace) -> None:
         str(config["db_pass"]),
         str(config["db_name"]),
     )
+
+    if not database_has_table(
+        mysql_cmd,
+        str(config["db_host"]),
+        int(config["db_port"]),
+        str(config["db_user"]),
+        str(config["db_pass"]),
+        str(config["db_name"]),
+        "users",
+    ):
+        print_step("Bootstrapping base schema")
+        import_bootstrap_schema(
+            mysql_cmd,
+            str(config["db_host"]),
+            int(config["db_port"]),
+            str(config["db_user"]),
+            str(config["db_pass"]),
+            str(config["db_name"]),
+            ROOT_DIR / "config" / "schema" / "academy_management_db.sql",
+        )
 
     admin_seed_password = os.getenv("ADMIN_SEED_PASSWORD", "admin123")
     env = build_runtime_env(config, admin_seed_password)
