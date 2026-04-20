@@ -8,7 +8,8 @@ $adminName = 'Admin';
 if ($identity) {
     $adminName = h($identity->get('username'));
 }
-$logoutUrl = $this->Url->build('/logout');
+$basePath = rtrim((string)$this->request->getAttribute('base', ''), '/');
+$logoutUrl = ($basePath !== '' ? $basePath : '') . '/logout';
 $redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
     ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
     : (string)time();
