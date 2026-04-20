@@ -161,6 +161,70 @@ php_app_base_literal() {
     ' "$app_url"
 }
 
+resolve_app_base_path() {
+    local explicit_base="$1"
+    local app_url="$2"
+
+    "$PHP_BIN" -r '
+        $explicitBase = $argv[1] ?? "";
+        $appUrl = $argv[2] ?? "";
+
+        if ($explicitBase !== "") {
+            echo $explicitBase;
+            exit(0);
+        }
+
+        $path = (string)parse_url($appUrl, PHP_URL_PATH);
+        $path = rtrim($path, "/");
+        echo $path;
+    ' "$explicit_base" "$app_url"
+}
+
+php_full_base_url_literal() {
+    local app_url="$1"
+
+    "$PHP_BIN" -r '
+        $appUrl = $argv[1] ?? "";
+        $parts = parse_url($appUrl);
+        if ($parts === false || empty($parts["scheme"]) || empty($parts["host"])) {
+            fwrite(STDERR, "APP_URL must be an absolute URL, for example https://example.com or https://example.com/production\n");
+            exit(1);
+        }
+
+        $origin = $parts["scheme"] . "://" . $parts["host"];
+        if (isset($parts["port"])) {
+            $origin .= ":" . $parts["port"];
+        }
+
+        echo var_export($origin, true);
+    ' "$app_url"
+}
+
+resolve_public_app_url() {
+    local app_url="$1"
+    local explicit_base="$2"
+
+    "$PHP_BIN" -r '
+        $appUrl = $argv[1] ?? "";
+        $explicitBase = $argv[2] ?? "";
+        $parts = parse_url($appUrl);
+        if ($parts === false || empty($parts["scheme"]) || empty($parts["host"])) {
+            fwrite(STDERR, "APP_URL must be an absolute URL.\n");
+            exit(1);
+        }
+
+        $origin = $parts["scheme"] . "://" . $parts["host"];
+        if (isset($parts["port"])) {
+            $origin .= ":" . $parts["port"];
+        }
+
+        $base = $explicitBase !== "" ? $explicitBase : (string)($parts["path"] ?? "");
+        $base = rtrim($base, "/");
+
+        echo $base === "" ? $origin : $origin . $base;
+    ' "$app_url" "$explicit_base"
+}
+
 generate_salt() {
     if command_exists openssl; then
         openssl rand -hex 32
@@ -185,14 +249,14 @@ ensure_directory() {
 write_app_local() {
     local file_path="$1"
 
-    local app_url_literal app_base_literal db_host_literal db_port_literal db_name_literal db_user_literal db_pass_literal
+    local app_base_literal full_base_url_literal db_host_literal db_port_literal db_name_literal db_user_literal db_pass_literal
     local test_host_literal test_port_literal test_name_literal test_user_literal test_pass_literal
     local salt_literal stripe_env_literal stripe_sk_literal stripe_pk_literal stripe_wh_literal
     local recaptcha_site_literal recaptcha_secret_literal uploads_root_literal uploads_prefix_literal
     local debug_literal payments_demo_literal
 
-    app_url_literal="$(php_literal "$APP_URL")"
     app_base_literal="$(php_app_base_literal "$APP_BASE" "$APP_URL")"
+    full_base_url_literal="$(php_full_base_url_literal "$APP_URL")"
     db_host_literal="$(php_literal "$DB_HOST")"
     db_port_literal="$(php_literal "$DB_PORT")"
     db_name_literal="$(php_literal "$DB_NAME")"
@@ -225,7 +289,7 @@ return [
 
     'App' => [
         'base' => env('APP_BASE', ${app_base_literal}),
-        'fullBaseUrl' => env('APP_FULL_BASE_URL', ${app_url_literal}),
+        'fullBaseUrl' => env('APP_FULL_BASE_URL', ${full_base_url_literal}),
     ],
 
     'Security' => [
@@ -295,20 +359,7 @@ sync_app_base_config() {
         return
     fi
 
-    resolved_base="$(
-        "$PHP_BIN" -r '
-            $explicitBase = $argv[1] ?? "";
-            $appUrl = $argv[2] ?? "";
-            if ($explicitBase !== "") {
-                echo $explicitBase;
-                exit(0);
-            }
-
-            $path = (string)parse_url($appUrl, PHP_URL_PATH);
-            $path = rtrim($path, "/");
-            echo $path;
-        ' "$APP_BASE" "$APP_URL"
-    )"
+    resolved_base="$(resolve_app_base_path "$APP_BASE" "$APP_URL")"
 
     if [ -n "$resolved_base" ]; then
         "$PHP_BIN" -r '
@@ -510,6 +561,8 @@ bootstrap_base_schema_if_required() {
 }
 
 main() {
+    local resolved_base public_app_url
+
     [ -d "$APP_DIR" ] || die "APP_DIR does not exist: $APP_DIR"
     cd "$APP_DIR"
 
@@ -525,6 +578,9 @@ main() {
         die "APP_URL is still the example placeholder. Set the real production URL first."
     fi
 
+    resolved_base="$(resolve_app_base_path "$APP_BASE" "$APP_URL")"
+    public_app_url="$(resolve_public_app_url "$APP_URL" "$APP_BASE")"
+
     if [ -z "$SECURITY_SALT" ]; then
         SECURITY_SALT="$(generate_salt)"
         success "Generated SECURITY_SALT automatically."
@@ -532,6 +588,10 @@ main() {
 
     info "Deploying CandleCraft from $APP_DIR"
     info "Using APP_URL=$APP_URL"
+    if [ -n "$resolved_base" ]; then
+        info "Resolved APP_BASE=$resolved_base"
+        info "Resolved App.fullBaseUrl origin from APP_URL to avoid duplicated subdirectory redirects"
+    fi
     info "Using database ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
     ensure_directory "$APP_DIR/config"
@@ -610,8 +670,8 @@ main() {
     fi
 
     success "Deployment finished successfully."
-    info "Health check suggestion: curl -I ${APP_URL}"
-    info "Stripe webhook endpoint: ${APP_URL%/}/stripe/webhook"
+    info "Health check suggestion: curl -I ${public_app_url}"
+    info "Stripe webhook endpoint: ${public_app_url%/}/stripe/webhook"
 }
 
 main "$@"

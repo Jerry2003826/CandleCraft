@@ -105,7 +105,9 @@ Examples:
 - root-domain deployment: `https://example.com`
 - subdirectory deployment: `https://example.com`
 
-For subdirectory deployments, the host must still be correct, and the application base path must also be handled by your web-server or cPanel packaging flow.
+For subdirectory deployments, keep `App.fullBaseUrl` on the site origin only, for example `https://example.com`, and set the subdirectory separately with `APP_BASE=/production`.
+
+Do not set `App.fullBaseUrl` to `https://example.com/production`, or redirects can become duplicated like `/production/production/login`.
 
 ### 3.3 Root vs Subdirectory Deployments
 
@@ -365,18 +367,35 @@ bash scripts/server-deploy.sh
 
 If the cPanel site is served from a subdirectory and the public structure was already prepared during the original install, this routine update flow is usually enough.
 
+Example for a subdirectory install:
+
+```bash
+cd /path/to/candlecraft
+git pull
+APP_DIR="$(pwd)" \
+APP_URL=https://example.com \
+APP_BASE=/production \
+DB_HOST=127.0.0.1 \
+DB_NAME=academy_management_db \
+DB_USER=academy_user \
+DB_PASS='replace-me' \
+SECURITY_SALT='existing-or-new-salt' \
+bash scripts/server-deploy.sh
+```
+
 ### cPanel Terminal Notes
 
 - In many shared-hosting cPanel terminals, `uapi` commands should be run as the current account without `--user=...`. Adding `--user` can fail with a `setuids failed` error.
 - Some cPanel environments require fully-prefixed MySQL names, for example `u26s1185_ccprod` instead of `ccprod`.
 - If the server does not provide the `mysql` CLI client, `scripts/server-deploy.sh` will fall back to a PHP-based schema import automatically.
+- For subdirectory installs, set `APP_URL` to the origin only, such as `https://u26s1185.iedev.org`, and set `APP_BASE` to the subdirectory, such as `/production`.
 
 ## 6. Environment Variables Explained
 
 The server-side deployment script accepts these important variables:
 
 - `APP_DIR`: path to the application directory
-- `APP_URL`: public application URL
+- `APP_URL`: public site origin used for `App.fullBaseUrl`, for example `https://example.com`
 - `APP_BASE`: optional explicit base path for subdirectory deployments, for example `/production`
 - `DB_HOST`: database host
 - `DB_PORT`: database port
@@ -474,7 +493,8 @@ Cause:
 
 Fix:
 
-- set `APP_URL` correctly
+- set `APP_URL` to the site origin only
+- set `APP_BASE` for subdirectory installs if needed
 - regenerate `config/app_local.php`
 - re-run `bash scripts/server-deploy.sh`
 
