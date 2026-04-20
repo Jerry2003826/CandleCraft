@@ -286,6 +286,75 @@ return [
 PHP
 }
 
+sync_app_base_config() {
+    local app_php_path="$APP_DIR/config/app.php"
+    local resolved_base
+
+    if [ ! -f "$app_php_path" ]; then
+        warn "config/app.php not found; skipping App.base synchronization"
+        return
+    fi
+
+    resolved_base="$(
+        "$PHP_BIN" -r '
+            $explicitBase = $argv[1] ?? "";
+            $appUrl = $argv[2] ?? "";
+            if ($explicitBase !== "") {
+                echo $explicitBase;
+                exit(0);
+            }
+
+            $path = (string)parse_url($appUrl, PHP_URL_PATH);
+            $path = rtrim($path, "/");
+            echo $path;
+        ' "$APP_BASE" "$APP_URL"
+    )"
+
+    if [ -n "$resolved_base" ]; then
+        "$PHP_BIN" -r '
+            $file = $argv[1];
+            $base = $argv[2];
+            $contents = file_get_contents($file);
+            if ($contents === false) {
+                fwrite(STDERR, "Could not read config/app.php\n");
+                exit(1);
+            }
+
+            $replacement = "'"'"'base'"'"' => " . var_export($base, true) . ",";
+            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*false\\s*,/", $replacement, $contents, 1, $count);
+            if ($count === 0) {
+                $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", $replacement, $contents, 1, $count);
+            }
+
+            if ($count === 0) {
+                fwrite(STDERR, "Could not update App.base in config/app.php\n");
+                exit(1);
+            }
+
+            file_put_contents($file, $updated);
+        ' "$app_php_path" "$resolved_base"
+        success "Set App.base to ${resolved_base} in config/app.php"
+    else
+        "$PHP_BIN" -r '
+            $file = $argv[1];
+            $contents = file_get_contents($file);
+            if ($contents === false) {
+                fwrite(STDERR, "Could not read config/app.php\n");
+                exit(1);
+            }
+
+            $updated = preg_replace("/'"'"'base'"'"'\\s*=>\\s*'[^']*'\\s*,/", "'"'"'base'"'"' => false,", $contents, 1);
+            if ($updated === null) {
+                fwrite(STDERR, "Could not reset App.base in config/app.php\n");
+                exit(1);
+            }
+
+            file_put_contents($file, $updated);
+        ' "$app_php_path"
+        success "Set App.base to false in config/app.php"
+    fi
+}
+
 set_permissions() {
     local target
 
@@ -480,6 +549,9 @@ main() {
     write_app_local "$APP_DIR/config/app_local.php"
     "$PHP_BIN" -l "$APP_DIR/config/app_local.php" >/dev/null
     success "Generated config/app_local.php"
+
+    sync_app_base_config
+    "$PHP_BIN" -l "$APP_DIR/config/app.php" >/dev/null
 
     if is_true "$RUN_COMPOSER_INSTALL"; then
         command_exists "$COMPOSER_BIN" || die "Composer binary not found: $COMPOSER_BIN"
