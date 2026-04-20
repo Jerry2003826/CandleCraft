@@ -35,6 +35,7 @@ COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 MYSQL_BIN="${MYSQL_BIN:-mysql}"
 
 APP_URL="${APP_URL:-https://example.com}"
+APP_BASE="${APP_BASE:-}"
 DEBUG_DEFAULT="${DEBUG_DEFAULT:-false}"
 PAYMENTS_DEMO_MODE="${PAYMENTS_DEMO_MODE:-false}"
 
@@ -139,6 +140,27 @@ php_bool_literal() {
     fi
 }
 
+php_app_base_literal() {
+    local explicit_base="$1"
+    local app_url="$2"
+
+    if [ -n "$explicit_base" ]; then
+        php_literal "$explicit_base"
+        return
+    fi
+
+    "$PHP_BIN" -r '
+        $path = (string)parse_url($argv[1], PHP_URL_PATH);
+        $path = rtrim($path, "/");
+        if ($path === "") {
+            echo "false";
+            exit(0);
+        }
+
+        echo var_export($path, true);
+    ' "$app_url"
+}
+
 generate_salt() {
     if command_exists openssl; then
         openssl rand -hex 32
@@ -163,13 +185,14 @@ ensure_directory() {
 write_app_local() {
     local file_path="$1"
 
-    local app_url_literal db_host_literal db_port_literal db_name_literal db_user_literal db_pass_literal
+    local app_url_literal app_base_literal db_host_literal db_port_literal db_name_literal db_user_literal db_pass_literal
     local test_host_literal test_port_literal test_name_literal test_user_literal test_pass_literal
     local salt_literal stripe_env_literal stripe_sk_literal stripe_pk_literal stripe_wh_literal
     local recaptcha_site_literal recaptcha_secret_literal uploads_root_literal uploads_prefix_literal
     local debug_literal payments_demo_literal
 
     app_url_literal="$(php_literal "$APP_URL")"
+    app_base_literal="$(php_app_base_literal "$APP_BASE" "$APP_URL")"
     db_host_literal="$(php_literal "$DB_HOST")"
     db_port_literal="$(php_literal "$DB_PORT")"
     db_name_literal="$(php_literal "$DB_NAME")"
@@ -201,6 +224,7 @@ return [
     'debug' => filter_var(env('DEBUG', ${debug_literal}), FILTER_VALIDATE_BOOLEAN),
 
     'App' => [
+        'base' => env('APP_BASE', ${app_base_literal}),
         'fullBaseUrl' => env('APP_FULL_BASE_URL', ${app_url_literal}),
     ],
 

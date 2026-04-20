@@ -377,6 +377,7 @@ The server-side deployment script accepts these important variables:
 
 - `APP_DIR`: path to the application directory
 - `APP_URL`: public application URL
+- `APP_BASE`: optional explicit base path for subdirectory deployments, for example `/production`
 - `DB_HOST`: database host
 - `DB_PORT`: database port
 - `DB_NAME`: database name
