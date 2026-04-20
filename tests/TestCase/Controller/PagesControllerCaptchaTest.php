@@ -8,6 +8,15 @@ use Cake\Datasource\FactoryLocator;
 
 class PagesControllerCaptchaTest extends AppIntegrationTestCase
 {
+    public function testContactPageUsesValidPhonePatternAndHelpText(): void
+    {
+        $this->get('/contact');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('pattern="\+?[0-9][0-9\s\-\(\)]{5,14}"');
+        $this->assertResponseContains('Use numbers, spaces, brackets, dashes or a leading + sign.');
+    }
+
     public function testValidContactEnquiryWithTestRecaptchaAppearsInAdmin(): void
     {
         $messagesTable = FactoryLocator::get('Table')->get('Messages');

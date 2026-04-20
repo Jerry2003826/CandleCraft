@@ -157,7 +157,7 @@ $captchaError = $fieldError('g-recaptcha-response');
                                 'placeholder' => 'Phone number',
                                 'required' => true,
                                 'maxlength' => 15,
-                                'pattern' => '[0-9+\s\-()]+',
+                                'pattern' => '\+?[0-9][0-9\s\-\(\)]{5,14}',
                                 'autocomplete' => 'tel',
                                 'aria-describedby' => $describedBy([
                                     'sender-phone-help',

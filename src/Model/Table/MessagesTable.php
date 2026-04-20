@@ -115,7 +115,7 @@ class MessagesTable extends Table
             ->notEmptyString('sender_phone')
             ->regex(
                 'sender_phone',
-                '/^[0-9+\-\s()]{6,15}$/',
+                '/^\+?[0-9][0-9\-\s()]{5,14}$/',
                 'Please enter a valid phone number.',
             );
 
