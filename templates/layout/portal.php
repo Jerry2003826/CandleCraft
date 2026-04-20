@@ -15,8 +15,7 @@ $displayName = 'User';
 if ($identity) {
     $displayName = h((string)($identity->get('username') ?: $identity->get('email')));
 }
-$basePath = rtrim((string)$this->request->getAttribute('base', ''), '/');
-$logoutUrl = ($basePath !== '' ? $basePath : '') . '/logout';
+$logoutUrl = '/logout';
 $redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
     ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
     : (string)time();
