@@ -15,6 +15,7 @@ $displayName = 'User';
 if ($identity) {
     $displayName = h((string)($identity->get('username') ?: $identity->get('email')));
 }
+$logoutUrl = $this->Url->build('/logout');
 $redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
     ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
     : (string)time();
@@ -107,7 +108,7 @@ $this->Paginator->setTemplates([
                     <i class="bi bi-moon" aria-hidden="true"></i><span id="themeToggleText">Dark Mode</span>
                 </button>
                 <?= $this->Form->create(null, [
-                    'url' => ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                    'url' => $logoutUrl,
                     'class' => 'm-0 sidebar-action-form',
                 ]) ?>
                     <?= $this->Form->button('<i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>', [

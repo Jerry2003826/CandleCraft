@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Http\Cookie\Cookie;
 use Cake\Http\Response;
 
 class UsersController extends AppController
@@ -64,8 +65,17 @@ class UsersController extends AppController
     {
         $this->request->allowMethod(['post']);
         $this->Authentication->logout();
-        $this->Flash->success(__('You have been logged out.'));
+        $session = $this->request->getSession();
+        $session->delete('Auth');
+        $session->renew();
 
-        return $this->redirect(['action' => 'login']);
+        $response = $this->redirect(['action' => 'login'])
+            ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->withHeader('Pragma', 'no-cache')
+            ->withHeader('Expires', '0');
+
+        $csrfCookie = new Cookie('csrfToken', '', null, '/');
+
+        return $response->withExpiredCookie($csrfCookie);
     }
 }
