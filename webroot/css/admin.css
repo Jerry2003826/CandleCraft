@@ -59,11 +59,15 @@ body {
         left: 0;
         bottom: 0;
         width: var(--cc-sidebar-width);
-        z-index: 1040;
+        z-index: 1046;
         background: var(--cc-sidebar-bg) !important;
         transform: none !important;
         visibility: visible !important;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .offcanvas-backdrop {
+        display: none !important;
     }
 
     .sidebar-main {

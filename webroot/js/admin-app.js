@@ -1,6 +1,7 @@
 /* CandleCraft Academy - Admin & Portal JS */
 document.addEventListener('DOMContentLoaded', function () {
     window.CandleCraftA11y?.init(document);
+    initialiseResponsiveSidebars();
 
     /* ===== Schedule Page — View Toggle ===== */
     var viewBtns = document.querySelectorAll('.sp-view-btn');
@@ -102,4 +103,54 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    function initialiseResponsiveSidebars() {
+        var desktopMediaQuery = window.matchMedia('(min-width: 992px)');
+
+        document.querySelectorAll('[data-bs-toggle="offcanvas"][data-bs-target]').forEach(function (toggle) {
+            var targetSelector = toggle.getAttribute('data-bs-target');
+            if (!targetSelector || targetSelector.charAt(0) !== '#') {
+                return;
+            }
+
+            var sidebar = document.querySelector(targetSelector);
+            if (!sidebar) {
+                return;
+            }
+
+            function setExpanded(isExpanded) {
+                toggle.setAttribute('aria-expanded', String(isExpanded));
+            }
+
+            function clearDesktopBackdropState() {
+                if (!desktopMediaQuery.matches) {
+                    return;
+                }
+
+                sidebar.classList.remove('show', 'showing', 'hiding');
+                sidebar.removeAttribute('aria-modal');
+                sidebar.removeAttribute('role');
+                sidebar.removeAttribute('aria-hidden');
+
+                document.querySelectorAll('.offcanvas-backdrop').forEach(function (backdrop) {
+                    backdrop.remove();
+                });
+
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+                setExpanded(false);
+            }
+
+            sidebar.addEventListener('shown.bs.offcanvas', function () {
+                setExpanded(true);
+            });
+
+            sidebar.addEventListener('hidden.bs.offcanvas', function () {
+                setExpanded(false);
+            });
+
+            window.addEventListener('resize', clearDesktopBackdropState);
+            clearDesktopBackdropState();
+        });
+    }
 });

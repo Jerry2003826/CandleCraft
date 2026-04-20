@@ -713,7 +713,9 @@ trap 'rm -f "$defaults_file"' EXIT
 
 for env in dev production review; do
     db_name="${cpanel_user}_${env}_db"
-    uapi --user="${cpanel_user}" Mysql create_database name="${db_name}" >/dev/null 2>&1 || true
+    # When this runs inside cPanel Terminal, we are already the cPanel account.
+    # Passing --user here can fail with "setuids failed" on shared hosting.
+    uapi Mysql create_database name="${db_name}" >/dev/null 2>&1 || true
 done
 
 for env in dev production review; do

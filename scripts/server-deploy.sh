@@ -361,6 +361,7 @@ bootstrap_base_schema_if_required() {
             --database="$DB_NAME" \
             < "$tmp_schema"
     else
+        info "MySQL client not found; using PHP-based schema import fallback"
         "$PHP_BIN" -r '
             [$schemaFile, $dbName, $dbHost, $dbPort, $dbUser, $dbPass] = array_slice($argv, 1);
             $sql = file_get_contents($schemaFile);

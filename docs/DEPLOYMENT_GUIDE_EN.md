@@ -365,6 +365,12 @@ bash scripts/server-deploy.sh
 
 If the cPanel site is served from a subdirectory and the public structure was already prepared during the original install, this routine update flow is usually enough.
 
+### cPanel Terminal Notes
+
+- In many shared-hosting cPanel terminals, `uapi` commands should be run as the current account without `--user=...`. Adding `--user` can fail with a `setuids failed` error.
+- Some cPanel environments require fully-prefixed MySQL names, for example `u26s1185_ccprod` instead of `ccprod`.
+- If the server does not provide the `mysql` CLI client, `scripts/server-deploy.sh` will fall back to a PHP-based schema import automatically.
+
 ## 6. Environment Variables Explained
 
 The server-side deployment script accepts these important variables:
