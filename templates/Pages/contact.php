@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Message $enquiry
  * @var array<string, string> $enquirySubjects
+ * @var array<string, string> $recaptcha
  * @var bool $requestAccount
  * @var string $sourcePage
  */
@@ -11,7 +12,11 @@ $this->disableAutoLayout();
 $homeUrl = $this->Url->build('/');
 $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
 $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']);
-$recaptchaSiteKey = (string)\Cake\Core\Configure::read('Recaptcha.site_key');
+$recaptchaSiteKey = (string)($recaptcha['siteKey'] ?? '');
+$recaptchaMode = (string)($recaptcha['mode'] ?? 'disabled');
+$recaptchaHelpText = (string)($recaptcha['helpText'] ?? '');
+$captchaFooterNote = (string)($recaptcha['footerNote'] ?? 'Protected by anti-spam checks.');
+$captchaRequired = $recaptchaMode === 'live';
 
 $fieldError = static function (string $field) use ($enquiry): ?string {
     $errors = $enquiry->getError($field);
@@ -280,17 +285,17 @@ $captchaError = $fieldError('g-recaptcha-response');
                             $captchaError ? 'captcha-error' : null,
                         ]) ?? 'captcha-help') ?>">
                             <p id="captcha-label" style="color: var(--home-accent-soft); font-family: var(--font-grown); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">
-                                CAPTCHA Verification *
+                                CAPTCHA Verification<?= $captchaRequired ? ' *' : '' ?>
                             </p>
 
                             <?php if ($recaptchaSiteKey !== ''): ?>
                                 <div class="g-recaptcha" style="display: inline-block;" data-sitekey="<?= h($recaptchaSiteKey) ?>"></div>
                                 <p class="field-help" id="captcha-help" style="margin-top: 12px;">
-                                    Local development should use a test or localhost-enabled reCAPTCHA key.
+                                    <?= h($recaptchaHelpText) ?>
                                 </p>
                             <?php else: ?>
                                 <p class="field-help" id="captcha-help">
-                                    reCAPTCHA is not configured in this environment yet. Form structure, labels and error messaging can still be validated locally.
+                                    <?= h($recaptchaHelpText) ?>
                                 </p>
                             <?php endif; ?>
 
@@ -301,7 +306,7 @@ $captchaError = $fieldError('g-recaptcha-response');
                     </div>
 
                     <div class="enquiry-form__footer">
-                        <p class="enquiry-form__note">Protected by CAPTCHA and anti-spam checks.</p>
+                        <p class="enquiry-form__note"><?= h($captchaFooterNote) ?></p>
                         <?= $this->Form->button('Send Enquiry Form', [
                             'class' => 'btn-primary',
                             'style' => 'min-width: 260px; padding: 18px 40px; font-size: 1.1rem;',

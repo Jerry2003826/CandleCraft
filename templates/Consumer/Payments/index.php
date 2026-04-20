@@ -58,7 +58,7 @@ foreach ($bookingList as $booking) {
                 <div class="z-billing-balance-divider"></div>
                 <div class="z-billing-balance-details">
                     <div class="z-billing-balance-item">
-                        <span class="z-billing-balance-label">Awaiting payment</span>
+                        <span class="z-billing-balance-label">Payment pending</span>
                         <span class="z-billing-balance-value"><?= $pendingCount ?> bookings</span>
                     </div>
                     <div class="z-billing-balance-item">
@@ -127,8 +127,20 @@ foreach ($bookingList as $booking) {
                                 }
 
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
-                                $paymentBadgeClass = $isPaid ? 'admin-badge-success' : 'admin-badge-warning';
-                                $paymentBadgeLabel = $isPaid ? 'Paid' : 'Awaiting payment';
+                                if ($isPaid) {
+                                    $paymentBadgeClass = 'admin-badge-success';
+                                    $paymentBadgeLabel = 'Payment Paid';
+                                } else {
+                                    $latestPaymentStatus = (string)($latestPayment->payment_status ?? 'pending');
+                                    [$paymentBadgeClass, $paymentBadgeLabel] = match ($latestPaymentStatus) {
+                                        'failed' => ['admin-badge-danger', 'Payment Failed'],
+                                        'expired', 'voided' => ['admin-badge-neutral', 'Payment Cancelled'],
+                                        'refund_required' => ['admin-badge-warning', 'Refund Required'],
+                                        'refunded' => ['admin-badge-neutral', 'Refunded'],
+                                        'partially_refunded' => ['admin-badge-info', 'Partially Refunded'],
+                                        default => ['admin-badge-warning', 'Payment Pending'],
+                                    };
+                                }
                             ?>
                             <tr>
                                 <td style="padding: 20px 24px;">

@@ -62,4 +62,24 @@ class StudentsControllerTest extends AppIntegrationTestCase
         $user = FactoryLocator::get('Table')->get('Users')->get(4);
         $this->assertTrue((bool)$user->age_verified_by_admin);
     }
+
+    public function testEditClearsAdultVerificationWhenAgeFallsBelow18(): void
+    {
+        $this->loginAsAdmin();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/admin/students/edit/1', [
+            'student_name' => 'Student One',
+            'declared_age' => 16,
+            'student_status' => 'active',
+            'date_of_birth' => '',
+            'medical_notes' => '',
+        ]);
+
+        $this->assertResponseCode(302);
+
+        $user = FactoryLocator::get('Table')->get('Users')->get(4);
+        $this->assertFalse((bool)$user->age_verified_by_admin);
+    }
 }

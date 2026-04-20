@@ -35,6 +35,30 @@ $calHourStart = 8;
 $calHourEnd = 22;
 $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
 $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $bookings->toList() : (is_array($bookings) ? $bookings : []);
+$resolvePaymentBadge = static function ($booking): array {
+    $latestPaymentStatus = null;
+    $hasPaid = false;
+
+    foreach ($booking->payments ?? [] as $payment) {
+        $latestPaymentStatus = (string)$payment->payment_status;
+        if ($latestPaymentStatus === 'paid') {
+            $hasPaid = true;
+        }
+    }
+
+    if (in_array((string)$booking->booking_status, ['confirmed', 'completed'], true) && $hasPaid) {
+        return ['class' => 'admin-badge-success', 'label' => 'Payment Paid'];
+    }
+
+    return match ($latestPaymentStatus) {
+        'failed' => ['class' => 'admin-badge-danger', 'label' => 'Payment Failed'],
+        'expired', 'voided' => ['class' => 'admin-badge-neutral', 'label' => 'Payment Cancelled'],
+        'refund_required' => ['class' => 'admin-badge-warning', 'label' => 'Refund Required'],
+        'refunded' => ['class' => 'admin-badge-neutral', 'label' => 'Refunded'],
+        'partially_refunded' => ['class' => 'admin-badge-info', 'label' => 'Partially Refunded'],
+        default => ['class' => 'admin-badge-warning', 'label' => 'Payment Pending'],
+    };
+};
 ?>
 
 <!-- Toolbar -->
@@ -242,9 +266,11 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                 $hasPaid = false;
                                 foreach ($booking->payments ?? [] as $p) { if ($p->payment_status === 'paid') { $hasPaid = true; break; } }
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaid;
+                                $paymentBadge = $resolvePaymentBadge($booking);
                                 ?>
                                 <?php if ($bookingAccessEnabled): ?>
                                     <div class="d-flex gap-2 flex-wrap">
+                                        <span class="admin-badge <?= h($paymentBadge['class']) ?>"><?= h($paymentBadge['label']) ?></span>
                                         <?php if ($booking->booking_status === 'pending' && !$isPaid): ?>
                                             <?php if ($ageVerifiedByAdmin): ?>
                                                 <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>" class="admin-btn-primary" style="padding: 6px 12px; font-size: 12px;">Pay</a>

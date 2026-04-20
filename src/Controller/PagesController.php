@@ -34,6 +34,7 @@ use Cake\View\Exception\MissingTemplateException;
  */
 class PagesController extends AppController
 {
+    private const RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
     private const RECAPTCHA_TEST_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
 
     public function beforeFilter(EventInterface $event): void
@@ -52,6 +53,7 @@ class PagesController extends AppController
         $messagesTable = $this->fetchTable('Messages');
         $session = $this->request->getSession();
         $sourcePage = $this->resolveSourcePage();
+        $recaptcha = $this->buildRecaptchaViewState();
         $enquirySubjects = [
             'General enquiry' => 'General',
             'Pottery enquiry' => 'Pottery',
@@ -145,7 +147,7 @@ class PagesController extends AppController
             $this->Flash->error(__('Please review the form and try again.'), ['key' => 'enquiry']);
         }
 
-        $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage', 'requestAccount'));
+        $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage', 'requestAccount', 'recaptcha'));
 
         return null;
     }
@@ -210,20 +212,15 @@ class PagesController extends AppController
 
     private function verifyRecaptcha(string $recaptchaResponse): bool
     {
+        if (!$this->isRecaptchaChallengeEnabled()) {
+            return true;
+        }
+
         if ($recaptchaResponse === '') {
             return false;
         }
 
-        $secretKey = (string)Configure::read('Recaptcha.secret_key');
-        if ($secretKey === '') {
-            return false;
-        }
-
-        // Google's published v2 test secret should short-circuit locally and in
-        // automated tests so enquiry submissions remain deterministic.
-        if (hash_equals(self::RECAPTCHA_TEST_SECRET_KEY, $secretKey)) {
-            return true;
-        }
+        $secretKey = $this->getRecaptchaSecretKey();
 
         try {
             $client = new Client(['timeout' => 3]);
@@ -243,6 +240,63 @@ class PagesController extends AppController
         $captchaSuccess = $response->getJson();
 
         return (bool)($captchaSuccess['success'] ?? false);
+    }
+
+    /**
+     * @return array{mode: string, siteKey: string, helpText: string, footerNote: string}
+     */
+    private function buildRecaptchaViewState(): array
+    {
+        if ($this->isRecaptchaChallengeEnabled()) {
+            return [
+                'mode' => 'live',
+                'siteKey' => $this->getRecaptchaSiteKey(),
+                'helpText' => 'Complete the CAPTCHA challenge before submitting your enquiry.',
+                'footerNote' => 'Protected by CAPTCHA and anti-spam checks.',
+            ];
+        }
+
+        if ($this->isRecaptchaTestMode()) {
+            return [
+                'mode' => 'test',
+                'siteKey' => '',
+                'helpText' => 'CAPTCHA test mode is active in this environment, so you can submit without completing a live challenge.',
+                'footerNote' => 'Protected by anti-spam checks while CAPTCHA runs in test mode.',
+            ];
+        }
+
+        return [
+            'mode' => 'disabled',
+            'siteKey' => '',
+            'helpText' => 'CAPTCHA is unavailable in this environment right now. You can still submit the form while basic anti-spam checks remain enabled.',
+            'footerNote' => 'Protected by anti-spam checks while CAPTCHA is unavailable.',
+        ];
+    }
+
+    private function isRecaptchaChallengeEnabled(): bool
+    {
+        return $this->getRecaptchaSiteKey() !== ''
+            && $this->getRecaptchaSecretKey() !== ''
+            && !$this->isRecaptchaTestMode();
+    }
+
+    private function isRecaptchaTestMode(): bool
+    {
+        $siteKey = $this->getRecaptchaSiteKey();
+        $secretKey = $this->getRecaptchaSecretKey();
+
+        return ($siteKey !== '' && hash_equals(self::RECAPTCHA_TEST_SITE_KEY, $siteKey))
+            || ($secretKey !== '' && hash_equals(self::RECAPTCHA_TEST_SECRET_KEY, $secretKey));
+    }
+
+    private function getRecaptchaSiteKey(): string
+    {
+        return trim((string)Configure::read('Recaptcha.site_key'));
+    }
+
+    private function getRecaptchaSecretKey(): string
+    {
+        return trim((string)Configure::read('Recaptcha.secret_key'));
     }
 
     private function normaliseDeclaredAge(mixed $declaredAge): ?int

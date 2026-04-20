@@ -91,13 +91,16 @@ $this->assign('title', 'Edit Student');
                         <span style="color: var(--admin-text-secondary); font-size: 14px;">Admin verified 18+:</span> 
                         <strong style="color: var(--admin-text-primary); font-size: 14px;"><?= $linkedUser->age_verified_by_admin ? 'Yes' : 'No' ?></strong>
                     </div>
-                    <?php if (!$linkedUser->age_verified_by_admin): ?>
-                        <div class="mt-3">
-                            <a href="<?= $this->Url->build(['action' => 'view', $student->student_id]) ?>" class="admin-btn-secondary" style="color: #D97706; background-color: #FEF3C7;">
-                                <i class="bi bi-shield-exclamation me-2"></i> Go to View page to verify age
-                            </a>
-                        </div>
-                    <?php endif; ?>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a href="<?= $this->Url->build(['action' => 'view', $student->student_id]) ?>" class="admin-btn-secondary" style="color: #D97706; background-color: #FEF3C7;">
+                            <i class="bi bi-shield-exclamation me-2"></i> Open customer details
+                        </a>
+                        <?php if ($linkedUser->age_verified_by_admin): ?>
+                            <p style="margin: 0; align-self: center; color: var(--admin-text-secondary); font-size: 13px;">
+                                Adult verification can be removed from the customer list or details page.
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php endif; ?>
         <?php endif; ?>

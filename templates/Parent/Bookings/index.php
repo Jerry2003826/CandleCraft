@@ -163,7 +163,10 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                 $hasPaid = false;
                                 foreach ($booking->payments ?? [] as $p) { if ($p->payment_status === 'paid') { $hasPaid = true; break; } }
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaid;
+                                $paymentLabel = $isPaid ? 'Payment Paid' : 'Payment Pending';
+                                $paymentClass = $isPaid ? 'badge-confirmed' : 'badge-pending';
                                 ?>
+                                <span class="badge <?= h($paymentClass) ?>"><?= h($paymentLabel) ?></span>
                                 <div class="d-flex gap-1 mt-2 flex-wrap">
                                     <?php if ($booking->booking_status === 'pending' && !$isPaid): ?>
                                         <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>" class="btn btn-sm btn-primary">Pay</a>

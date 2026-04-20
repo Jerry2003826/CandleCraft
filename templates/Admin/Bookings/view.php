@@ -49,7 +49,7 @@ $this->assign('title', 'View Booking #' . $booking->booking_id);
                     <td><?= ucfirst(h($payment->payment_method ?? '-')) ?></td>
                     <td>
                         <span class="badge <?= $payment->payment_status === 'paid' ? 'bg-success' : 'bg-warning text-dark' ?>">
-                            <?= $payment->payment_status === 'paid' ? 'Paid' : 'Unpaid' ?>
+                            <?= $payment->payment_status === 'paid' ? 'Payment Paid' : 'Payment Pending' ?>
                         </span>
                     </td>
                     <td><?= $payment->payment_date ? $payment->payment_date->format('j M Y, g:ia') : '-' ?></td>

@@ -115,17 +115,17 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                         <td>
                             <?php 
                                 $statusClass = 'admin-badge-neutral';
-                                if ($booking->booking_status === 'Confirmed') $statusClass = 'admin-badge-success';
-                                if ($booking->booking_status === 'Pending') $statusClass = 'admin-badge-warning';
-                                if ($booking->booking_status === 'Cancelled') $statusClass = 'admin-badge-danger';
+                                if ($booking->booking_status === 'confirmed') $statusClass = 'admin-badge-success';
+                                if ($booking->booking_status === 'pending') $statusClass = 'admin-badge-warning';
+                                if ($booking->booking_status === 'cancelled') $statusClass = 'admin-badge-danger';
                             ?>
-                            <span class="admin-badge <?= $statusClass ?>"><?= h($booking->booking_status) ?></span>
+                            <span class="admin-badge <?= $statusClass ?>"><?= h(ucfirst((string)$booking->booking_status)) ?></span>
                         </td>
                         <td>
                             <?php if ($hasPaidRecord): ?>
-                                <span class="admin-badge admin-badge-success">Paid</span>
+                                <span class="admin-badge admin-badge-success">Payment Paid</span>
                             <?php else: ?>
-                                <span class="admin-badge admin-badge-warning">Unpaid</span>
+                                <span class="admin-badge admin-badge-warning">Payment Pending</span>
                             <?php endif; ?>
                         </td>
                         <td>

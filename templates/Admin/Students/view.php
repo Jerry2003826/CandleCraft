@@ -13,6 +13,7 @@ if ($student->date_of_birth) {
 
 $effectiveAge = $calculatedAge ?? ($student->declared_age !== null ? (int)$student->declared_age : null);
 $canVerifyAdult = $effectiveAge !== null && $effectiveAge >= 18;
+$verifiedMinor = $student->user && $student->user->age_verified_by_admin && $effectiveAge !== null && $effectiveAge < 18;
 $ageEvidenceLabel = $student->date_of_birth ? 'date of birth' : 'declared age';
 $verificationBlockedMessage = $effectiveAge === null
     ? 'Admin verification is only available once a date of birth or declared age has been recorded for this customer.'
@@ -210,6 +211,15 @@ $verificationBlockedMessage = $effectiveAge === null
         <p style="font-family: 'Inter', sans-serif; font-size: 15px; color: var(--admin-text-primary); line-height: 1.6; margin-bottom: 20px;">
             Booking and payment are currently unlocked for this customer. Use the action below if the verification was recorded by mistake or needs to be removed.
         </p>
+
+        <?php if ($verifiedMinor): ?>
+            <div style="border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.28); background: rgba(239, 68, 68, 0.08); padding: 16px 18px; color: var(--admin-text-primary); margin-bottom: 20px;">
+                <strong style="display: block; margin-bottom: 8px; color: #DC2626;">Recorded age conflict</strong>
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5;">
+                    This customer is still marked as verified even though the recorded <?= h($ageEvidenceLabel) ?> shows they are under 18. Remove adult verification to lock booking and payment access again.
+                </span>
+            </div>
+        <?php endif; ?>
 
         <?= $this->Form->postLink(
             '<i class="bi bi-shield-x me-2"></i> Remove Adult Verification',

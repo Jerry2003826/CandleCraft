@@ -47,8 +47,9 @@ class PagesControllerCaptchaTest extends AppIntegrationTestCase
         $this->assertResponseContains('General enquiry');
     }
 
-    public function testMissingRecaptchaConfigDoesNotSaveMessage(): void
+    public function testMissingRecaptchaConfigStillAllowsMessageSave(): void
     {
+        Configure::write('Recaptcha.site_key', '');
         Configure::write('Recaptcha.secret_key', '');
         $messagesTable = FactoryLocator::get('Table')->get('Messages');
         $before = $messagesTable->find()->count();
@@ -67,8 +68,8 @@ class PagesControllerCaptchaTest extends AppIntegrationTestCase
 
         $after = $messagesTable->find()->count();
 
-        $this->assertResponseOk();
-        $this->assertSame($before, $after);
+        $this->assertResponseCode(302);
+        $this->assertSame($before + 1, $after);
     }
 
     public function testCustomerAccessRequestRejectsConflictingAgeDeclaration(): void

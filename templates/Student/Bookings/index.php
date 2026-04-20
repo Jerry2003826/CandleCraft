@@ -177,7 +177,10 @@ $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
                                     }
                                 }
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
+                                $paymentLabel = $isPaid ? 'Payment Paid' : (!empty($booking->parent_id) ? 'Managed by Parent' : 'Payment Pending');
+                                $paymentClass = $isPaid ? 'badge-confirmed' : (!empty($booking->parent_id) ? 'badge-read' : 'badge-pending');
                                 ?>
+                                <span class="badge <?= h($paymentClass) ?>"><?= h($paymentLabel) ?></span>
                                 <div class="d-flex gap-1 mt-2 flex-wrap">
                                     <?php if ($booking->booking_status === 'pending' && !$isPaid && empty($booking->parent_id)): ?>
                                         <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>" class="btn btn-sm btn-primary">Pay</a>

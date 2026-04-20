@@ -157,6 +157,18 @@ class StudentsController extends AppController
                 ],
             ]);
             if ($studentsTable->save($student)) {
+                if ($student->user_id !== null) {
+                    $usersTable = $this->fetchTable('Users');
+                    $user = $usersTable->get($student->user_id);
+                    $ageCheck = $this->evaluateAdultEligibility($student);
+
+                    if ($user->age_verified_by_admin && !$ageCheck['eligible']) {
+                        $user->age_verified_by_admin = false;
+                        $usersTable->save($user);
+                        $this->Flash->warning(__('Adult verification was removed automatically because the updated age details show this customer is under 18.'));
+                    }
+                }
+
                 $this->Flash->success(__('The student has been saved.'));
 
                 return $this->redirect(['action' => 'index']);

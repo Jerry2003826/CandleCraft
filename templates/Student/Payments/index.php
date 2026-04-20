@@ -50,7 +50,7 @@ $this->assign('title', 'Payments');
                                 <?php elseif ($needsParentAuth): ?>
                                     <span class="badge badge-read">Managed by Parent</span>
                                 <?php else: ?>
-                                    <span class="badge badge-pending">Unpaid</span>
+                                    <span class="badge badge-pending">Payment Pending</span>
                                 <?php endif; ?>
                             </td>
                             <td>
