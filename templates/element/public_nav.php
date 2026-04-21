@@ -28,17 +28,8 @@ $menuId = $menuId ?? 'public-courses-menu';
         <div class="nav-dropdown" data-nav-disclosure>
             <div class="nav-dropdown__trigger">
                 <a href="<?= h($coursesUrl) ?>" class="nav-dropdown__primary-link">Courses</a>
-                <button
-                    type="button"
-                    class="nav-dropdown__toggle"
-                    aria-expanded="false"
-                    aria-controls="<?= h($menuId) ?>"
-                >
-                    <span class="visually-hidden">Toggle course categories</span>
-                    <span aria-hidden="true" class="nav-dropdown__toggle-icon">▾</span>
-                </button>
             </div>
-            <div class="nav-dropdown__menu" id="<?= h($menuId) ?>" data-nav-panel hidden>
+            <div class="nav-dropdown__menu" id="<?= h($menuId) ?>" data-nav-panel>
                 <div class="nav-dropdown__menu-inner">
                     <a href="<?= h($coursesUrl) ?>?type=pottery">Pottery</a>
                     <a href="<?= h($coursesUrl) ?>?type=knitting">Knitting</a>
