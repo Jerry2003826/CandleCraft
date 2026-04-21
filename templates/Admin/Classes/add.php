@@ -4,6 +4,7 @@
  * @var \App\Model\Entity\ClassEntity $class
  * @var \Cake\ORM\ResultSet $courses
  * @var \Cake\ORM\ResultSet $teachers
+ * @var array<string, string> $locationOptions
  */
 $this->assign('title', 'Add Class');
 ?>
@@ -18,16 +19,11 @@ $this->assign('title', 'Add Class');
     </div>
     
     <?= $this->Form->create($class) ?>
-        <div class="admin-form-group">
-            <label for="class-code" class="admin-form-label">Class Code</label>
-            <?= $this->Form->text('class_code', [
-                'id' => 'class-code', 
-                'required' => true, 
-                'placeholder' => 'e.g. POT-BEG-001', 
-                'maxlength' => 30, 
-                'pattern' => '[A-Za-z0-9-]{3,30}',
-                'class' => 'admin-form-input'
-            ]) ?>
+        <div class="admin-form-group" style="padding: 16px 18px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border);">
+            <div class="admin-form-label" style="margin-bottom: 6px;">Class Code</div>
+            <p style="margin: 0; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">
+                The class code will be generated automatically from the selected course when you save this class.
+            </p>
         </div>
         
         <div class="row g-4">
@@ -63,6 +59,7 @@ $this->assign('title', 'Add Class');
                         'type' => 'datetime-local', 
                         'id' => 'start-datetime', 
                         'required' => true,
+                        'value' => $class->start_datetime?->format('Y-m-d\TH:i') ?? '',
                         'class' => 'admin-form-input'
                     ]) ?>
                 </div>
@@ -74,6 +71,7 @@ $this->assign('title', 'Add Class');
                         'type' => 'datetime-local', 
                         'id' => 'end-datetime', 
                         'required' => true,
+                        'value' => $class->end_datetime?->format('Y-m-d\TH:i') ?? '',
                         'class' => 'admin-form-input'
                     ]) ?>
                 </div>
@@ -82,12 +80,11 @@ $this->assign('title', 'Add Class');
         
         <div class="admin-form-group mt-4">
             <label for="location" class="admin-form-label">Location</label>
-            <?= $this->Form->text('location', [
+            <?= $this->Form->select('location', $locationOptions, [
                 'id' => 'location', 
+                'empty' => '-- Select Location --',
                 'required' => true, 
-                'placeholder' => 'e.g. Studio A', 
-                'maxlength' => 150,
-                'class' => 'admin-form-input'
+                'class' => 'admin-form-select'
             ]) ?>
         </div>
         
@@ -120,16 +117,6 @@ $this->assign('title', 'Add Class');
                     ]) ?>
                 </div>
             </div>
-        </div>
-        
-        <div class="admin-form-group mt-4">
-            <label for="notes" class="admin-form-label">Notes</label>
-            <?= $this->Form->textarea('notes', [
-                'id' => 'notes', 
-                'rows' => 3, 
-                'maxlength' => 2000,
-                'class' => 'admin-form-textarea'
-            ]) ?>
         </div>
         
         <div class="admin-form-actions">

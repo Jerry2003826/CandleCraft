@@ -4,6 +4,7 @@
  * @var \App\Model\Entity\ClassEntity $class
  * @var \Cake\ORM\ResultSet $courses
  * @var \Cake\ORM\ResultSet $teachers
+ * @var array<string, string> $locationOptions
  */
 $this->assign('title', 'Edit Class');
 ?>
@@ -22,11 +23,12 @@ $this->assign('title', 'Edit Class');
             <label for="class-code" class="admin-form-label">Class Code</label>
             <?= $this->Form->text('class_code', [
                 'id' => 'class-code', 
-                'required' => true, 
-                'maxlength' => 30, 
-                'pattern' => '[A-Za-z0-9-]{3,30}',
+                'readonly' => true,
                 'class' => 'admin-form-input'
             ]) ?>
+            <p style="margin: 8px 0 0; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
+                This code is generated automatically. If you change the course and save, the code will be regenerated to match.
+            </p>
         </div>
         
         <div class="row g-4">
@@ -62,6 +64,7 @@ $this->assign('title', 'Edit Class');
                         'type' => 'datetime-local', 
                         'id' => 'start-datetime', 
                         'required' => true,
+                        'value' => $class->start_datetime?->format('Y-m-d\TH:i') ?? '',
                         'class' => 'admin-form-input'
                     ]) ?>
                 </div>
@@ -73,6 +76,7 @@ $this->assign('title', 'Edit Class');
                         'type' => 'datetime-local', 
                         'id' => 'end-datetime', 
                         'required' => true,
+                        'value' => $class->end_datetime?->format('Y-m-d\TH:i') ?? '',
                         'class' => 'admin-form-input'
                     ]) ?>
                 </div>
@@ -81,11 +85,11 @@ $this->assign('title', 'Edit Class');
         
         <div class="admin-form-group mt-4">
             <label for="location" class="admin-form-label">Location</label>
-            <?= $this->Form->text('location', [
+            <?= $this->Form->select('location', $locationOptions, [
                 'id' => 'location', 
+                'empty' => '-- Select Location --',
                 'required' => true, 
-                'maxlength' => 150,
-                'class' => 'admin-form-input'
+                'class' => 'admin-form-select'
             ]) ?>
         </div>
         
@@ -116,16 +120,6 @@ $this->assign('title', 'Edit Class');
                     ]) ?>
                 </div>
             </div>
-        </div>
-        
-        <div class="admin-form-group mt-4">
-            <label for="notes" class="admin-form-label">Notes</label>
-            <?= $this->Form->textarea('notes', [
-                'id' => 'notes', 
-                'rows' => 3, 
-                'maxlength' => 2000,
-                'class' => 'admin-form-textarea'
-            ]) ?>
         </div>
         
         <div class="admin-form-actions">

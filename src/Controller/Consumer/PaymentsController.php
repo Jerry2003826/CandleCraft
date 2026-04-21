@@ -83,9 +83,6 @@ class PaymentsController extends AppController
 
         $preferredPaymentMethods = [
             'card' => 'Card',
-            'bank_transfer' => 'Bank Transfer',
-            'cash' => 'Cash',
-            'other' => 'Other',
         ];
 
         $this->set(compact('bookings', 'paymentProfiles', 'paymentProfile', 'preferredPaymentMethods'));
@@ -239,7 +236,7 @@ class PaymentsController extends AppController
             ->firstOrFail();
 
         try {
-            (new BookingCancellationService())->voidPendingPaymentsForBooking((int)$booking->booking_id, [
+            (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
                 'portal_source' => 'consumer_portal',
             ]);
         } catch (RuntimeException $exception) {
@@ -248,7 +245,7 @@ class PaymentsController extends AppController
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->warning(__('Payment was cancelled. Booking remains pending.'));
+        $this->Flash->warning(__('Payment was cancelled, so the pending booking was removed.'));
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
     }
@@ -312,7 +309,7 @@ class PaymentsController extends AppController
             'billing_state' => trim((string)($data['billing_state'] ?? '')),
             'billing_postcode' => trim((string)($data['billing_postcode'] ?? '')),
             'billing_country' => trim((string)($data['billing_country'] ?? '')),
-            'preferred_payment_method' => (string)($data['preferred_payment_method'] ?? 'card'),
+            'preferred_payment_method' => 'card',
             'profile_status' => 'active',
             'is_default' => !empty($data['is_default']),
         ];

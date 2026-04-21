@@ -7,7 +7,7 @@
  * @var \Cake\I18n\DateTime $weekEnd
  * @var bool $bookingAccessEnabled
  */
-$this->assign('title', 'View Schedule & Attendance');
+$this->assign('title', 'My Schedule');
 
 $prevWeek = $weekStart->modify('-7 days')->format('Y-m-d');
 $nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
@@ -85,9 +85,6 @@ $resolvePaymentBadge = static function ($booking): array {
                     <i class="bi bi-list-ul"></i> List
                 </button>
             </div>
-            <?php if ($bookingAccessEnabled): ?>
-                <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary" style="padding: 8px 16px; font-size: 13px;"><i class="bi bi-plus-circle me-1"></i> Open Booking System</a>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -172,9 +169,6 @@ $resolvePaymentBadge = static function ($booking): array {
             <div class="admin-form-card text-center py-5 flex-grow-1 d-flex flex-column justify-content-center" style="max-width: 100%;">
                 <i class="bi bi-calendar-event text-muted" style="font-size: 48px;"></i>
                 <p class="mt-3 text-muted">You do not have any schedule or attendance records yet.</p>
-                <?php if ($bookingAccessEnabled): ?>
-                    <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary btn-sm mt-2 mx-auto">Open Booking System</a>
-                <?php endif; ?>
             </div>
         <?php else: ?>
             <?php

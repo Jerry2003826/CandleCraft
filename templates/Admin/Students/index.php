@@ -62,18 +62,7 @@ $this->assign('title', 'Customers');
                         <?php if (!$student->user): ?>
                             <span class="admin-badge admin-badge-neutral"><i class="bi bi-person-dash me-1"></i> No account</span>
                         <?php elseif ($student->user->age_verified_by_admin): ?>
-                            <div class="d-flex flex-column align-items-start gap-2">
-                                <span class="admin-badge admin-badge-success"><i class="bi bi-shield-check me-1"></i> Yes</span>
-                                <?= $this->Form->postLink(
-                                    'Unverify',
-                                    ['action' => 'unverifyAge', $student->student_id],
-                                    [
-                                        'class' => 'admin-action-link delete',
-                                        'style' => 'padding: 4px 10px; width: auto; height: auto; font-size: 12px;',
-                                        'confirm' => __('Remove adult verification for {0}?', $student->student_name),
-                                    ]
-                                ) ?>
-                            </div>
+                            <span class="admin-badge admin-badge-success"><i class="bi bi-shield-check me-1"></i> Yes</span>
                         <?php else: ?>
                             <span class="admin-badge admin-badge-warning"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
                         <?php endif; ?>

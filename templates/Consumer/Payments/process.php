@@ -71,7 +71,7 @@ $this->assign('title', 'Payment');
         </p>
         <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
         <button type="submit" class="admin-btn-primary w-100 justify-content-center py-3" style="font-size: 16px;">
-            <i class="bi bi-lock me-2"></i> Proceed to Secure Payment
+            <i class="bi bi-lock me-2"></i> Confirm Booking &amp; Pay
         </button>
         <?= $this->Form->end() ?>
     <?php elseif (!empty($demoModeEnabled)): ?>
@@ -83,7 +83,7 @@ $this->assign('title', 'Payment');
         </div>
         <?= $this->Form->create(null, ['url' => ['action' => 'process', $booking->booking_id]]) ?>
         <button type="submit" class="admin-btn-primary w-100 justify-content-center py-3" style="font-size: 16px;">
-            <i class="bi bi-check-circle me-2"></i> Complete Demo Payment
+            <i class="bi bi-check-circle me-2"></i> Confirm Demo Payment
         </button>
         <?= $this->Form->end() ?>
     <?php else: ?>

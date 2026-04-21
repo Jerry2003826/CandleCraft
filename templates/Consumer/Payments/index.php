@@ -75,32 +75,6 @@ foreach ($bookingList as $booking) {
             </div>
         </div>
 
-        <div class="z-billing-grid">
-            <button type="button" class="z-billing-grid-card" data-tab-trigger="history">
-                <div class="z-billing-grid-icon"><i class="bi bi-clock-history"></i></div>
-                <div class="z-billing-grid-content">
-                    <h3>Billing History</h3>
-                    <p>View past and current bills</p>
-                </div>
-                <i class="bi bi-chevron-right z-billing-grid-arrow"></i>
-            </button>
-            <button type="button" class="z-billing-grid-card" data-tab-trigger="details">
-                <div class="z-billing-grid-icon"><i class="bi bi-credit-card"></i></div>
-                <div class="z-billing-grid-content">
-                    <h3>Payment Methods</h3>
-                    <p>Add or change payment method</p>
-                </div>
-                <i class="bi bi-chevron-right z-billing-grid-arrow"></i>
-            </button>
-            <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="z-billing-grid-card">
-                <div class="z-billing-grid-icon"><i class="bi bi-journal-text"></i></div>
-                <div class="z-billing-grid-content">
-                    <h3>Order Summary</h3>
-                    <p>View your course bookings</p>
-                </div>
-                <i class="bi bi-chevron-right z-billing-grid-arrow"></i>
-            </a>
-        </div>
     </div>
 
     <div id="history" class="z-billing-section" hidden>
@@ -172,7 +146,10 @@ foreach ($bookingList as $booking) {
     </div>
 
     <div id="details" class="z-billing-section" hidden>
-        <h2 class="z-billing-section-title">Saved Payment Methods</h2>
+        <h2 class="z-billing-section-title">Saved Payment Details</h2>
+        <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 20px;">
+            Online checkout currently accepts card payments only, so saved details are stored as card billing details.
+        </p>
         
         <div class="row g-4">
             <div class="col-lg-6">
@@ -195,7 +172,7 @@ foreach ($bookingList as $booking) {
                                 </div>
                                 
                                 <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 16px; line-height: 1.6;">
-                                    <div style="color: var(--admin-text-primary); font-weight: 500; margin-bottom: 4px;"><?= h(ucwords(str_replace('_', ' ', (string)$profile->preferred_payment_method))) ?></div>
+                                    <div style="color: var(--admin-text-primary); font-weight: 500; margin-bottom: 4px;">Card</div>
                                     <div>
                                         <?= h(trim(implode(', ', array_filter([
                                             $profile->billing_address_line1,
@@ -243,7 +220,7 @@ foreach ($bookingList as $booking) {
             <div class="col-lg-6">
                 <div class="admin-form-card" id="payment-details-form" style="border-radius: 12px; padding: 24px;">
                     <h3 class="admin-form-title mb-4" style="font-size: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--admin-card-border);">
-                        <?= $editingExistingProfile ? 'Update Payment Details' : 'Add Payment Details' ?>
+                        <?= $editingExistingProfile ? 'Update Card Billing Details' : 'Add Card Billing Details' ?>
                     </h3>
                     
                     <?= $this->Form->create($paymentProfile, [
@@ -260,12 +237,15 @@ foreach ($bookingList as $booking) {
                                 <?= $this->Form->control('billing_email', ['label' => false, 'id' => 'billing-email', 'class' => 'admin-form-input']) ?>
                             </div>
                             <div class="col-12">
-                                <label class="admin-form-label" style="font-size: 13px;" for="preferred-payment-method">Preferred Payment Method</label>
+                                <label class="admin-form-label" style="font-size: 13px;" for="preferred-payment-method">Payment Method</label>
                                 <?= $this->Form->control('preferred_payment_method', [
                                     'label' => false,
                                     'id' => 'preferred-payment-method',
                                     'options' => $preferredPaymentMethods,
                                     'class' => 'admin-form-select',
+                                    'empty' => false,
+                                    'default' => 'card',
+                                    'value' => 'card',
                                 ]) ?>
                             </div>
                             <div class="col-12">

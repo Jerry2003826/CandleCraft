@@ -1019,6 +1019,13 @@ body {
     text-decoration: none;
 }
 
+.wc-evt:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+    color: #fff;
+    text-decoration: none;
+}
+
 .wc-evt__title {
     font-size: 11px;
     font-weight: 700;
@@ -1040,6 +1047,41 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.wc-evt--compact {
+    padding: 4px 6px;
+}
+
+.wc-evt--compact .wc-evt__title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.wc-evt--compact .wc-evt__loc:last-child {
+    display: none;
+}
+
+.wc-evt--tiny {
+    padding: 3px 6px;
+    gap: 0;
+}
+
+.wc-evt--tiny .wc-evt__time {
+    font-size: 9px;
+}
+
+.wc-evt--tiny .wc-evt__title {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.wc-evt--tiny .wc-evt__loc {
+    display: none;
 }
 
 /* Now line */

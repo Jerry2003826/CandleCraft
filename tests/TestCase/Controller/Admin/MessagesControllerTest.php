@@ -84,6 +84,55 @@ class MessagesControllerTest extends AppIntegrationTestCase
         $this->assertResponseContains('View Customer Record');
     }
 
+    public function testArchiveMovesEnquiryToArchivedStatus(): void
+    {
+        $this->loginAsAdmin();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/admin/messages/archive/1');
+
+        $this->assertResponseCode(302);
+
+        $message = FactoryLocator::get('Table')->get('Messages')->get(1);
+        $this->assertSame('archived', $message->message_status);
+    }
+
+    public function testDeleteRequiresArchivedStatus(): void
+    {
+        $this->loginAsAdmin();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/admin/messages/delete/1');
+
+        $this->assertResponseCode(302);
+
+        $messages = FactoryLocator::get('Table')->get('Messages');
+        $message = $messages->get(1);
+        $this->assertSame('unread', $message->message_status);
+        $this->assertSame(1, $messages->find()->count());
+    }
+
+    public function testRestoreReturnsArchivedEnquiryToReadStatus(): void
+    {
+        $messages = FactoryLocator::get('Table')->get('Messages');
+        $message = $messages->get(1);
+        $message->message_status = 'archived';
+        $messages->saveOrFail($message);
+
+        $this->loginAsAdmin();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/admin/messages/restore/1');
+
+        $this->assertResponseCode(302);
+
+        $message = $messages->get(1);
+        $this->assertSame('read', $message->message_status);
+    }
+
     private function createCustomerAccessMessage(bool $selfDeclaredAdult, string $email = 'customer-request@example.com'): int
     {
         $messages = FactoryLocator::get('Table')->get('Messages');

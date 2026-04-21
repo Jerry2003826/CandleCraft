@@ -69,13 +69,19 @@ $messageItems = method_exists($messages, 'items') ? $messages->items() : $messag
                             <?php endif; ?>
                         </td>
                         <td>
-                            <p class="admin-table-secondary-text"><?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?></p>
+                            <p class="admin-table-secondary-text">
+                                <?= $message->sent_at ? h($message->sent_at->timeAgoInWords()) : '-' ?>
+                            </p>
+                            <?php if ($message->sent_at): ?>
+                                <p class="admin-table-secondary-text" style="font-size: 12px; opacity: 0.75;"><?= h($message->sent_at->format('j M Y, g:ia')) ?></p>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <?php 
                                 $statusClass = 'admin-badge-neutral';
                                 if ($message->message_status === 'unread') $statusClass = 'admin-badge-info';
                                 if ($message->message_status === 'replied') $statusClass = 'admin-badge-success';
+                                if ($message->message_status === 'archived') $statusClass = 'admin-badge-warning';
                             ?>
                             <span class="admin-badge <?= $statusClass ?>"><?= ucfirst(h($message->message_status)) ?></span>
                         </td>
@@ -89,22 +95,50 @@ $messageItems = method_exists($messages, 'items') ? $messages->items() : $messag
                                         <i class="bi bi-person-plus"></i>
                                     </a>
                                 <?php endif; ?>
-                                <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply" aria-label="Reply to enquiry from <?= h($message->sender_name ?: $message->sender_email ?: 'customer') ?>">
-                                    <i class="bi bi-reply"></i>
-                                </a>
-                                <?= $this->Form->create(null, [
-                                    'url' => ['action' => 'delete', $message->message_id],
-                                    'class' => 'd-inline m-0',
-                                ]) ?>
-                                    <?= $this->Form->button('<i class="bi bi-trash"></i>', [
-                                        'class' => 'admin-action-link delete',
-                                        'type' => 'submit',
-                                        'title' => 'Delete',
-                                        'aria-label' => 'Delete enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
-                                        'onclick' => "return confirm('Are you sure you want to delete this enquiry?');",
-                                        'escapeTitle' => false,
+                                <?php if ($message->message_status !== 'archived'): ?>
+                                    <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-action-link edit" title="Reply" aria-label="Reply to enquiry from <?= h($message->sender_name ?: $message->sender_email ?: 'customer') ?>">
+                                        <i class="bi bi-reply"></i>
+                                    </a>
+                                    <?= $this->Form->create(null, [
+                                        'url' => ['action' => 'archive', $message->message_id],
+                                        'class' => 'd-inline m-0',
                                     ]) ?>
-                                <?= $this->Form->end() ?>
+                                        <?= $this->Form->button('<i class="bi bi-archive"></i>', [
+                                            'class' => 'admin-action-link edit',
+                                            'type' => 'submit',
+                                            'title' => 'Archive',
+                                            'aria-label' => 'Archive enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
+                                            'onclick' => "return confirm('Archive this enquiry?');",
+                                            'escapeTitle' => false,
+                                        ]) ?>
+                                    <?= $this->Form->end() ?>
+                                <?php else: ?>
+                                    <?= $this->Form->create(null, [
+                                        'url' => ['action' => 'restore', $message->message_id],
+                                        'class' => 'd-inline m-0',
+                                    ]) ?>
+                                        <?= $this->Form->button('<i class="bi bi-arrow-counterclockwise"></i>', [
+                                            'class' => 'admin-action-link view',
+                                            'type' => 'submit',
+                                            'title' => 'Restore',
+                                            'aria-label' => 'Restore enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
+                                            'escapeTitle' => false,
+                                        ]) ?>
+                                    <?= $this->Form->end() ?>
+                                    <?= $this->Form->create(null, [
+                                        'url' => ['action' => 'delete', $message->message_id],
+                                        'class' => 'd-inline m-0',
+                                    ]) ?>
+                                        <?= $this->Form->button('<i class="bi bi-trash"></i>', [
+                                            'class' => 'admin-action-link delete',
+                                            'type' => 'submit',
+                                            'title' => 'Delete',
+                                            'aria-label' => 'Delete archived enquiry from ' . ($message->sender_name ?: $message->sender_email ?: 'customer'),
+                                            'onclick' => "return confirm('Delete this archived enquiry permanently?');",
+                                            'escapeTitle' => false,
+                                        ]) ?>
+                                    <?= $this->Form->end() ?>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

@@ -3,11 +3,19 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class ClassesTable extends Table
 {
+    public const LOCATION_OPTIONS = [
+        'Studio A',
+        'Studio B',
+        'Room A',
+        'Room B',
+    ];
+
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -91,6 +99,7 @@ class ClassesTable extends Table
         $validator
             ->scalar('location')
             ->maxLength('location', 150)
+            ->inList('location', self::LOCATION_OPTIONS, 'Please choose one of the available studio locations.')
             ->requirePresence('location', 'create')
             ->notEmptyString('location');
 
@@ -112,12 +121,68 @@ class ClassesTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['class_code']), ['errorField' => 'class_code']);
         $rules->add($rules->existsIn('course_id', 'Courses'), ['errorField' => 'course_id']);
         $rules->add($rules->existsIn('teacher_id', 'Teachers'), ['errorField' => 'teacher_id']);
+        $rules->add(
+            fn(object $entity): bool => !$this->hasOverlappingClass($entity, ['Classes.course_id' => $entity->course_id]),
+            'noDuplicateCourseTimeslot',
+            [
+                'errorField' => 'start_datetime',
+                'message' => 'Another class for this course already uses that time slot.',
+            ]
+        );
+        $rules->add(
+            fn(object $entity): bool => !$this->hasOverlappingClass($entity, ['Classes.teacher_id' => $entity->teacher_id]),
+            'noTeacherClash',
+            [
+                'errorField' => 'teacher_id',
+                'message' => 'This teacher already has another class during the selected time.',
+            ]
+        );
+        $rules->add(
+            fn(object $entity): bool => !$this->hasOverlappingClass($entity, ['Classes.location' => $entity->location]),
+            'noLocationClash',
+            [
+                'errorField' => 'location',
+                'message' => 'This location is already booked during the selected time.',
+            ]
+        );
 
         return $rules;
+    }
+
+    private function hasOverlappingClass(object $entity, array $conditions): bool
+    {
+        $start = $entity->start_datetime ?? null;
+        $end = $entity->end_datetime ?? null;
+        $status = (string)($entity->class_status ?? '');
+
+        if ($start === null || $end === null || $conditions === [] || $status === 'cancelled') {
+            return false;
+        }
+
+        foreach ($conditions as $value) {
+            if ($value === null || $value === '') {
+                return false;
+            }
+        }
+
+        $query = $this->find()
+            ->where($conditions)
+            ->where([
+                'Classes.start_datetime <' => $end,
+                'Classes.end_datetime >' => $start,
+                'Classes.class_status !=' => 'cancelled',
+            ]);
+
+        $classId = $entity->class_id ?? null;
+        if ($classId !== null) {
+            $query->where(['Classes.class_id !=' => $classId]);
+        }
+
+        return $query->count() > 0;
     }
 }

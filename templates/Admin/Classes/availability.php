@@ -8,6 +8,7 @@
  * @var \Cake\ORM\ResultSet $allCourses
  * @var array<int, bool> $scheduledCourseIds
  * @var int $weekOffset
+ * @var array<string, string> $locationOptions
  */
 $this->assign('title', 'Classes');
 $dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -160,14 +161,16 @@ $nowMinute = (int)date('i');
                             if ($durMin < 30) {
                                 $durMin = 30;
                             }
+                            $eventSizeClass = $durMin < 45 ? 'wc-evt--tiny' : ($durMin < 75 ? 'wc-evt--compact' : '');
                             $startFmt = sprintf('%02d:%02d', $event['start_hour'], $event['start_minute']);
                             $endFmt = sprintf('%02d:%02d', $event['end_hour'], $event['end_minute']);
                         ?>
                         <a
                             href="<?= $this->Url->build(['action' => 'edit', $event['class_id']]) ?>"
-                            class="wc-evt"
+                            class="wc-evt <?= $eventSizeClass ?>"
                             style="top: calc(<?= $topMin ?> * var(--wc-min-h)); height: calc(<?= $durMin ?> * var(--wc-min-h)); --evt-color: <?= h($event['color']) ?>; background-color: <?= h($event['background']) ?>;"
                             title="<?= h($event['title']) ?>"
+                            aria-label="<?= h($event['title'] . '. ' . $startFmt . ' to ' . $endFmt . '. ' . $event['teacher'] . '. ' . $event['class_code'] . ($event['location'] !== '' ? ' at ' . $event['location'] : '') . '. ' . $event['spots']) ?>"
                         >
                             <strong class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></strong>
                             <strong class="wc-evt__title"><?= h($event['title']) ?></strong>
@@ -267,16 +270,11 @@ $nowMinute = (int)date('i');
                     ]) ?>
                 </div>
 
-                <div class="admin-form-group">
-                    <label for="slot-code" class="admin-form-label">Class Code <span class="text-danger">*</span></label>
-                    <?= $this->Form->text('class_code', [
-                        'id' => 'slot-code', 
-                        'required' => true, 
-                        'placeholder' => 'e.g. POT-BEG-001', 
-                        'maxlength' => 30, 
-                        'pattern' => '[A-Za-z0-9-]{3,30}',
-                        'class' => 'admin-form-input'
-                    ]) ?>
+                <div class="admin-form-group" style="padding: 14px 16px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border);">
+                    <div class="admin-form-label" style="margin-bottom: 6px;">Class Code</div>
+                    <p style="margin: 0; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);">
+                        A class code will be generated automatically when this time slot is saved.
+                    </p>
                 </div>
 
                 <div class="row g-4">
@@ -334,12 +332,12 @@ $nowMinute = (int)date('i');
 
                 <div class="admin-form-group mt-4">
                     <label for="slot-location" class="admin-form-label">Location <span class="text-danger">*</span></label>
-                    <?= $this->Form->text('location', [
+                    <?= $this->Form->select('location', $locationOptions, [
                         'id' => 'slot-location', 
-                        'placeholder' => 'Studio A', 
-                        'value' => 'Studio A', 
+                        'empty' => 'Select location...',
+                        'default' => 'Studio A',
                         'required' => true,
-                        'class' => 'admin-form-input'
+                        'class' => 'admin-form-select'
                     ]) ?>
                 </div>
 

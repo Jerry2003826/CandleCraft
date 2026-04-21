@@ -3,8 +3,18 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
+use Cake\Core\Configure;
+
 class AccessibilityRenderingTest extends AppIntegrationTestCase
 {
+    protected function tearDown(): void
+    {
+        Configure::delete('Recaptcha.site_key');
+        Configure::delete('Recaptcha.secret_key');
+
+        parent::tearDown();
+    }
+
     public function testHomePageRendersSkipLinkAndAccessibleCourseDisclosure(): void
     {
         $this->get('/');
@@ -25,11 +35,14 @@ class AccessibilityRenderingTest extends AppIntegrationTestCase
         $this->assertResponseContains('for="sender-email"');
         $this->assertResponseContains('aria-controls="request-account-fields"');
         $this->assertResponseContains('aria-expanded="false"');
-        $this->assertResponseContains('data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"');
+        $this->assertResponseContains('id="captcha-label"');
+        $this->assertResponseContains('id="captcha-help"');
     }
 
     public function testContactPageInvalidSubmitRendersAccessibleErrorFeedback(): void
     {
+        Configure::write('Recaptcha.site_key', 'live-site-key');
+        Configure::write('Recaptcha.secret_key', 'live-secret-key');
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
@@ -41,6 +54,7 @@ class AccessibilityRenderingTest extends AppIntegrationTestCase
             'sender_phone' => '0400000000',
             'subject' => 'General enquiry',
             'message_text' => 'Please contact me about upcoming pottery classes.',
+            'g-recaptcha-response' => '',
         ]);
 
         $this->assertResponseOk();

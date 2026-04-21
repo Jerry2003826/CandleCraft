@@ -123,6 +123,35 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         $this->assertSame('pending', $booking->booking_status);
     }
 
+    public function testCancelRemovesPendingBookingAndVoidsPayment(): void
+    {
+        $this->loginAsStudent();
+
+        $this->get('/consumer/payments/cancel/1');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer/bookings');
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
+
+        $this->assertSame('voided', $payment->payment_status);
+        $this->assertSame('cancelled', $booking->booking_status);
+    }
+
+    public function testPaymentPortalOnlyOffersCardPaymentDetails(): void
+    {
+        $this->loginAsStudent();
+
+        $this->get('/consumer/payments');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Card');
+        $this->assertResponseNotContains('Bank Transfer');
+        $this->assertResponseNotContains('Cash');
+        $this->assertResponseNotContains('Other');
+    }
+
     public function testProcessStripeDoesNotRedirectWhenPaymentSaveFails(): void
     {
         Configure::write('Stripe.secret_key', 'sk_test_liveish');

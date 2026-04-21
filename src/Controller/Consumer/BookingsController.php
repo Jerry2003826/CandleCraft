@@ -39,7 +39,7 @@ class BookingsController extends AppController
         $calendarEvents = $this->buildCalendarEvents($bookings, $weekStart, $weekEnd);
 
         $this->set(compact('bookings', 'calendarEvents', 'weekStart', 'weekEnd'));
-        $this->set('title', 'View Schedule & Attendance');
+        $this->set('title', 'My Schedule');
     }
 
     /**
@@ -91,7 +91,7 @@ class BookingsController extends AppController
         $this->set(compact('class', 'student', 'availableSlots'));
         $this->set('studentOptions', []);
         $this->set('selectedStudentId', null);
-        $this->set('title', 'Book Class');
+        $this->set('title', 'Book a Class');
 
         return null;
     }
@@ -122,9 +122,9 @@ class BookingsController extends AppController
             }
 
             if (!empty($result['reactivated'])) {
-                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+                $this->Flash->success(__('Previous cancelled booking has been reactivated. Continue to payment to confirm it.'));
             } else {
-                $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+                $this->Flash->success(__('Your class has been reserved temporarily. Complete payment to confirm the booking.'));
             }
 
             return $this->redirect([
