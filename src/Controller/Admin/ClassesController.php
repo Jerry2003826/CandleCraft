@@ -7,6 +7,8 @@ use App\Model\Table\ClassesTable;
 
 class ClassesController extends AppController
 {
+    private const DEFAULT_DURATION_MINUTES = 120;
+
     private const LOCATION_OPTIONS = [
         'Studio A' => 'Studio A',
         'Studio B' => 'Studio B',
@@ -54,6 +56,7 @@ class ClassesController extends AppController
     {
         $classesTable = $this->fetchTable('Classes');
         $class = $classesTable->newEmptyEntity();
+        $courseEntities = $this->fetchActiveCourses($classesTable);
 
         if ($this->request->is('post')) {
             $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable));
@@ -70,11 +73,8 @@ class ClassesController extends AppController
             $this->Flash->error(__('The class could not be saved. Please try again.'));
         }
 
-        $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
-            ->where(['is_active' => true])
-            ->orderBy(['course_name' => 'ASC'])
-            ->all();
-
+        $courses = $this->buildCourseOptions($courseEntities);
+        $courseDurations = $this->buildCourseDurationMap($classesTable, $courseEntities);
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
             ->orderBy(['teacher_name' => 'ASC'])
@@ -82,13 +82,14 @@ class ClassesController extends AppController
 
         $locationOptions = self::LOCATION_OPTIONS;
 
-        $this->set(compact('class', 'courses', 'teachers', 'locationOptions'));
+        $this->set(compact('class', 'courses', 'teachers', 'locationOptions', 'courseDurations'));
     }
 
     public function edit(?string $id = null)
     {
         $classesTable = $this->fetchTable('Classes');
         $class = $classesTable->get($id);
+        $courseEntities = $this->fetchActiveCourses($classesTable);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable, $class));
@@ -100,11 +101,15 @@ class ClassesController extends AppController
             $this->Flash->error(__('The class could not be saved. Please try again.'));
         }
 
-        $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
-            ->where(['is_active' => true])
-            ->orderBy(['course_name' => 'ASC'])
-            ->all();
-
+        $courses = $this->buildCourseOptions($courseEntities);
+        $courseDurations = $this->buildCourseDurationMap($classesTable, $courseEntities);
+        if ($class->course_id !== null) {
+            $courseDurations[(int)$class->course_id] = $this->resolveCourseDurationMinutes(
+                $classesTable,
+                (int)$class->course_id,
+                $class
+            );
+        }
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
             ->orderBy(['teacher_name' => 'ASC'])
@@ -112,7 +117,7 @@ class ClassesController extends AppController
 
         $locationOptions = self::LOCATION_OPTIONS;
 
-        $this->set(compact('class', 'courses', 'teachers', 'locationOptions'));
+        $this->set(compact('class', 'courses', 'teachers', 'locationOptions', 'courseDurations'));
     }
 
     public function availability()
@@ -151,19 +156,12 @@ class ClassesController extends AppController
             }
         }
 
-        $courses = $classesTable->Courses->find('list', keyField: 'course_id', valueField: 'course_name')
-            ->where(['is_active' => true])
-            ->orderBy(['course_name' => 'ASC'])
-            ->all();
-
+        $allCourses = $this->fetchActiveCourses($classesTable);
+        $courses = $this->buildCourseOptions($allCourses);
+        $courseDurations = $this->buildCourseDurationMap($classesTable, $allCourses);
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
             ->where(['teacher_status' => 'active'])
             ->orderBy(['teacher_name' => 'ASC'])
-            ->all();
-
-        $allCourses = $classesTable->Courses->find()
-            ->where(['is_active' => true])
-            ->orderBy(['course_name' => 'ASC'])
             ->all();
 
         $scheduledCourseIds = [];
@@ -173,7 +171,17 @@ class ClassesController extends AppController
 
         $locationOptions = self::LOCATION_OPTIONS;
 
-        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset', 'allCourses', 'scheduledCourseIds', 'locationOptions'));
+        $this->set(compact(
+            'classesByDay',
+            'days',
+            'courses',
+            'teachers',
+            'weekOffset',
+            'allCourses',
+            'scheduledCourseIds',
+            'locationOptions',
+            'courseDurations'
+        ));
     }
 
     public function delete(?string $id = null)
@@ -210,7 +218,123 @@ class ClassesController extends AppController
             );
         }
 
+        if ($selectedCourseId && !empty($data['start_datetime'])) {
+            $durationMinutes = $this->resolveCourseDurationMinutes($classesTable, $selectedCourseId, $existingClass);
+            $calculatedEnd = $this->calculateEndDateTime((string)$data['start_datetime'], $durationMinutes);
+            if ($calculatedEnd !== null) {
+                $data['end_datetime'] = $calculatedEnd;
+            }
+        }
+
         return $data;
+    }
+
+    /**
+     * @return \Cake\Collection\CollectionInterface<int, object>
+     */
+    private function fetchActiveCourses(ClassesTable $classesTable)
+    {
+        return $classesTable->Courses->find()
+            ->where(['is_active' => true])
+            ->orderBy(['course_name' => 'ASC'])
+            ->all();
+    }
+
+    /**
+     * @param iterable<object> $courseEntities
+     * @return array<int, string>
+     */
+    private function buildCourseOptions(iterable $courseEntities): array
+    {
+        $options = [];
+        foreach ($courseEntities as $course) {
+            $options[(int)$course->course_id] = (string)$course->course_name;
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param iterable<object> $courseEntities
+     * @return array<int, int>
+     */
+    private function buildCourseDurationMap(ClassesTable $classesTable, iterable $courseEntities): array
+    {
+        $durations = [];
+        foreach ($courseEntities as $course) {
+            $durations[(int)$course->course_id] = $this->resolveCourseDurationMinutes($classesTable, (int)$course->course_id);
+        }
+
+        return $durations;
+    }
+
+    private function resolveCourseDurationMinutes(
+        ClassesTable $classesTable,
+        int $courseId,
+        ?object $existingClass = null
+    ): int {
+        if (
+            $existingClass !== null
+            && (int)$existingClass->course_id === $courseId
+            && ($existingDuration = $this->extractDurationMinutes($existingClass->start_datetime ?? null, $existingClass->end_datetime ?? null)) !== null
+        ) {
+            return $existingDuration;
+        }
+
+        $latestClass = $classesTable->find()
+            ->select(['course_id', 'start_datetime', 'end_datetime'])
+            ->where(['Classes.course_id' => $courseId])
+            ->orderBy(['Classes.start_datetime' => 'DESC'])
+            ->first();
+
+        if ($latestClass !== null) {
+            $durationMinutes = $this->extractDurationMinutes($latestClass->start_datetime ?? null, $latestClass->end_datetime ?? null);
+            if ($durationMinutes !== null) {
+                return $durationMinutes;
+            }
+        }
+
+        $course = $classesTable->Courses->find()
+            ->select(['course_id', 'course_type'])
+            ->where(['Courses.course_id' => $courseId])
+            ->first();
+
+        return $this->defaultDurationMinutesForCourse($course);
+    }
+
+    private function extractDurationMinutes(mixed $start, mixed $end): ?int
+    {
+        if (!$start || !$end || !method_exists($start, 'getTimestamp') || !method_exists($end, 'getTimestamp')) {
+            return null;
+        }
+
+        $duration = (int)round(($end->getTimestamp() - $start->getTimestamp()) / 60);
+        if ($duration < 30) {
+            return null;
+        }
+
+        return min($duration, 480);
+    }
+
+    private function calculateEndDateTime(string $startInput, int $durationMinutes): ?string
+    {
+        try {
+            $start = new \DateTimeImmutable($startInput);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $start->modify(sprintf('+%d minutes', max(30, $durationMinutes)))->format('Y-m-d H:i:s');
+    }
+
+    private function defaultDurationMinutesForCourse(?object $course): int
+    {
+        $courseType = strtolower((string)($course->course_type ?? ''));
+
+        return match ($courseType) {
+            'pottery', 'knitting' => self::DEFAULT_DURATION_MINUTES,
+            default => self::DEFAULT_DURATION_MINUTES,
+        };
     }
 
     private function generateClassCode(ClassesTable $classesTable, int $courseId, ?int $ignoreClassId = null): string

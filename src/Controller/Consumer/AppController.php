@@ -144,6 +144,12 @@ class AppController extends BaseAppController
                 'controller' => 'Dashboard',
             ],
             [
+                'label' => 'My Account',
+                'icon' => 'bi bi-person-badge',
+                'url' => ['prefix' => 'Consumer', 'controller' => 'Account', 'action' => 'index'],
+                'controller' => 'Account',
+            ],
+            [
                 'label' => 'My Schedule',
                 'icon' => 'bi bi-calendar-event',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index'],
@@ -164,7 +170,7 @@ class AppController extends BaseAppController
         ];
 
         if ($this->bookingAccessEnabled) {
-            array_splice($nav, 1, 0, [[
+            array_splice($nav, 3, 0, [[
                 'label' => 'Book a Class',
                 'icon' => 'bi bi-palette',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index'],
@@ -173,7 +179,7 @@ class AppController extends BaseAppController
         }
 
         if ($this->paymentAccessEnabled) {
-            array_splice($nav, 3, 0, [[
+            array_splice($nav, max(count($nav) - 1, 0), 0, [[
                 'label' => 'Payment Portal',
                 'icon' => 'bi bi-credit-card',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'index'],

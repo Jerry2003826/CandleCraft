@@ -53,10 +53,13 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
                 <?php endif; ?>
             </p>
         </div>
-        <div class="d-flex align-items-start">
+        <div class="d-flex align-items-start gap-2 flex-wrap">
             <span class="admin-badge <?= $bookingAccessEnabled ? 'admin-badge-success' : 'admin-badge-warning' ?>" style="padding: 8px 14px; font-size: 13px;">
                 <?= $bookingAccessEnabled ? 'Verified' : 'Pending review' ?>
             </span>
+            <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Account', 'action' => 'index']) ?>" class="admin-btn-secondary" style="padding: 8px 14px; font-size: 13px;">
+                My Account
+            </a>
         </div>
     </div>
 </div>

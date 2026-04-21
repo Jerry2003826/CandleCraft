@@ -9,8 +9,10 @@
  * @var array<int, bool> $scheduledCourseIds
  * @var int $weekOffset
  * @var array<string, string> $locationOptions
+ * @var array<int, int> $courseDurations
  */
 $this->assign('title', 'Classes');
+$courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 $dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 $today = (new \DateTimeImmutable())->format('Y-m-d');
 $weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
@@ -292,14 +294,15 @@ $nowMinute = (int)date('i');
                     </div>
                     <div class="col-md-6">
                         <div class="admin-form-group mb-0">
-                            <label for="slot-end-dt" class="admin-form-label">End Date & Time <span class="text-danger">*</span></label>
-                            <?= $this->Form->text('end_datetime', [
-                                'type' => 'datetime-local',
-                                'id' => 'slot-end-dt',
-                                'required' => true,
-                                'value' => $days[0]->format('Y-m-d') . 'T12:00',
-                                'class' => 'admin-form-input'
-                            ]) ?>
+                            <div class="admin-form-label">Fixed Duration</div>
+                            <div style="padding: 14px 16px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border); min-height: 106px;">
+                                <div id="slot-duration-text" style="font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--admin-text-primary); margin-bottom: 8px;">
+                                    Select a course to preview the saved class duration.
+                                </div>
+                                <div id="slot-end-preview" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); line-height: 1.5;">
+                                    End time is calculated automatically once you choose a course and start time.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -353,13 +356,84 @@ $nowMinute = (int)date('i');
 </div>
 
 <script>
-document.querySelectorAll('.avail-quick-add').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        var courseId = this.getAttribute('data-course-id');
-        var courseSelect = document.getElementById('slot-course');
-        if (courseSelect && courseId) {
-            courseSelect.value = courseId;
+document.addEventListener('DOMContentLoaded', function () {
+    var courseDurations = <?= $courseDurationsJson ?>;
+    var courseSelect = document.getElementById('slot-course');
+    var startInput = document.getElementById('slot-start-dt');
+    var durationText = document.getElementById('slot-duration-text');
+    var endPreview = document.getElementById('slot-end-preview');
+
+    function formatDuration(minutes) {
+        var hours = Math.floor(minutes / 60);
+        var remainder = minutes % 60;
+        if (hours > 0 && remainder > 0) {
+            return hours + 'h ' + remainder + 'm';
         }
+        if (hours > 0) {
+            return hours + 'h';
+        }
+        return minutes + 'm';
+    }
+
+    function formatLocalDate(value) {
+        if (!value) {
+            return '';
+        }
+
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+
+        return date.toLocaleString([], {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+
+    function updateDurationSummary() {
+        var courseId = courseSelect ? courseSelect.value : '';
+        var durationMinutes = Number(courseDurations[courseId] || 0);
+        var startValue = startInput ? startInput.value : '';
+
+        if (!courseId || !durationMinutes) {
+            durationText.textContent = 'Select a course to preview the saved class duration.';
+            endPreview.textContent = 'End time is calculated automatically once you choose a course and start time.';
+            return;
+        }
+
+        durationText.textContent = 'This class will run for ' + formatDuration(durationMinutes) + '.';
+
+        if (!startValue) {
+            endPreview.textContent = 'Choose a start date and time to preview the saved end time.';
+            return;
+        }
+
+        var startDate = new Date(startValue);
+        if (Number.isNaN(startDate.getTime())) {
+            endPreview.textContent = 'Choose a valid start date and time to preview the saved end time.';
+            return;
+        }
+
+        var endDate = new Date(startDate.getTime() + (durationMinutes * 60 * 1000));
+        endPreview.textContent = 'The class will be saved until ' + formatLocalDate(endDate);
+    }
+
+    document.querySelectorAll('.avail-quick-add').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var courseId = this.getAttribute('data-course-id');
+            if (courseSelect && courseId) {
+                courseSelect.value = courseId;
+                updateDurationSummary();
+            }
+        });
     });
+
+    courseSelect && courseSelect.addEventListener('change', updateDurationSummary);
+    startInput && startInput.addEventListener('input', updateDurationSummary);
+    updateDurationSummary();
 });
 </script>

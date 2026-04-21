@@ -5,8 +5,10 @@
  * @var \Cake\ORM\ResultSet $courses
  * @var \Cake\ORM\ResultSet $teachers
  * @var array<string, string> $locationOptions
+ * @var array<int, int> $courseDurations
  */
 $this->assign('title', 'Edit Class');
+$courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 ?>
 
 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
@@ -71,14 +73,15 @@ $this->assign('title', 'Edit Class');
             </div>
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="end-datetime" class="admin-form-label">End Date & Time</label>
-                    <?= $this->Form->text('end_datetime', [
-                        'type' => 'datetime-local', 
-                        'id' => 'end-datetime', 
-                        'required' => true,
-                        'value' => $class->end_datetime?->format('Y-m-d\TH:i') ?? '',
-                        'class' => 'admin-form-input'
-                    ]) ?>
+                    <div class="admin-form-label">Fixed Duration</div>
+                    <div id="duration-summary" style="padding: 14px 16px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border); min-height: 106px;">
+                        <div id="duration-text" style="font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; color: var(--admin-text-primary); margin-bottom: 8px;">
+                            This class will keep the selected course duration.
+                        </div>
+                        <div id="end-preview" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); line-height: 1.5;">
+                            End time is calculated automatically from the course and start time when you save.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -128,3 +131,76 @@ $this->assign('title', 'Edit Class');
         </div>
     <?= $this->Form->end() ?>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var courseDurations = <?= $courseDurationsJson ?>;
+    var courseSelect = document.getElementById('course-id');
+    var startInput = document.getElementById('start-datetime');
+    var durationText = document.getElementById('duration-text');
+    var endPreview = document.getElementById('end-preview');
+
+    function formatDuration(minutes) {
+        var hours = Math.floor(minutes / 60);
+        var remainder = minutes % 60;
+        if (hours > 0 && remainder > 0) {
+            return hours + 'h ' + remainder + 'm';
+        }
+        if (hours > 0) {
+            return hours + 'h';
+        }
+        return minutes + 'm';
+    }
+
+    function formatLocalDate(value) {
+        if (!value) {
+            return '';
+        }
+
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '';
+        }
+
+        return date.toLocaleString([], {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+
+    function updateDurationSummary() {
+        var courseId = courseSelect ? courseSelect.value : '';
+        var durationMinutes = Number(courseDurations[courseId] || 0);
+        var startValue = startInput ? startInput.value : '';
+
+        if (!courseId || !durationMinutes) {
+            durationText.textContent = 'Select a course to preview the saved class duration.';
+            endPreview.textContent = 'End time is calculated automatically once you choose a course and start time.';
+            return;
+        }
+
+        durationText.textContent = 'This class will run for ' + formatDuration(durationMinutes) + '.';
+
+        if (!startValue) {
+            endPreview.textContent = 'Choose a start date and time to preview the saved end time.';
+            return;
+        }
+
+        var startDate = new Date(startValue);
+        if (Number.isNaN(startDate.getTime())) {
+            endPreview.textContent = 'Choose a valid start date and time to preview the saved end time.';
+            return;
+        }
+
+        var endDate = new Date(startDate.getTime() + (durationMinutes * 60 * 1000));
+        endPreview.textContent = 'The class will be saved until ' + formatLocalDate(endDate);
+    }
+
+    courseSelect && courseSelect.addEventListener('change', updateDurationSummary);
+    startInput && startInput.addEventListener('input', updateDurationSummary);
+    updateDurationSummary();
+});
+</script>
