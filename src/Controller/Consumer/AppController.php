@@ -144,7 +144,7 @@ class AppController extends BaseAppController
                 'controller' => 'Dashboard',
             ],
             [
-                'label' => 'View Schedule & Attendance',
+                'label' => 'My Schedule',
                 'icon' => 'bi bi-calendar-event',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index'],
                 'controller' => 'Bookings',
@@ -165,7 +165,7 @@ class AppController extends BaseAppController
 
         if ($this->bookingAccessEnabled) {
             array_splice($nav, 1, 0, [[
-                'label' => 'Booking System',
+                'label' => 'Book a Class',
                 'icon' => 'bi bi-palette',
                 'url' => ['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index'],
                 'controller' => 'Courses',

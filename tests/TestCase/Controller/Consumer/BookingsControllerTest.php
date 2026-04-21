@@ -16,7 +16,7 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->get('/consumer/bookings/add/1');
 
         $this->assertResponseOk();
-        $this->assertResponseContains('Book Class');
+        $this->assertResponseContains('Book a Class');
     }
 
     public function testLiveTeacherRoleRedirectsConsumerSessionOutOfCustomerPortal(): void
@@ -153,6 +153,6 @@ class BookingsControllerTest extends AppIntegrationTestCase
         $this->get('/consumer/bookings?week_start=not-a-date');
 
         $this->assertResponseCode(200);
-        $this->assertResponseContains('View Schedule & Attendance');
+        $this->assertResponseContains('My Schedule');
     }
 }

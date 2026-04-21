@@ -3,8 +3,17 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Model\Table\ClassesTable;
+
 class ClassesController extends AppController
 {
+    private const LOCATION_OPTIONS = [
+        'Studio A' => 'Studio A',
+        'Studio B' => 'Studio B',
+        'Room A' => 'Room A',
+        'Room B' => 'Room B',
+    ];
+
     public function index(): void
     {
         $classesTable = $this->fetchTable('Classes');
@@ -47,7 +56,7 @@ class ClassesController extends AppController
         $class = $classesTable->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $class = $classesTable->patchEntity($class, $this->request->getData());
+            $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable));
             if ($classesTable->save($class)) {
                 $this->Flash->success(__('The class has been saved.'));
 
@@ -71,7 +80,9 @@ class ClassesController extends AppController
             ->orderBy(['teacher_name' => 'ASC'])
             ->all();
 
-        $this->set(compact('class', 'courses', 'teachers'));
+        $locationOptions = self::LOCATION_OPTIONS;
+
+        $this->set(compact('class', 'courses', 'teachers', 'locationOptions'));
     }
 
     public function edit(?string $id = null)
@@ -80,7 +91,7 @@ class ClassesController extends AppController
         $class = $classesTable->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $class = $classesTable->patchEntity($class, $this->request->getData());
+            $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable, $class));
             if ($classesTable->save($class)) {
                 $this->Flash->success(__('The class has been saved.'));
 
@@ -99,7 +110,9 @@ class ClassesController extends AppController
             ->orderBy(['teacher_name' => 'ASC'])
             ->all();
 
-        $this->set(compact('class', 'courses', 'teachers'));
+        $locationOptions = self::LOCATION_OPTIONS;
+
+        $this->set(compact('class', 'courses', 'teachers', 'locationOptions'));
     }
 
     public function availability()
@@ -158,7 +171,9 @@ class ClassesController extends AppController
             $scheduledCourseIds[$class->course_id] = true;
         }
 
-        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset', 'allCourses', 'scheduledCourseIds'));
+        $locationOptions = self::LOCATION_OPTIONS;
+
+        $this->set(compact('classesByDay', 'days', 'courses', 'teachers', 'weekOffset', 'allCourses', 'scheduledCourseIds', 'locationOptions'));
     }
 
     public function delete(?string $id = null)
@@ -174,5 +189,75 @@ class ClassesController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    private function buildClassPayload(array $data, ClassesTable $classesTable, ?object $existingClass = null): array
+    {
+        $data['location'] = trim((string)($data['location'] ?? ''));
+        $data['notes'] = trim((string)($data['notes'] ?? '')) ?: null;
+        $selectedCourseId = isset($data['course_id']) ? (int)$data['course_id'] : null;
+        $existingCourseId = $existingClass?->course_id !== null ? (int)$existingClass->course_id : null;
+        $shouldGenerateCode = $existingClass === null
+            || $selectedCourseId === null
+            || $selectedCourseId !== $existingCourseId
+            || trim((string)($data['class_code'] ?? '')) === '';
+
+        if ($selectedCourseId && $shouldGenerateCode) {
+            $data['class_code'] = $this->generateClassCode(
+                $classesTable,
+                $selectedCourseId,
+                $existingClass?->class_id ? (int)$existingClass->class_id : null
+            );
+        }
+
+        return $data;
+    }
+
+    private function generateClassCode(ClassesTable $classesTable, int $courseId, ?int $ignoreClassId = null): string
+    {
+        $course = $classesTable->Courses->get($courseId);
+        $prefix = $this->buildClassCodePrefix($course);
+
+        $query = $classesTable->find()
+            ->select(['class_code'])
+            ->where(['Classes.class_code LIKE' => $prefix . '-%']);
+
+        if ($ignoreClassId !== null) {
+            $query->where(['Classes.class_id !=' => $ignoreClassId]);
+        }
+
+        $existingCodes = $query
+            ->enableHydration(false)
+            ->all()
+            ->extract('class_code')
+            ->toList();
+
+        $maxSuffix = 0;
+        foreach ($existingCodes as $code) {
+            if (preg_match('/-(\d{3})$/', (string)$code, $matches) === 1) {
+                $maxSuffix = max($maxSuffix, (int)$matches[1]);
+            }
+        }
+
+        return sprintf('%s-%03d', $prefix, $maxSuffix + 1);
+    }
+
+    private function buildClassCodePrefix(object $course): string
+    {
+        $typePrefix = match (strtolower((string)($course->course_type ?? ''))) {
+            'pottery' => 'POT',
+            'knitting' => 'KNT',
+            default => strtoupper(substr(preg_replace('/[^A-Za-z]/', '', (string)$course->course_name), 0, 3) ?: 'CLS'),
+        };
+
+        $levelPrefix = match (strtolower((string)($course->course_level ?? ''))) {
+            'beginner' => 'BEG',
+            'intermediate' => 'INT',
+            'advanced' => 'ADV',
+            'all_levels' => 'ALL',
+            default => 'GEN',
+        };
+
+        return $typePrefix . '-' . $levelPrefix;
     }
 }

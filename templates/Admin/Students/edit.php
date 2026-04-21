@@ -96,8 +96,19 @@ $this->assign('title', 'Edit Student');
                             <i class="bi bi-shield-exclamation me-2"></i> Open customer details
                         </a>
                         <?php if ($linkedUser->age_verified_by_admin): ?>
+                            <?= $this->Form->postLink(
+                                '<i class="bi bi-shield-x me-2"></i> Remove Adult Verification',
+                                ['action' => 'unverifyAge', $student->student_id],
+                                [
+                                    'escape' => false,
+                                    'class' => 'admin-btn-secondary',
+                                    'style' => 'color: #B45309; background-color: rgba(254, 243, 199, 0.8); border-color: rgba(180, 83, 9, 0.22);',
+                                    'confirm' => 'Are you sure you want to remove adult verification and lock booking/payment access again?',
+                                ]
+                            ) ?>
+                        <?php else: ?>
                             <p style="margin: 0; align-self: center; color: var(--admin-text-secondary); font-size: 13px;">
-                                Adult verification can be removed from the customer list or details page.
+                                Open the customer details page when you are ready to verify adult status.
                             </p>
                         <?php endif; ?>
                     </div>

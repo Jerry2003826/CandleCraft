@@ -33,19 +33,41 @@ $displayText = trim($displayText);
                 View Customer Record
             </a>
         <?php endif; ?>
-        <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-btn-secondary" style="color: #10B981; padding: 6px 16px; font-size: 13px;">
-            <i class="bi bi-reply me-1"></i> Respond
-        </a>
-        <?= $this->Form->postLink(
+        <?php if ($message->message_status !== 'archived'): ?>
+            <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-btn-secondary" style="color: #10B981; padding: 6px 16px; font-size: 13px;">
+                <i class="bi bi-reply me-1"></i> Respond
+            </a>
+            <?= $this->Form->postLink(
+                '<i class="bi bi-archive me-1"></i> Archive',
+                ['action' => 'archive', $message->message_id],
+                [
+                    'confirm' => __('Archive this enquiry?'),
+                    'class' => 'admin-btn-secondary',
+                    'style' => 'color: #B45309; padding: 6px 16px; font-size: 13px;',
+                    'escape' => false,
+                ]
+            ) ?>
+        <?php else: ?>
+            <?= $this->Form->postLink(
+                '<i class="bi bi-arrow-counterclockwise me-1"></i> Restore',
+                ['action' => 'restore', $message->message_id],
+                [
+                    'class' => 'admin-btn-secondary',
+                    'style' => 'color: #2563EB; padding: 6px 16px; font-size: 13px;',
+                    'escape' => false,
+                ]
+            ) ?>
+            <?= $this->Form->postLink(
                 '<i class="bi bi-trash me-1"></i> Delete',
                 ['action' => 'delete', $message->message_id],
                 [
-                'confirm' => __('Are you sure you want to delete this enquiry?'),
-                'class' => 'admin-btn-secondary',
-                'style' => 'color: #EF4444; padding: 6px 16px; font-size: 13px;',
-                'escape' => false
-            ]
-        ) ?>
+                    'confirm' => __('Delete this archived enquiry permanently?'),
+                    'class' => 'admin-btn-secondary',
+                    'style' => 'color: #EF4444; padding: 6px 16px; font-size: 13px;',
+                    'escape' => false,
+                ]
+            ) ?>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -140,7 +162,12 @@ $displayText = trim($displayText);
             <div style="margin-bottom: 16px;">
                 <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Received</div>
                 <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
-                    <?= $message->sent_at ? $message->sent_at->format('j M Y, g:ia') : '-' ?>
+                    <?php if ($message->sent_at): ?>
+                        <?= h($message->sent_at->timeAgoInWords()) ?>
+                        <span style="display: block; font-weight: 400; color: var(--admin-text-secondary); margin-top: 4px;"><?= h($message->sent_at->format('j M Y, g:ia')) ?></span>
+                    <?php else: ?>
+                        -
+                    <?php endif; ?>
                 </div>
             </div>
             <div style="margin-bottom: 16px;">

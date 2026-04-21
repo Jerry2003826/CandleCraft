@@ -5,19 +5,19 @@
  * @var int $availableSlots
  * @var \App\Model\Entity\Student $student
  */
-$this->assign('title', 'Book Class');
+$this->assign('title', 'Book a Class');
 $courseType = strtolower($class->course?->course_type ?? 'default');
 $typeColor = $courseType === 'pottery' ? '#1D4ED8' : ($courseType === 'knitting' ? '#B45309' : '#374151');
 $typeBg = $courseType === 'pottery' ? '#DBEAFE' : ($courseType === 'knitting' ? '#FEF3C7' : '#F3F4F6');
 ?>
 
 <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Courses
+    <i class="bi bi-arrow-left"></i> Back to Book a Class
 </a>
 
 <div class="admin-form-card">
     <div class="admin-form-header">
-        <h2 class="admin-form-title">Book Class: <?= h($class->class_code) ?></h2>
+        <h2 class="admin-form-title">Review Booking: <?= h($class->class_code) ?></h2>
     </div>
     
     <!-- Class Info Card -->
@@ -74,24 +74,13 @@ $typeBg = $courseType === 'pottery' ? '#DBEAFE' : ($courseType === 'knitting' ? 
 
     <!-- Booking Form -->
     <?= $this->Form->create(null, ['url' => ['action' => 'add', $class->class_id]]) ?>
-        <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 16px; color: var(--admin-brand-icon);">Confirm Your Booking</h3>
+        <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 16px; color: var(--admin-brand-icon);">Proceed to Payment</h3>
         <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 24px;">
-            You are booking as <strong style="color: var(--admin-text-primary);"><?= h($student->student_name ?? '') ?></strong>.
+            You are booking as <strong style="color: var(--admin-text-primary);"><?= h($student->student_name ?? '') ?></strong>. The class will only be confirmed after successful payment.
         </p>
-        <div class="admin-form-group d-flex align-items-center gap-2">
-            <?= $this->Form->checkbox('confirm', [
-                'required' => true,
-                'id' => 'confirm-booking',
-                'style' => 'width: 18px; height: 18px; accent-color: var(--admin-brand-icon); cursor: pointer;'
-            ]) ?>
-            <label for="confirm-booking" style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer; margin: 0;">
-                I confirm I want to book this class
-            </label>
-        </div>
-        
         <div class="admin-form-actions mt-4">
             <button type="submit" class="admin-btn-primary">
-                <i class="bi bi-check-circle"></i> Confirm Booking
+                <i class="bi bi-credit-card"></i> Proceed to Payment
             </button>
             <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-secondary">Cancel</a>
         </div>

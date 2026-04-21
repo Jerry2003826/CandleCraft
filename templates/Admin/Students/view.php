@@ -209,7 +209,7 @@ $verificationBlockedMessage = $effectiveAge === null
         </div>
 
         <p style="font-family: 'Inter', sans-serif; font-size: 15px; color: var(--admin-text-primary); line-height: 1.6; margin-bottom: 20px;">
-            Booking and payment are currently unlocked for this customer. Use the action below if the verification was recorded by mistake or needs to be removed.
+            Booking and payment are currently unlocked for this customer. Adult verification can be removed from the edit screen if it was recorded by mistake or needs to be cleared.
         </p>
 
         <?php if ($verifiedMinor): ?>
@@ -221,15 +221,8 @@ $verificationBlockedMessage = $effectiveAge === null
             </div>
         <?php endif; ?>
 
-        <?= $this->Form->postLink(
-            '<i class="bi bi-shield-x me-2"></i> Remove Adult Verification',
-            ['action' => 'unverifyAge', $student->student_id],
-            [
-                'escape' => false,
-                'class' => 'admin-btn-secondary',
-                'style' => 'color: #B45309; border-color: rgba(180, 83, 9, 0.22); background-color: rgba(255, 255, 255, 0.7); font-size: 15px; padding: 12px 24px;',
-                'confirm' => 'Are you sure you want to remove adult verification and lock booking/payment access again?',
-            ]
-        ) ?>
+        <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-btn-secondary" style="color: #B45309; border-color: rgba(180, 83, 9, 0.22); background-color: rgba(255, 255, 255, 0.7); font-size: 15px; padding: 12px 24px;">
+            <i class="bi bi-pencil me-2"></i> Manage Verification in Edit
+        </a>
     </div>
 <?php endif; ?>

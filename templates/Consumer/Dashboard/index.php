@@ -29,7 +29,7 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
         Welcome back, <?= h($firstName) ?>!
     </h2>
     <p class="welcome-subtitle" style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; margin: 0;">
-        This portal gives you quick access to your schedule, learning resources, booking system, and payment history.
+        This portal gives you quick access to your schedule, learning resources, class bookings, and payment history.
     </p>
 </div>
 
@@ -67,7 +67,7 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
             <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(59, 130, 246, 0.12); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                 <i class="bi bi-calendar-check" style="font-size: 20px; color: #3B82F6;"></i>
             </div>
-            <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary); margin-bottom: 6px;">View Schedule &amp; Attendance</div>
+            <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary); margin-bottom: 6px;">My Schedule</div>
             <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">See your upcoming classes, attendance records, and reminder status.</div>
         </a>
     </div>
@@ -85,7 +85,7 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
             <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                 <i class="bi bi-journal-plus" style="font-size: 20px; color: #10B981;"></i>
             </div>
-            <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary); margin-bottom: 6px;">Booking System</div>
+            <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary); margin-bottom: 6px;">Book a Class</div>
             <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
                 <?= $bookingAccessEnabled ? 'Browse available classes and start a new booking.' : 'You can browse classes now. Booking unlocks after adult verification.' ?>
             </div>
@@ -120,9 +120,6 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
             <div class="admin-form-card text-center py-5 flex-grow-1 d-flex flex-column justify-content-center" style="max-width: 100%;">
                 <i class="bi bi-calendar-event" style="font-size: 48px; color: var(--admin-text-secondary);"></i>
                 <p class="mt-3" style="color: var(--admin-text-secondary);">No upcoming classes are booked yet.</p>
-                <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-btn-primary mt-2 mx-auto">
-                    Open Booking System
-                </a>
             </div>
         <?php else: ?>
             <div class="admin-form-card flex-grow-1 d-flex flex-column" style="padding: 24px; max-width: 100%;">
@@ -170,7 +167,7 @@ $otherBookings = array_slice($recentBookings ?? [], 1, 3);
 
                 <div class="d-flex justify-content-end mt-auto">
                     <a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="admin-btn-secondary" style="padding: 8px 16px; font-size: 13px;">
-                        View Schedule &amp; Attendance
+                        My Schedule
                     </a>
                 </div>
             </div>

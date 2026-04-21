@@ -282,6 +282,13 @@ class MessagesController extends AppController
 
         $messagesTable = $this->fetchTable('Messages');
         $message = $messagesTable->get($id);
+
+        if ($message->message_status !== 'archived') {
+            $this->Flash->warning(__('Please archive the enquiry before deleting it permanently.'));
+
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
+        }
+
         if ($messagesTable->delete($message)) {
             $this->Flash->success(__('The enquiry has been deleted.'));
         } else {
@@ -289,6 +296,52 @@ class MessagesController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    public function archive(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $messagesTable = $this->fetchTable('Messages');
+        $message = $messagesTable->get($id);
+
+        if ($message->message_status === 'archived') {
+            $this->Flash->info(__('This enquiry is already archived.'));
+
+            return $this->redirect($this->referer(['action' => 'index', '?' => ['status' => 'archived']], true));
+        }
+
+        $message->message_status = 'archived';
+        if ($messagesTable->save($message)) {
+            $this->Flash->success(__('The enquiry has been archived.'));
+        } else {
+            $this->Flash->error(__('The enquiry could not be archived. Please try again.'));
+        }
+
+        return $this->redirect($this->referer(['action' => 'index'], true));
+    }
+
+    public function restore(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $messagesTable = $this->fetchTable('Messages');
+        $message = $messagesTable->get($id);
+
+        if ($message->message_status !== 'archived') {
+            $this->Flash->info(__('Only archived enquiries can be restored.'));
+
+            return $this->redirect($this->referer(['action' => 'index'], true));
+        }
+
+        $message->message_status = 'read';
+        if ($messagesTable->save($message)) {
+            $this->Flash->success(__('The enquiry has been restored to the inbox.'));
+        } else {
+            $this->Flash->error(__('The enquiry could not be restored. Please try again.'));
+        }
+
+        return $this->redirect($this->referer(['action' => 'index'], true));
     }
 
     private function extractAccountRequestMeta(object $message): array

@@ -7,7 +7,7 @@
  * @var \Cake\I18n\DateTime $weekStart
  * @var \Cake\I18n\DateTime $weekEnd
  */
-$this->assign('title', 'Booking System');
+$this->assign('title', 'Book a Class');
 
 $prevWeek = $weekStart->modify('-7 days')->format('Y-m-d');
 $nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
