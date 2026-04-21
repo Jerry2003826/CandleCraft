@@ -47,8 +47,9 @@ html {
 body.site-home {
     margin: 0;
     min-height: 100vh;
+    overflow: hidden;
     background-image: linear-gradient(rgba(18, 13, 10, 0.85), rgba(18, 13, 10, 0.85)),
-                      url('../image/potbg.jpeg');
+                      url('../image/background.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -64,10 +65,11 @@ a {
 
 .home-shell {
     min-height: 100vh;
+    overflow: hidden;
 }
 
 main {
-    padding: 0 22px 80px;
+    padding: 0 22px;
 }
 
 
@@ -119,7 +121,7 @@ textarea:focus-visible {
    ------------------------------------------------------------ */
 
 .hero-home {
-    padding: 18px 22px 36px;
+    padding: 18px 22px;
 }
 
 .hero-home--compact {
@@ -193,6 +195,25 @@ textarea:focus-visible {
 
 .nav-dropdown {
     position: relative;
+}
+
+.nav-dropdown__menu {
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition-delay: 0.3s;
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    min-width: 190px;
+    z-index: 200;
+}
+
+.nav-dropdown:hover .nav-dropdown__menu {
+    visibility: visible;
+    opacity: 1;
+    transition-delay: 0s;
 }
 
 .nav-dropdown__trigger {
@@ -283,17 +304,15 @@ textarea:focus-visible {
     position: relative;
     overflow: hidden;
     max-width: 100%;
-    min-height: calc(100vh - 145px);
-    height: calc(100vh - 145px);
+    height: calc(100vh - 185px);
+    max-height: calc(100vh - 185px);
     margin: 0 auto;
     border: 1px solid rgba(210, 154, 88, 0.22);
     border-radius: 0;
-    background:
-        linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
-        url('/image/background.jpg') center center / cover no-repeat;
     box-shadow: var(--home-shadow);
     isolation: isolate;
 }
+
 
 .hero-stage__grain,
 .hero-stage__halo {
@@ -400,14 +419,14 @@ textarea:focus-visible {
 }
 
 .button--solid {
-    background: linear-gradient(135deg, var(--home-accent-soft) 0%, var(--home-accent) 100%);
-    color: #2d190e;
+     border-color: rgba(240, 207, 156, 0.48);
+    background: rgba(19, 13, 10, 0.18);
+    color: var(--home-text);
 }
 
 .button--outline {
-    border-color: rgba(240, 207, 156, 0.48);
-    background: rgba(19, 13, 10, 0.18);
-    color: var(--home-text);
+    background: linear-gradient(135deg, var(--home-accent-soft) 0%, var(--home-accent) 100%);
+    color: #2d190e;
 }
 
 .button--compact {

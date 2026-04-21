@@ -1,6 +1,7 @@
 <?php
 $this->disableAutoLayout();
 
+$bgUrl = $this->Url->build('/image/background.jpg', ['fullBase' => false]);
 $loginUrl = $this->Url->build(['controller' => 'Users', 'action' => 'login']);
 $homeUrl = $this->Url->build('/');
 $contactUrl = $this->Url->build([
@@ -16,8 +17,16 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CandleCraft Academy</title>
-    <?= $this->Html->meta('icon') ?>
+    <link rel="icon" type="image/png" href="/production/favicon.ico">
     <?= $this->Html->css(['fonts', 'home']) ?>
+    <style>
+    .hero-stage {
+        background:
+            linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+            url('<?= h($bgUrl) ?>') center center / cover no-repeat;
+        background-size: cover;
+    }
+</style>
 </head>
 <body class="site-home">
     <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -29,7 +38,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 'contactUrl' => $contactUrl,
                 'loginUrl' => $loginUrl,
                 'showHomeLink' => false,
-                'contactLabel' => 'Enquiry Form',
+                'contactLabel' => 'Enquire',
                 'menuId' => 'home-courses-menu',
             ]) ?>
         </header>
@@ -44,7 +53,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                     <h1 id="landing-title">CandleCraft Academy</h1>
                     <div class="hero-copy__actions">
                         <a href="<?= h($coursesUrl) ?>" class="button button--solid">Browse Courses</a>
-                        <a href="<?= h($contactUrl) ?>" class="button button--outline">Open Enquiry Form</a>
+                        <a href="<?= h($contactUrl) ?>" class="button button--outline">Enquire Now</a>
                     </div>
                 </div>
             </section>
