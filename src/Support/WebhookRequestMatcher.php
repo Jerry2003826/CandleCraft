@@ -16,6 +16,11 @@ final class WebhookRequestMatcher
         '/student/payments/webhook',
     ];
 
+    /**
+     * Is stripe webhook request.
+     *
+     * @param mixed $request Request.
+     */
     public static function isStripeWebhookRequest(ServerRequestInterface $request): bool
     {
         $params = (array)$request->getAttribute('params', []);
@@ -49,6 +54,11 @@ final class WebhookRequestMatcher
         return false;
     }
 
+    /**
+     * Normalize path.
+     *
+     * @param mixed $candidate Candidate.
+     */
     private static function normalizePath(string $candidate): string
     {
         $normalized = strtok($candidate, '?') ?: '';

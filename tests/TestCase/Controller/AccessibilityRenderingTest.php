@@ -4,26 +4,43 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller;
 
 use Cake\Core\Configure;
+use Cake\Datasource\FactoryLocator;
 
 class AccessibilityRenderingTest extends AppIntegrationTestCase
 {
+    private const CMS_TEST_PAGE_SLUG = 'accessibility-contact-test';
+
     protected function tearDown(): void
     {
+        $sitePages = FactoryLocator::get('Table')->get('SitePages');
+        $pageSections = FactoryLocator::get('Table')->get('PageSections');
+        $pageIds = $sitePages->find()
+            ->select(['id'])
+            ->where(['page_slug' => self::CMS_TEST_PAGE_SLUG])
+            ->all()
+            ->extract('id')
+            ->toList();
+
+        if ($pageIds !== []) {
+            $pageSections->deleteAll(['page_id IN' => $pageIds]);
+            $sitePages->deleteAll(['id IN' => $pageIds]);
+        }
+
         Configure::delete('Recaptcha.site_key');
         Configure::delete('Recaptcha.secret_key');
 
         parent::tearDown();
     }
 
-    public function testHomePageRendersSkipLinkAndAccessibleCourseDisclosure(): void
+    public function testHomePageRendersSkipLinkAndAccessibleCoursesNavLink(): void
     {
         $this->get('/');
 
         $this->assertResponseOk();
         $this->assertResponseContains('href="#main-content"');
         $this->assertResponseContains('id="main-content"');
-        $this->assertResponseContains('aria-controls="home-courses-menu"');
-        $this->assertResponseContains('class="nav-dropdown__toggle"');
+        $this->assertResponseContains('class="hero-nav__courses"');
+        $this->assertResponseContains('hero-nav--sticky');
     }
 
     public function testContactPageRendersLabelsAndExpandableAccountRequestControls(): void
@@ -37,6 +54,7 @@ class AccessibilityRenderingTest extends AppIntegrationTestCase
         $this->assertResponseContains('aria-expanded="false"');
         $this->assertResponseContains('id="captcha-label"');
         $this->assertResponseContains('id="captcha-help"');
+        $this->assertResponseContains('enquiry-field--subject');
     }
 
     public function testContactPageInvalidSubmitRendersAccessibleErrorFeedback(): void
@@ -83,8 +101,48 @@ class AccessibilityRenderingTest extends AppIntegrationTestCase
         $this->assertResponseContains('aria-controls="adminSidebar"');
         $this->assertResponseContains('aria-label="Open admin navigation"');
         $this->assertResponseContains('<span>Logout</span>');
+        $this->assertResponseContains('Recent Booking Activity');
+        $this->assertResponseContains('Shows the latest booking records only');
         $this->assertResponseNotContains('&lt;i class=&quot;bi bi-box-arrow-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;');
         $this->assertResponseNotContains('settingsPlaceholder');
+    }
+
+    public function testAdminCmsUsesPlainPageAddressTerminology(): void
+    {
+        $this->loginAsAdmin();
+        $sitePages = FactoryLocator::get('Table')->get('SitePages');
+        $pageSections = FactoryLocator::get('Table')->get('PageSections');
+        $page = $sitePages->newEntity([
+            'page_slug' => self::CMS_TEST_PAGE_SLUG,
+            'page_title' => 'Contact / Enquiry',
+            'is_active' => true,
+            'sort_order' => 1,
+            'created_at' => '2026-05-18 09:00:00',
+            'updated_at' => '2026-05-18 09:00:00',
+        ]);
+        $sitePages->saveOrFail($page);
+        $pageSections->saveOrFail($pageSections->newEntity([
+            'page_id' => $page->id,
+            'section_key' => 'intro.title',
+            'section_label' => 'Intro title',
+            'content_type' => 'text',
+            'content_value' => 'Enquiry Form',
+            'sort_order' => 1,
+            'is_active' => true,
+            'updated_at' => '2026-05-18 09:00:00',
+        ]));
+
+        $this->get('/admin/cms');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Page URL');
+        $this->assertResponseNotContains('<th>Slug</th>');
+
+        $this->get('/admin/cms/pages/' . self::CMS_TEST_PAGE_SLUG);
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Page URL');
+        $this->assertResponseNotContains('Slug:');
     }
 
     public function testConsumerDashboardRendersUnescapedLogoutButtonMarkup(): void

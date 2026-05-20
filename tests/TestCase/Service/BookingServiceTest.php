@@ -13,6 +13,7 @@ class BookingServiceTest extends TestCase
 {
     protected array $fixtures = [
         'app.Bookings',
+        'app.Payments',
         'app.Classes',
         'app.Courses',
         'app.Teachers',
@@ -56,6 +57,29 @@ class BookingServiceTest extends TestCase
         $this->assertSame(1, $booking->booking_id);
         $this->assertSame('pending', $booking->booking_status);
         $this->assertSame(1, $booking->parent_id);
+    }
+
+    public function testRefundedBookingCanBeReusedForSameStudentAndClass(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'refunded';
+        $payment->refunded_amount = 50.00;
+        $payments->saveOrFail($payment);
+
+        $service = new BookingService();
+        $result = $service->createBookingForStudent(1, 1);
+
+        $booking = $bookings->get(1);
+
+        $this->assertTrue($result['reactivated']);
+        $this->assertSame(1, $booking->booking_id);
+        $this->assertSame('pending', $booking->booking_status);
     }
 
     public function testExplicitInvalidAllowedStatusesFailFast(): void

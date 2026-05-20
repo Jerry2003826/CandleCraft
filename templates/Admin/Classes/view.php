@@ -6,49 +6,112 @@
 $this->assign('title', 'Class Details');
 ?>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2 mb-3">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm">&larr; Back to Classes</a>
-    <div class="btn-group btn-group-sm">
-        <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="btn btn-outline-warning">Edit</a>
-        <?= $this->Form->postLink('Delete', ['action' => 'delete', $class->class_id], [
-            'confirm' => __('Are you sure you want to delete class {0}?', $class->class_code),
-            'class' => 'btn btn-outline-danger',
-        ]) ?>
+<div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-0" onclick="history.back(); return false;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+    <div class="d-flex gap-2">
+        <a href="<?= $this->Url->build(['action' => 'edit', $class->class_id]) ?>" class="admin-btn-secondary" style="color: #D97706; padding: 6px 16px; font-size: 13px;">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <?= $this->Form->postLink(
+            '<i class="bi bi-trash me-1"></i> Delete',
+            ['action' => 'delete', $class->class_id],
+            [
+                'confirm' => __('Are you sure you want to delete class {0}?', $class->class_code),
+                'class' => 'admin-btn-secondary',
+                'style' => 'color: #EF4444; padding: 6px 16px; font-size: 13px;',
+                'escape' => false,
+            ]
+        ) ?>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><?= h($class->class_code) ?></h5>
-        <?= $this->Badge->status($class->class_status) ?>
+<div class="admin-form-card mb-4" style="max-width: 100%; padding: 32px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3" style="border-bottom: 1px solid var(--admin-card-border);">
+        <h2 class="admin-form-title" style="font-size: 20px; margin: 0;"><?= h($class->class_code) ?></h2>
+        <?php
+            $statusClass = 'admin-badge-neutral';
+            if ($class->class_status === 'scheduled') $statusClass = 'admin-badge-info';
+            if ($class->class_status === 'ongoing') $statusClass = 'admin-badge-success';
+            if ($class->class_status === 'cancelled') $statusClass = 'admin-badge-danger';
+            if ($class->class_status === 'full') $statusClass = 'admin-badge-warning';
+        ?>
+        <span class="admin-badge <?= $statusClass ?>" style="padding: 6px 12px; font-size: 13px;"><?= h(ucfirst((string)$class->class_status)) ?></span>
     </div>
-    <div class="card-body">
-        <table class="table table-borderless">
-            <tr><th class="text-end text-muted" style="width:180px">Class Code:</th><td><?= h($class->class_code) ?></td></tr>
-            <tr><th class="text-end text-muted">Course:</th><td><?= $class->course ? h($class->course->course_name) : '-' ?></td></tr>
-            <tr><th class="text-end text-muted">Teacher:</th><td><?= $class->teacher ? h($class->teacher->teacher_name) : '-' ?></td></tr>
-            <tr><th class="text-end text-muted">Start:</th><td><?= $class->start_datetime ? $class->start_datetime->format('j M Y, g:ia') : '-' ?></td></tr>
-            <tr><th class="text-end text-muted">End:</th><td><?= $class->end_datetime ? $class->end_datetime->format('j M Y, g:ia') : '-' ?></td></tr>
-            <tr><th class="text-end text-muted">Location:</th><td><?= h($class->location) ?></td></tr>
-            <tr><th class="text-end text-muted">Capacity:</th><td><?= h($class->capacity) ?></td></tr>
-            <tr><th class="text-end text-muted">Notes:</th><td><?= $class->notes ? nl2br(h($class->notes)) : 'N/A' ?></td></tr>
-        </table>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Class Code</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= h($class->class_code) ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Course</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= $class->course ? h($class->course->course_name) : '-' ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Teacher</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= $class->teacher ? h($class->teacher->teacher_name) : '-' ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Start</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= $class->start_datetime ? $class->start_datetime->format('j M Y, g:ia') : '-' ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">End</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= $class->end_datetime ? $class->end_datetime->format('j M Y, g:ia') : '-' ?></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Location</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= h($class->location) ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Capacity</div>
+                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= h($class->capacity) ?></div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Notes</div>
+                <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); line-height: 1.5;">
+                    <?= $class->notes ? nl2br(h($class->notes)) : '<span style="color: var(--admin-text-secondary);">N/A</span>' ?>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <?php if (!empty($class->bookings)): ?>
-<div class="card">
-    <div class="card-header"><h5 class="mb-0">Enrolled Students</h5></div>
+<div class="admin-table-card">
+    <div style="padding: 20px 24px; border-bottom: 1.5px solid var(--admin-card-border); background: rgba(210, 154, 88, 0.03);">
+        <h3 class="admin-form-title" style="font-size: 18px; margin: 0;">Enrolled Students</h3>
+    </div>
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead><tr><th>Student</th><th>Booking Date</th><th>Status</th><th>Price</th></tr></thead>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Booking Date</th>
+                    <th>Status</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
             <tbody>
                 <?php foreach ($class->bookings as $booking): ?>
                 <tr>
-                    <td><?= $booking->student ? h($booking->student->student_name) : '-' ?></td>
-                    <td><?= $booking->booking_date ? $booking->booking_date->format('j M Y') : '-' ?></td>
-                    <td><?= $this->Badge->status($booking->booking_status) ?></td>
-                    <td>$<?= number_format((float)$booking->price_at_booking, 2) ?></td>
+                    <td><p class="admin-table-primary-text"><?= $booking->student ? h($booking->student->student_name) : '-' ?></p></td>
+                    <td><p class="admin-table-secondary-text"><?= $booking->booking_date ? $booking->booking_date->format('j M Y') : '-' ?></p></td>
+                    <td>
+                        <?php
+                            $bStatusClass = 'admin-badge-neutral';
+                            if ($booking->booking_status === 'confirmed') $bStatusClass = 'admin-badge-success';
+                            if ($booking->booking_status === 'pending') $bStatusClass = 'admin-badge-warning';
+                            if ($booking->booking_status === 'cancelled') $bStatusClass = 'admin-badge-danger';
+                        ?>
+                        <span class="admin-badge <?= $bStatusClass ?>"><?= h(ucfirst((string)$booking->booking_status)) ?></span>
+                    </td>
+                    <td><p class="admin-table-primary-text">$<?= number_format((float)$booking->price_at_booking, 2) ?></p></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

@@ -2,14 +2,36 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Message $originalMessage
+ * @var string $replySubject
  */
 $this->assign('title', 'Respond to Enquiry');
+$returnUrl = (string)($this->request->getQuery('return_url') ?? '');
+$webrootPrefix = (string)($this->request->getAttribute('webroot') ?? '/');
+$normaliseReturnUrl = static function (string $url) use ($webrootPrefix): string {
+    if ($url === '' || preg_match('#^https?://#i', $url) === 1) {
+        return $url;
+    }
+
+    $prefix = rtrim($webrootPrefix, '/');
+    $normalised = '/' . ltrim($url, '/');
+    if ($prefix !== '' && str_starts_with($normalised, $prefix . '/')) {
+        return $normalised;
+    }
+
+    return $prefix . $normalised;
+};
+$backUrl = $returnUrl !== ''
+    ? $normaliseReturnUrl($returnUrl)
+    : '#';
 $originalDisplayText = preg_replace(
     [
         '/^\[REQUEST TYPE:\s*[^\]]+\]\s*$/mi',
         '/^\[REQUESTED ROLE:\s*[^\]]+\]\s*$/mi',
         '/^\[SELF DECLARED 18\+:\s*[^\]]+\]\s*$/mi',
         '/^\[DECLARED AGE:\s*[^\]]+\]\s*$/mi',
+        '/^\[STUDENT_NAME:\s*[^\]]+\]\s*$/mi',
+        '/^\[STUDENT_DOB:\s*[^\]]+\]\s*$/mi',
+        '/^\[CLASS_TYPE:\s*[^\]]+\]\s*$/mi',
     ],
     '',
     (string)$originalMessage->message_text,
@@ -18,8 +40,8 @@ $originalDisplayText = trim((string)$originalDisplayText);
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <a href="<?= $this->Url->build(['action' => 'view', $originalMessage->message_id]) ?>" class="admin-back-link mb-0">
-        <i class="bi bi-arrow-left"></i> Back to Enquiry
+    <a href="<?= h($backUrl) ?>" <?= $returnUrl === '' ? 'onclick="history.back(); return false;"' : '' ?> class="admin-back-link mb-0">
+        <i class="bi bi-arrow-left"></i> Back
     </a>
 </div>
 
@@ -60,9 +82,12 @@ $originalDisplayText = trim((string)$originalDisplayText);
     </p>
     
     <?= $this->Form->create(null, ['templates' => ['inputContainer' => '{{content}}']]) ?>
+        <?= $this->Form->hidden('return_url', [
+            'value' => $returnUrl !== '' ? $returnUrl : $this->Url->build(['action' => 'view', $originalMessage->message_id]),
+        ]) ?>
         <div style="margin-bottom: 24px;">
             <label for="reply-subject-display" style="display: block; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: var(--admin-text-primary); margin-bottom: 8px;">Subject</label>
-            <input id="reply-subject-display" type="text" value="Re: <?= h($originalMessage->subject) ?>" disabled class="admin-form-input" style="background-color: var(--admin-search-bg); color: var(--admin-text-secondary); cursor: not-allowed; opacity: 0.8;">
+            <input id="reply-subject-display" type="text" value="<?= h($replySubject) ?>" disabled class="admin-form-input" style="background-color: var(--admin-search-bg); color: var(--admin-text-secondary); cursor: not-allowed; opacity: 0.8;">
         </div>
         
         <div style="margin-bottom: 32px;">
@@ -80,7 +105,7 @@ $originalDisplayText = trim((string)$originalDisplayText);
             <button type="submit" class="admin-btn-primary">
                 <i class="bi bi-send me-2"></i> Send Email Reply
             </button>
-            <a href="<?= $this->Url->build(['action' => 'view', $originalMessage->message_id]) ?>" class="admin-btn-secondary" style="text-decoration: none;">
+            <a href="<?= h($returnUrl !== '' ? $backUrl : $this->Url->build(['action' => 'view', $originalMessage->message_id])) ?>" class="admin-btn-secondary" style="text-decoration: none;">
                 Cancel
             </a>
         </div>

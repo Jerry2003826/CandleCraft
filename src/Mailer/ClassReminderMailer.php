@@ -7,6 +7,11 @@ use Cake\Mailer\Mailer;
 
 class ClassReminderMailer extends Mailer
 {
+    /**
+     * Class reminder.
+     *
+     * @param mixed $payload Payload.
+     */
     public function classReminder(array $payload): static
     {
         $this

@@ -3,8 +3,14 @@ declare(strict_types=1);
 
 namespace App\Controller\Teacher;
 
+use Cake\Http\Response;
+use DateTime;
+
 class DashboardController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -16,46 +22,26 @@ class DashboardController extends AppController
             ->where(['Teachers.user_id' => $identity?->get('user_id')])
             ->firstOrFail();
 
-        $classes = $classesTable->find()
-            ->where(['Classes.teacher_id' => $teacher->teacher_id])
-            ->contain([
-                'Courses',
-                'Bookings' => [
-                    'Students',
-                    'AttendanceRecords',
-                ],
+        $upcoming = $classesTable->find()
+            ->contain(['Courses', 'Bookings'])
+            ->where([
+                'Classes.teacher_id' => $teacher->teacher_id,
+                'Classes.start_datetime >' => new DateTime(),
             ])
             ->orderBy(['Classes.start_datetime' => 'ASC'])
-            ->all();
+            ->all()
+            ->toArray();
 
-        $classCount = $classes->count();
-        $upcomingClasses = $classes->filter(
-            fn ($class) => $class->start_datetime && $class->start_datetime->isFuture(),
-        )->count();
-
-        $studentCount = 0;
-        $attendanceMarked = 0;
-        foreach ($classes as $class) {
-            $studentCount += count($class->bookings);
-            foreach ($class->bookings as $booking) {
-                if ($booking->attendance_record !== null) {
-                    $attendanceMarked++;
-                }
-            }
-        }
-
-        $this->set(compact(
-            'teacher',
-            'classes',
-            'classCount',
-            'upcomingClasses',
-            'studentCount',
-            'attendanceMarked',
-        ));
+        $this->set(compact('teacher', 'upcoming'));
         $this->set('title', 'Teacher Dashboard');
     }
 
-    public function markAttendance(?string $bookingId = null)
+    /**
+     * Mark attendance.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
+    public function markAttendance(?string $bookingId = null): Response
     {
         $this->request->allowMethod(['post']);
 

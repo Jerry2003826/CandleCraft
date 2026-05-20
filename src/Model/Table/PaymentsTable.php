@@ -12,6 +12,11 @@ use Cake\Validation\Validator;
 
 class PaymentsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -26,6 +31,16 @@ class PaymentsTable extends Table
             'joinType' => 'INNER',
         ]);
 
+        $this->hasMany('PaymentRefunds', [
+            'foreignKey' => 'payment_id',
+            'bindingKey' => 'payment_id',
+        ]);
+
+        $this->hasMany('PaymentDisputes', [
+            'foreignKey' => 'payment_id',
+            'bindingKey' => 'payment_id',
+        ]);
+
         $this->addBehavior('Timestamp', [
             'events' => [
                 'Model.beforeSave' => [
@@ -36,6 +51,11 @@ class PaymentsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -55,13 +75,44 @@ class PaymentsTable extends Table
             ->notEmptyString('payment_method');
 
         $validator
-            ->inList('payment_status', ['pending', 'paid', 'failed', 'expired', 'voided', 'refund_required', 'refunded', 'partially_refunded'])
+            ->inList('payment_status', ['pending', 'paid', 'failed', 'expired', 'voided', 'refund_required', 'refunded', 'partially_refunded', 'disputed'])
             ->notEmptyString('payment_status');
 
         $validator
             ->scalar('transaction_reference')
             ->maxLength('transaction_reference', 100)
             ->allowEmptyString('transaction_reference');
+
+        foreach (
+            [
+            'stripe_session_id' => 100,
+            'stripe_payment_intent_id' => 100,
+            'stripe_charge_id' => 100,
+            'stripe_customer_id' => 100,
+            'stripe_invoice_id' => 100,
+            'stripe_payment_method_type' => 50,
+            ] as $field => $maxLength
+        ) {
+            $validator
+                ->scalar($field)
+                ->maxLength($field, $maxLength)
+                ->allowEmptyString($field);
+        }
+
+        $validator
+            ->scalar('stripe_invoice_pdf_url')
+            ->maxLength('stripe_invoice_pdf_url', 500)
+            ->allowEmptyString('stripe_invoice_pdf_url');
+
+        $validator
+            ->scalar('stripe_receipt_url')
+            ->maxLength('stripe_receipt_url', 500)
+            ->allowEmptyString('stripe_receipt_url');
+
+        $validator
+            ->decimal('refunded_amount')
+            ->greaterThanOrEqual('refunded_amount', 0)
+            ->allowEmptyString('refunded_amount');
 
         $validator
             ->dateTime('payment_date')
@@ -74,12 +125,17 @@ class PaymentsTable extends Table
         return $validator;
     }
 
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('booking_id', 'Bookings'), ['errorField' => 'booking_id']);
         $rules->add($rules->isUnique(
             ['transaction_reference'],
-            'This Stripe checkout session has already been recorded.'
+            'This Stripe checkout session has already been recorded.',
         ), [
             'errorField' => 'transaction_reference',
             'allowMultipleNulls' => true,
@@ -88,6 +144,12 @@ class PaymentsTable extends Table
         return $rules;
     }
 
+    /**
+     * Before save.
+     *
+     * @param mixed $event Event.
+     * @param mixed $entity Entity.
+     */
     public function beforeSave(EventInterface $event, EntityInterface $entity): void
     {
         if (

@@ -8,6 +8,11 @@ use Cake\Event\EventInterface;
 
 class AppController extends BaseAppController
 {
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -15,7 +20,7 @@ class AppController extends BaseAppController
         // Legacy Student prefix: redirect to Consumer portal
         $this->shortCircuitRequest(
             $event,
-            $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index'])
+            $this->redirect(['prefix' => 'Consumer', 'controller' => 'Dashboard', 'action' => 'index']),
         );
     }
 }

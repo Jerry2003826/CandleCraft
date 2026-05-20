@@ -8,6 +8,11 @@ use Cake\Validation\Validator;
 
 class ParentsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -30,6 +35,11 @@ class ParentsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator

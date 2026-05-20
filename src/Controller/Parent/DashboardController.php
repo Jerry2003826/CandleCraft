@@ -5,6 +5,9 @@ namespace App\Controller\Parent;
 
 class DashboardController extends AppController
 {
+    /**
+     * Load parent children data.
+     */
     private function loadParentChildrenData(): array
     {
         $identity = $this->Authentication->getIdentity();
@@ -26,6 +29,9 @@ class DashboardController extends AppController
         return [$parent, $studentIds, $children];
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $bookingsTable = $this->fetchTable('Bookings');
@@ -83,6 +89,9 @@ class DashboardController extends AppController
         $this->set('title', 'Parent Dashboard');
     }
 
+    /**
+     * Children.
+     */
     public function children(): void
     {
         [, , $children] = $this->loadParentChildrenData();

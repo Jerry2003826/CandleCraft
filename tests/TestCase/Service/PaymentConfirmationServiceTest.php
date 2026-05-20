@@ -7,9 +7,10 @@ use App\Exception\Payments\ManualReviewWebhookException;
 use App\Exception\Payments\NonRetriableWebhookException;
 use App\Exception\Payments\RetriableWebhookException;
 use App\Service\PaymentConfirmationService;
-use Cake\I18n\DateTime;
 use Cake\Datasource\FactoryLocator;
+use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
+use RuntimeException;
 
 class PaymentConfirmationServiceTest extends TestCase
 {
@@ -40,6 +41,40 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('confirmed', $result);
         $this->assertSame('paid', $payment->payment_status);
         $this->assertSame('confirmed', $booking->booking_status);
+    }
+
+    public function testWebhookStoresStripeReconciliationFields(): void
+    {
+        $session = $this->makeSession('cs_owned', 1, 5000, [
+            'payment_intent' => (object)[
+                'id' => 'pi_reconcile',
+                'latest_charge' => (object)[
+                    'id' => 'ch_reconcile',
+                    'receipt_url' => 'https://pay.stripe.test/receipts/ch_reconcile',
+                    'payment_method_details' => (object)[
+                        'type' => 'card',
+                    ],
+                ],
+            ],
+            'customer' => 'cus_reconcile',
+            'invoice' => (object)[
+                'id' => 'in_reconcile',
+                'invoice_pdf' => 'https://pay.stripe.test/invoices/in_reconcile.pdf',
+            ],
+        ]);
+
+        $this->service->confirmCheckoutSession($session);
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+
+        $this->assertSame('cs_owned', $payment->stripe_session_id);
+        $this->assertSame('pi_reconcile', $payment->stripe_payment_intent_id);
+        $this->assertSame('ch_reconcile', $payment->stripe_charge_id);
+        $this->assertSame('cus_reconcile', $payment->stripe_customer_id);
+        $this->assertSame('in_reconcile', $payment->stripe_invoice_id);
+        $this->assertSame('https://pay.stripe.test/invoices/in_reconcile.pdf', $payment->stripe_invoice_pdf_url);
+        $this->assertSame('https://pay.stripe.test/receipts/ch_reconcile', $payment->stripe_receipt_url);
+        $this->assertSame('card', $payment->stripe_payment_method_type);
     }
 
     public function testWebhookThrowsManualReviewForCancelledBooking(): void
@@ -93,7 +128,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertNotNull($payment->payment_date);
         $this->assertGreaterThan(
             $legacyPendingDate->getTimestamp(),
-            $payment->payment_date->getTimestamp()
+            $payment->payment_date->getTimestamp(),
         );
     }
 
@@ -189,10 +224,10 @@ class PaymentConfirmationServiceTest extends TestCase
 
     public function testWebhookThrowsRetriableWhenPaymentPersistenceFails(): void
     {
-        $service = new class() extends PaymentConfirmationService {
+        $service = new class () extends PaymentConfirmationService {
             protected function persistPayment(object $payment): void
             {
-                throw new \RuntimeException('database temporarily unavailable');
+                throw new RuntimeException('database temporarily unavailable');
             }
         };
 
@@ -223,7 +258,7 @@ class PaymentConfirmationServiceTest extends TestCase
         } catch (ManualReviewWebhookException $exception) {
             $this->assertSame(
                 'completed_after_local_payment_voided_or_expired',
-                $exception->getContext()['reason_code'] ?? null
+                $exception->getContext()['reason_code'] ?? null,
             );
         }
 
@@ -249,7 +284,7 @@ class PaymentConfirmationServiceTest extends TestCase
         } catch (ManualReviewWebhookException $exception) {
             $this->assertSame(
                 'completed_after_local_payment_voided_or_expired',
-                $exception->getContext()['reason_code'] ?? null
+                $exception->getContext()['reason_code'] ?? null,
             );
         }
 
@@ -276,7 +311,7 @@ class PaymentConfirmationServiceTest extends TestCase
         } catch (ManualReviewWebhookException $exception) {
             $this->assertSame(
                 'completed_after_local_payment_voided_or_expired_without_paid_status',
-                $exception->getContext()['reason_code'] ?? null
+                $exception->getContext()['reason_code'] ?? null,
             );
         }
 
@@ -347,7 +382,7 @@ class PaymentConfirmationServiceTest extends TestCase
         } catch (ManualReviewWebhookException $exception) {
             $this->assertSame(
                 'unexpected_booking_status_after_paid_checkout',
-                $exception->getContext()['reason_code'] ?? null
+                $exception->getContext()['reason_code'] ?? null,
             );
         }
 
@@ -360,7 +395,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertTrue((bool)($notes['refund_required'] ?? false));
         $this->assertSame(
             'captured_payment_with_unexpected_booking_status',
-            $notes['review_state'] ?? null
+            $notes['review_state'] ?? null,
         );
     }
 
@@ -396,7 +431,7 @@ class PaymentConfirmationServiceTest extends TestCase
                 'status' => 'complete',
                 'payment_status' => 'paid',
             ]),
-            'checkout.session.async_payment_succeeded'
+            'checkout.session.async_payment_succeeded',
         );
 
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
@@ -460,7 +495,7 @@ class PaymentConfirmationServiceTest extends TestCase
                 'status' => 'complete',
                 'payment_status' => 'paid',
             ]),
-            'checkout.session.async_payment_succeeded'
+            'checkout.session.async_payment_succeeded',
         );
 
         $this->service->confirmCheckoutSession(
@@ -468,7 +503,7 @@ class PaymentConfirmationServiceTest extends TestCase
                 'status' => 'complete',
                 'payment_status' => 'paid',
             ]),
-            'checkout.session.completed'
+            'checkout.session.completed',
         );
 
         $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
@@ -478,7 +513,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertSame('checkout.session.async_payment_succeeded', $notes['last_stripe_event_type'] ?? null);
         $this->assertSame(
             ['checkout.session.completed', 'checkout.session.async_payment_succeeded'],
-            $notes['confirmation_events'] ?? null
+            $notes['confirmation_events'] ?? null,
         );
     }
 
@@ -557,7 +592,7 @@ class PaymentConfirmationServiceTest extends TestCase
         $this->assertStringContainsString('"refund_required":false', (string)$payment->notes);
         $this->assertStringContainsString(
             '"review_state":"contradictory_terminal_event_after_paid"',
-            (string)$payment->notes
+            (string)$payment->notes,
         );
     }
 

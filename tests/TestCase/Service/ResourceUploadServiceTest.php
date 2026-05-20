@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Service;
 
-use Cake\Core\Configure;
 use App\Service\ResourceUploadService;
+use Cake\Core\Configure;
 use Cake\TestSuite\TestCase;
 use Laminas\Diactoros\UploadedFile;
 use RuntimeException;
@@ -33,7 +33,7 @@ class ResourceUploadServiceTest extends TestCase
             filesize($tmpFile),
             UPLOAD_ERR_OK,
             '../../evil.php',
-            'application/x-php'
+            'application/x-php',
         ));
     }
 
@@ -53,7 +53,7 @@ class ResourceUploadServiceTest extends TestCase
             filesize($tmpFile),
             UPLOAD_ERR_OK,
             'large.pdf',
-            'application/pdf'
+            'application/pdf',
         ));
     }
 
@@ -94,7 +94,7 @@ class ResourceUploadServiceTest extends TestCase
             filesize($tmpFile),
             UPLOAD_ERR_OK,
             'notes.pdf',
-            'application/pdf'
+            'application/pdf',
         ));
 
         $this->assertStringStartsWith('dev/uploads/resources/', $storedPath);
@@ -112,7 +112,7 @@ class ResourceUploadServiceTest extends TestCase
         Configure::write('Uploads.resources_url_prefix', '/resources');
 
         $tmpFile = tempnam(sys_get_temp_dir(), 'upload');
-        file_put_contents($tmpFile, "<html><body>not really a pdf</body></html>");
+        file_put_contents($tmpFile, '<html><body>not really a pdf</body></html>');
 
         $service = new ResourceUploadService();
 
@@ -123,7 +123,7 @@ class ResourceUploadServiceTest extends TestCase
             filesize($tmpFile),
             UPLOAD_ERR_OK,
             'fake.pdf',
-            'application/pdf'
+            'application/pdf',
         ));
     }
 }

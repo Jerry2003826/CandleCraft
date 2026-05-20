@@ -20,6 +20,16 @@ class StripeWebhooksControllerTest extends TestCase
     protected array $fixtures = [
         'app.PaymentWebhookIncidents',
         'app.StripeWebhookEvents',
+        'app.Users',
+        'app.Admins',
+        'app.Notifications',
+        'app.Bookings',
+        'app.Payments',
+        'app.PaymentRefunds',
+        'app.PaymentDisputes',
+        'app.Classes',
+        'app.Courses',
+        'app.Students',
     ];
 
     protected function tearDown(): void
@@ -66,7 +76,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new RetriableWebhookException('Temporary database issue.', [
                 'session_id' => 'cs_retry',
@@ -186,7 +196,7 @@ class StripeWebhooksControllerTest extends TestCase
         $this->assertCount(1, FakePaymentConfirmationService::$receivedSessions);
         $this->assertSame(
             'checkout.session.async_payment_succeeded',
-            FakePaymentConfirmationService::$receivedEventTypes[0] ?? null
+            FakePaymentConfirmationService::$receivedEventTypes[0] ?? null,
         );
         $this->assertSame('cs_async_success', FakePaymentConfirmationService::$receivedSessions[0]->id);
     }
@@ -242,7 +252,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new ManualReviewWebhookException('Cancelled booking paid late.', [
                 'session_id' => 'cs_manual_review',
@@ -281,7 +291,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new NonRetriableWebhookException('Stripe amount mismatch.', [
                 'session_id' => 'cs_non_retriable',
@@ -321,7 +331,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new ManualReviewWebhookException('Cancelled booking paid late.', [
                 'session_id' => 'cs_duplicate_event',
@@ -362,7 +372,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new ManualReviewWebhookException('Cancelled booking paid late.', [
                 'session_id' => 'cs_business_duplicate',
@@ -373,12 +383,12 @@ class StripeWebhooksControllerTest extends TestCase
         $firstPayload = $this->sessionPayload(
             'checkout.session.completed',
             'cs_business_duplicate',
-            'evt_business_duplicate_a'
+            'evt_business_duplicate_a',
         );
         $secondPayload = $this->sessionPayload(
             'checkout.session.completed',
             'cs_business_duplicate',
-            'evt_business_duplicate_b'
+            'evt_business_duplicate_b',
         );
 
         $this->configRequest([
@@ -479,7 +489,7 @@ class StripeWebhooksControllerTest extends TestCase
         FakePaymentConfirmationService::$handler = static function (
             object $session,
             string $eventType,
-            string $confirmationSource
+            string $confirmationSource,
         ): string {
             throw new RetriableWebhookException('Temporary database issue.', [
                 'session_id' => 'cs_retry_again',
@@ -503,6 +513,96 @@ class StripeWebhooksControllerTest extends TestCase
             ->where(['session_id' => 'cs_retry_again'])
             ->count();
         $this->assertSame(0, $count);
+    }
+
+    public function testRefundWebhookSyncsLocalPayment(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'paid';
+        $payment->stripe_payment_intent_id = 'pi_refund_webhook_controller';
+        $payment->stripe_charge_id = 'ch_refund_webhook_controller';
+        $payments->saveOrFail($payment);
+
+        $payload = (string)json_encode([
+            'id' => 'evt_refund_webhook_controller',
+            'type' => 'refund.created',
+            'data' => [
+                'object' => [
+                    'id' => 're_webhook_controller',
+                    'amount' => 1000,
+                    'currency' => 'aud',
+                    'status' => 'succeeded',
+                    'reason' => 'requested_by_customer',
+                    'charge' => 'ch_refund_webhook_controller',
+                    'payment_intent' => 'pi_refund_webhook_controller',
+                ],
+            ],
+        ]);
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseOk();
+        $payment = $payments->get(1);
+        $this->assertSame('partially_refunded', $payment->payment_status);
+        $this->assertSame(10.0, (float)$payment->refunded_amount);
+    }
+
+    public function testDisputeWebhookCreatesLocalDispute(): void
+    {
+        $secret = 'whsec_test';
+        Configure::write('Stripe.webhook_secret', $secret);
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'paid';
+        $payment->stripe_payment_intent_id = 'pi_dispute_webhook_controller';
+        $payment->stripe_charge_id = 'ch_dispute_webhook_controller';
+        $payments->saveOrFail($payment);
+
+        $payload = (string)json_encode([
+            'id' => 'evt_dispute_webhook_controller',
+            'type' => 'charge.dispute.created',
+            'data' => [
+                'object' => [
+                    'id' => 'dp_webhook_controller',
+                    'amount' => 5000,
+                    'currency' => 'aud',
+                    'reason' => 'fraudulent',
+                    'status' => 'needs_response',
+                    'charge' => 'ch_dispute_webhook_controller',
+                    'payment_intent' => 'pi_dispute_webhook_controller',
+                    'created' => 1777046400,
+                    'evidence_details' => [
+                        'due_by' => 1777651200,
+                    ],
+                ],
+            ],
+        ]);
+        $this->configRequest([
+            'headers' => [
+                'Stripe-Signature' => $this->signatureForPayload($payload, $secret),
+                'Content-Type' => 'application/json',
+            ],
+        ]);
+
+        $this->post('/stripe/webhook', $payload);
+
+        $this->assertResponseOk();
+        $dispute = FactoryLocator::get('Table')->get('PaymentDisputes')->find()
+            ->where(['PaymentDisputes.stripe_dispute_id' => 'dp_webhook_controller'])
+            ->firstOrFail();
+        $this->assertSame(1, (int)$dispute->payment_id);
+        $this->assertSame('needs_response', $dispute->status);
     }
 
     private function completedSessionPayload(string $sessionId, ?string $eventId = null): string

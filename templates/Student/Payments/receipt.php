@@ -44,6 +44,21 @@ $this->assign('title', 'Payment Receipt');
                         <th class="text-muted">Status</th>
                         <td><span class="badge badge-confirmed"><?= ucfirst(h($payment->payment_status)) ?></span></td>
                     </tr>
+                    <?php if (!empty($payment->stripe_invoice_pdf_url) || !empty($payment->stripe_receipt_url)): ?>
+                        <tr>
+                            <th class="text-muted">Stripe Documents</th>
+                            <td>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <?php if (!empty($payment->stripe_invoice_pdf_url)): ?>
+                                        <a href="<?= h($payment->stripe_invoice_pdf_url) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Download Invoice</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($payment->stripe_receipt_url)): ?>
+                                        <a href="<?= h($payment->stripe_receipt_url) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">Stripe Receipt</a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
                 <tfoot>
                     <tr class="table-light">

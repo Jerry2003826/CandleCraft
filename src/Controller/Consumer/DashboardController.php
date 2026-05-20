@@ -5,6 +5,9 @@ namespace App\Controller\Consumer;
 
 class DashboardController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -13,7 +16,12 @@ class DashboardController extends AppController
         $this->set('title', 'Customer Portal');
     }
 
-    private function studentDashboard($identity): void
+    /**
+     * Student dashboard.
+     *
+     * @param mixed $identity Identity.
+     */
+    private function studentDashboard(mixed $identity): void
     {
         $studentsTable = $this->fetchTable('Students');
         $bookingsTable = $this->fetchTable('Bookings');
@@ -34,10 +42,10 @@ class DashboardController extends AppController
 
         $bookingCount = $bookings->count();
         $upcomingCount = $bookings->filter(
-            fn ($booking) => $booking->class_entity?->start_datetime && $booking->class_entity->start_datetime->isFuture(),
+            fn($booking) => $booking->class_entity?->start_datetime && $booking->class_entity->start_datetime->isFuture(),
         )->count();
         $presentCount = $bookings->filter(
-            fn ($booking) => $booking->attendance_record?->attendance_status === 'present',
+            fn($booking) => $booking->attendance_record?->attendance_status === 'present',
         )->count();
 
         $recentBookings = array_slice($bookings->toList(), 0, 5);

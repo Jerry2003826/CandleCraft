@@ -31,6 +31,11 @@ class User extends Entity
         'password_hash',
     ];
 
+    /**
+     * Set password hash.
+     *
+     * @param mixed $password Password.
+     */
     protected function _setPasswordHash(string $password): ?string
     {
         if (strlen($password) > 0) {

@@ -22,14 +22,9 @@ $verificationBlockedMessage = $effectiveAge === null
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-0">
-            <i class="bi bi-arrow-left"></i> Back to Students
+        <a href="#" onclick="history.back(); return false;" class="admin-back-link mb-0">
+            <i class="bi bi-arrow-left"></i> Back
         </a>
-        <?php if ($messageId): ?>
-            <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'view', $messageId]) ?>" class="admin-back-link mb-0">
-                <i class="bi bi-envelope"></i> Back to Request
-            </a>
-        <?php endif; ?>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-btn-secondary" style="color: #D97706; padding: 6px 16px; font-size: 13px;">

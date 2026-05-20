@@ -56,9 +56,28 @@ class AccountControllerTest extends AppIntegrationTestCase
         $user = $users->get(4);
 
         $this->assertSame('Student One Updated', $student->student_name);
+        $this->assertSame(16, (int)$student->declared_age);
         $this->assertSame('2010-01-01', $student->date_of_birth?->format('Y-m-d'));
         $this->assertSame('Needs lower wheel height.', $student->medical_notes);
         $this->assertSame('student-one-updated@candlecraft.com', $user->email);
         $this->assertFalse((bool)$user->age_verified_by_admin);
+    }
+
+    public function testEditRejectsFutureDateOfBirth(): void
+    {
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/account/edit', [
+            'email' => 'student-one@candlecraft.com',
+            'student_name' => 'Student One',
+            'declared_age' => 24,
+            'date_of_birth' => '2099-01-01',
+            'medical_notes' => '',
+        ]);
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Date of birth cannot be in the future.');
     }
 }

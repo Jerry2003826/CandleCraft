@@ -4,11 +4,17 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\ORM\Rule\ExistsIn;
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class BookingsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -46,6 +52,11 @@ class BookingsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -72,10 +83,19 @@ class BookingsTable extends Table
             ->dateTime('reminder_sent_at')
             ->allowEmptyDateTime('reminder_sent_at');
 
+        $validator
+            ->dateTime('booking_confirmation_sent_at')
+            ->allowEmptyDateTime('booking_confirmation_sent_at');
+
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('class_id', 'Classes'), ['errorField' => 'class_id']);
         $rules->add($rules->existsIn('student_id', 'Students'), ['errorField' => 'student_id']);

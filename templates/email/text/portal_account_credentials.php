@@ -2,15 +2,19 @@ Hello <?= h((string)($recipient_name ?: 'there')) ?>,
 
 Your CandleCraft Academy portal account has been created.
 
-Login URL: <?= h((string)$login_url) ?>
 Login email: <?= h((string)$login_email) ?>
 Temporary password: <?= h((string)$temporary_password) ?>
-
+Login URL: <?= h((string)$login_url) ?>
 <?php if ($declared_age !== null): ?>
-Declared age on request: <?= h((string)$declared_age) ?>
-
+Declared age: <?= h((string)$declared_age) ?>
 <?php endif; ?>
-You can sign in straight away to browse courses and check your portal updates.
-Booking and payment access remain locked until an administrator confirms you are 18 or older.
 
-If you did not expect this email, please contact CandleCraft Academy.
+For your security, please change the temporary password using this one-time link:
+<?= h((string)$change_password_url) ?>
+
+This password change link expires after 7 days.
+
+You may sign in to browse courses and check portal updates. Booking and payment access remain locked until an administrator confirms age eligibility.
+
+Kind regards,
+CandleCraft Academy

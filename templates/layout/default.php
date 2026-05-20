@@ -14,12 +14,14 @@ $appTitle = 'CandleCraft Academy';
         <?php if ($this->fetch('title')): ?> - <?= $this->fetch('title') ?><?php endif; ?>
     </title>
     <?= $this->Html->meta('icon') ?>
-    <?= $this->Html->css(['fonts', 'cake', 'admin', 'home']) ?>
+    <?= $this->Html->css(['fonts', 'cake', 'admin']) ?>
+    <?= $this->Html->css('home', ['timestamp' => 'force']) ?>
+    <?= $this->Html->css('mobile', ['timestamp' => 'force']) ?>
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 </head>
-<body class="site-home">
+<body class="site-home site-default">
     <div class="home-shell">
         <a href="#main-content" class="skip-link">Skip to main content</a>
         <header class="hero-home hero-home--compact">
@@ -44,7 +46,9 @@ $appTitle = 'CandleCraft Academy';
                 'contactUrl' => $this->Url->build(['controller' => 'Pages', 'action' => 'contact']),
                 'loginUrl' => $this->Url->build(['controller' => 'Users', 'action' => 'login']),
                 'portalUrl' => $portalUrl,
-                'showHomeLink' => true,
+                'showHomeLink' => false,
+                'aboutUrl' => $this->Url->build('/') . '#main-content',
+                'showAboutLink' => false,
                 'contactLabel' => 'Enquire',
                 'menuId' => 'default-courses-menu',
             ]);

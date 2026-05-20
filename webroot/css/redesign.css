@@ -1,4174 +1,2243 @@
 /* ========================================
-   CandleCraft Academy — Figma Redesign Styles
-   Based on Figma Design System tokens
+   CandleCraft Academy - Airy Redesign
+   Theme: Warm Alabaster & Brushed Gold
    ======================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* ---- Design System Tokens ---- */
 :root {
-    /* Primary */
-    --rd-primary: #8A5A16;
-    --rd-primary-hover: #6F4710;
-    --rd-primary-light: #FFF7ED;
-    --rd-primary-15: rgba(138, 90, 22, 0.15);
+    /* Airy Color Palette */
+    --rd-bg: #fdfaf7;               /* Light, warm beige background */
+    --rd-card: rgba(255, 255, 255, 0.7); /* Translucent White (Glass) */
+    --rd-sidebar: #1A120C;          /* Kept dark for contrast vs airy content */
+    
+    /* Brand Colors */
+    --rd-primary: #d29a58;          /* Brushed Gold */
+    --rd-primary-hover: #b88244;
+    --rd-primary-light: #f9f1e8;
+    
+    /* Typography */
+    --rd-text-title: #2f2219;       /* Deep Espresso Brown */
+    --rd-text-body: #6e5e52;        /* Soft Earthy Taupe */
+    --rd-text-caption: #a69182;
+    
+    /* Borders & Depths */
+    --rd-border: rgba(210, 154, 88, 0.15);
+    --rd-shadow-airy: 0 20px 40px rgba(47, 34, 25, 0.05);
+    --rd-glass-border: rgba(255, 255, 255, 0.4);
 
-    /* Neutral */
-    --rd-bg: #FAFAFA;
-    --rd-card: #FFFFFF;
-    --rd-sidebar: #1A120C;
-    --rd-border: #E8E8E8;
-    --rd-divider: #F0F0F0;
-
-    /* Text */
-    --rd-text-title: #1D1D1D;
-    --rd-text-body: #595959;
-    --rd-text-caption: #8C8C8C;
-    --rd-text-white: #FFFFFF;
-    --rd-text-sidebar: #F5EDDE;
-
-    /* Status */
-    --rd-success: #52C41A;
-    --rd-success-bg: #F6FFED;
-    --rd-warning: #FAAD14;
-    --rd-warning-bg: #FFFBE6;
-    --rd-error: #FF4D4F;
-    --rd-error-bg: #FFF2F0;
-    --rd-info: #1890FF;
-    --rd-info-bg: #E6F7FF;
-
-    /* Category: Pottery */
-    --rd-pottery: #8A5A16;
-    --rd-pottery-bg: #FFF7ED;
-
-    /* Category: Knitting */
-    --rd-knitting: #2F54EB;
-    --rd-knitting-bg: #F0F5FF;
-
-    /* Spacing */
-    --rd-space-xs: 4px;
-    --rd-space-sm: 8px;
-    --rd-space-md: 12px;
-    --rd-space-base: 16px;
-    --rd-space-lg: 20px;
-    --rd-space-xl: 24px;
-    --rd-space-2xl: 32px;
-    --rd-space-3xl: 40px;
-    --rd-space-4xl: 48px;
-    --rd-space-5xl: 64px;
-
-    /* Radius */
-    --rd-radius-sm: 4px;
-    --rd-radius-md: 6px;
-    --rd-radius-lg: 8px;
-    --rd-radius-xl: 12px;
-
-    /* Shadow */
-    --rd-shadow-card: 0px 2px 8px rgba(0, 0, 0, 0.04);
-
-    /* Sidebar */
-    --rd-sidebar-width: 240px;
+    /* Spacing & Radius */
+    --rd-radius-xl: 20px;
+    --rd-sidebar-width: 260px;
 }
 
-/* ---- Base Override ---- */
+/* ---- Base Styles ---- */
 body.redesign {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--rd-bg);
-    color: var(--rd-text-title);
-    margin: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--rd-bg);
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(210, 154, 88, 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(210, 154, 88, 0.03) 0px, transparent 50%);
+    color: var(--rd-text-body);
 }
-
-.visually-hidden {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0, 0, 0, 0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
-
-body.redesign a:focus-visible,
-body.redesign button:focus-visible,
-body.redesign input:focus-visible,
-body.redesign select:focus-visible,
-body.redesign textarea:focus-visible {
-    outline: 3px solid rgba(138, 90, 22, 0.35);
-    outline-offset: 3px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-}
-
-/* ---- Typography ---- */
-.rd-h1 { font-size: 30px; line-height: 40px; font-weight: 700; }
-.rd-h2 { font-size: 24px; line-height: 32px; font-weight: 700; }
-.rd-h3 { font-size: 20px; line-height: 28px; font-weight: 600; }
-.rd-h4 { font-size: 16px; line-height: 24px; font-weight: 600; }
-.rd-body-lg { font-size: 16px; line-height: 24px; font-weight: 400; }
-.rd-body { font-size: 14px; line-height: 22px; font-weight: 400; }
-.rd-body-medium { font-size: 14px; line-height: 22px; font-weight: 500; }
-.rd-caption { font-size: 12px; line-height: 20px; font-weight: 400; }
-.rd-small { font-size: 11px; line-height: 16px; font-weight: 500; }
 
 /* ========================================
-   Redesigned Sidebar
+   1. REDESIGNED SIDEBAR (Dark & Elegant)
    ======================================== */
-body.redesign #adminSidebar,
-body.redesign #portalSidebar {
-    background: var(--rd-sidebar) !important;
-}
 
-body.redesign #adminSidebar .offcanvas-body,
-body.redesign #portalSidebar .offcanvas-body {
-    padding: 24px 12px 16px !important;
-    gap: 4px;
-}
-
-/* Brand */
-body.redesign .rd-sidebar-brand {
-    font-family: 'Inter', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--rd-primary);
-    padding: 0 0 0 0;
-    margin-bottom: 6px;
-}
-
-/* Nav links */
-body.redesign #adminSidebar .nav-link,
 body.redesign #portalSidebar .nav-link {
-    font-family: 'Inter', sans-serif;
-    color: var(--rd-text-sidebar);
-    padding: 10px 12px;
-    font-size: 14px;
-    font-weight: 400;
-    border-radius: var(--rd-radius-lg);
-    border-left: none;
-    transition: all 0.15s ease;
+    color: rgba(245, 236, 223, 0.6);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 2px 8px;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
+    gap: 10px;
 }
 
-body.redesign #adminSidebar .nav-link i,
 body.redesign #portalSidebar .nav-link i {
-    display: inline-block;
+    font-size: 16px;
     width: 20px;
     text-align: center;
-    margin-right: 10px;
-    font-size: 15px;
-    opacity: 0.7;
 }
 
-body.redesign #adminSidebar .nav-link.active i,
+body.redesign #portalSidebar .nav-link.active {
+    background: rgba(210, 154, 88, 0.15) !important;
+    color: #d29a58 !important;
+}
+
 body.redesign #portalSidebar .nav-link.active i {
-    opacity: 1;
+    color: #d29a58 !important;
 }
 
-body.redesign #adminSidebar .nav-link:hover,
 body.redesign #portalSidebar .nav-link:hover {
     background: rgba(255, 255, 255, 0.06);
     color: #fff;
 }
 
-body.redesign #adminSidebar .nav-link.active,
-body.redesign #portalSidebar .nav-link.active {
-    background: var(--rd-primary-15);
-    color: var(--rd-primary);
-    font-weight: 500;
-    border-left: none;
-}
-
-/* Hide old brand section */
-body.redesign #adminSidebar .offcanvas-body > .d-none.d-lg-block,
-body.redesign #portalSidebar .offcanvas-body > .d-none.d-lg-block {
-    display: none !important;
-}
-
-/* ========================================
-   Redesigned Top Navbar
-   ======================================== */
-body.redesign .sidebar-navbar {
-    background: var(--rd-card);
-    border-bottom: none;
-    padding: 16px 32px;
-}
-
-body.redesign .sidebar-navbar .page-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--rd-text-title);
-}
-
-body.redesign .rd-welcome-text {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 400;
-    color: var(--rd-text-body);
-}
-
-body.redesign .rd-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--rd-primary);
-    display: inline-block;
-}
-
-.admin-user-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--admin-text-primary);
-}
-
-.nav-link--button {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    text-align: left;
-    font: inherit;
-    appearance: none;
-}
-
-/* ========================================
-   Redesigned Main Content
-   ======================================== */
-body.redesign .sidebar-main > main {
-    background: var(--rd-card);
-    padding: 24px 32px !important;
-}
-
-/* ========================================
-   Course Grid Layout
-   ======================================== */
-.rd-toolbar {
+body.redesign .rd-sidebar-brand,
+body.redesign .admin-brand {
+    padding: 32px 24px 24px;
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 12px;
+    border-bottom: 1px solid rgba(210, 154, 88, 0.15);
     margin-bottom: 24px;
 }
 
-.rd-search {
-    flex: 1;
-    border: 1px solid var(--rd-border);
-    border-radius: var(--rd-radius-md);
-    padding: 9px 12px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--rd-text-caption);
+/* ========================================
+   2. KEY STATS (Airy Single-Pane Glass)
+   ======================================== */
+.stats-container-airy {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     background: var(--rd-card);
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.rd-search:focus {
-    border-color: var(--rd-primary);
-    color: var(--rd-text-title);
-}
-
-.rd-view-toggle {
-    display: inline-flex;
-    border: 1px solid var(--rd-border);
-    border-radius: var(--rd-radius-md);
-    overflow: hidden;
-}
-
-.rd-view-toggle a,
-.rd-view-toggle button {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 12px;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.15s, color 0.15s;
-    line-height: normal;
-}
-
-.rd-view-toggle .rd-active {
-    background: var(--rd-primary);
-    color: var(--rd-text-white);
-}
-
-.rd-view-toggle .rd-inactive {
-    background: var(--rd-card);
-    color: var(--rd-text-body);
-}
-
-.rd-view-toggle .rd-inactive:hover {
-    background: var(--rd-divider);
-}
-
-.rd-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    background: var(--rd-primary);
-    color: var(--rd-text-white);
-    border: none;
-    border-radius: var(--rd-radius-md);
-    padding: 9px 16px;
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.15s;
-}
-
-.rd-btn-primary:hover {
-    background: var(--rd-primary-hover);
-    color: var(--rd-text-white);
-    text-decoration: none;
-}
-
-/* ---- Course Grid ---- */
-.rd-course-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-/* ---- Course Card ---- */
-.rd-course-card {
-    width: 350px;
-    min-height: 240px;
-    background: var(--rd-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--rd-glass-border);
     border-radius: var(--rd-radius-xl);
-    box-shadow: var(--rd-shadow-card);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    box-shadow: var(--rd-shadow-airy);
+    margin-bottom: 32px;
 }
 
-.rd-course-card__bar {
-    height: 6px;
-    width: 100%;
-}
-
-.rd-course-card__bar--pottery { background: var(--rd-pottery); }
-.rd-course-card__bar--knitting { background: var(--rd-knitting); }
-.rd-course-card__bar--default { background: var(--rd-primary); }
-
-.rd-course-card__body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px 20px;
-}
-
-/* Tags row */
-.rd-course-card__tags {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.rd-course-card__tags .spacer {
-    flex: 1;
-}
-
-.rd-tag {
-    display: inline-block;
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: var(--rd-radius-sm);
-    white-space: nowrap;
-}
-
-.rd-tag--pottery {
-    background: var(--rd-pottery-bg);
-    color: var(--rd-pottery);
-}
-
-.rd-tag--knitting {
-    background: var(--rd-knitting-bg);
-    color: var(--rd-knitting);
-}
-
-.rd-tag--level {
-    background: var(--rd-divider);
-    color: var(--rd-text-body);
-}
-
-.rd-tag--active {
-    background: var(--rd-success-bg);
-    color: var(--rd-success);
-}
-
-.rd-tag--inactive {
-    background: var(--rd-error-bg);
-    color: var(--rd-error);
-}
-
-.rd-tag--pending {
-    background: var(--rd-warning-bg);
-    color: var(--rd-warning);
-}
-
-/* Course name */
-.rd-course-card__name {
-    font-family: 'Inter', sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--rd-text-title);
-    margin: 0;
-}
-
-/* Stats row */
-.rd-course-card__stats {
-    display: flex;
-    gap: 24px;
-}
-
-.rd-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.rd-stat__label {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--rd-text-caption);
-}
-
-.rd-stat__value {
-    font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--rd-text-title);
-}
-
-/* Actions row */
-.rd-course-card__actions {
-    display: flex;
-    gap: 8px;
-}
-
-.rd-btn-edit {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 12px;
-    border: 1px solid var(--rd-primary);
-    border-radius: var(--rd-radius-md);
-    color: var(--rd-primary);
-    background: transparent;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-
-.rd-btn-edit:hover {
-    background: var(--rd-primary);
-    color: var(--rd-text-white);
-    text-decoration: none;
-}
-
-.rd-btn-delete {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    padding: 6px 12px;
-    border: 1px solid var(--rd-border);
-    border-radius: var(--rd-radius-md);
-    color: var(--rd-text-caption);
-    background: transparent;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.15s;
-}
-
-.rd-btn-delete:hover {
-    border-color: var(--rd-error);
-    color: var(--rd-error);
-    text-decoration: none;
-}
-
-/* ---- Empty State ---- */
-.rd-empty-state {
+.stat-item-airy {
+    padding: 24px;
     text-align: center;
-    padding: 60px 20px;
+    border-right: 1px solid var(--rd-border);
+}
+
+.stat-item-airy:last-child { border-right: none; }
+
+.stat-item-airy .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
     color: var(--rd-text-caption);
-    width: 100%;
+    margin-bottom: 8px;
+    display: block;
 }
 
-.rd-empty-state p {
-    font-size: 16px;
-    margin-bottom: 16px;
-}
-
-/* ---- Responsive ---- */
-@media (max-width: 1200px) {
-    .rd-course-card {
-        width: calc(50% - 10px);
-        min-width: 280px;
-    }
-}
-
-@media (max-width: 768px) {
-    .rd-course-card {
-        width: 100%;
-    }
-
-    .rd-toolbar {
-        flex-wrap: wrap;
-    }
-
-    .rd-search {
-        width: 100%;
-        flex: unset;
-    }
-
-    body.redesign .sidebar-main > main {
-        padding: 16px !important;
-    }
+.stat-item-airy .value {
+    font-family: 'Grown', serif; /* Using your luxury font for numbers */
+    font-size: 2.5rem;
+    color: var(--rd-text-title);
+    line-height: 1;
 }
 
 /* ========================================
-   Login Screen Redesign
+   3. CHILD PROFILE (Floating ID Card)
    ======================================== */
-
-.login-screen {
+.child-card-airy {
+    background: white;
+    border-radius: var(--rd-radius-xl);
+    padding: 32px;
+    box-shadow: var(--rd-shadow-airy);
     display: flex;
-    min-height: 100vh;
-    width: 100%;
-    background-color: #ffffff;
-    font-family: 'Inter', sans-serif;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px solid var(--rd-glass-border);
 }
 
-.login-image-container {
-    flex: 1;
-    background-color: #f0f0f0;
-    display: none;
-}
-
-@media (min-width: 992px) {
-    .login-image-container {
-        display: block;
-    }
-}
-
-.login-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.login-form-container {
-    flex: 1;
+.child-avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    background: var(--rd-primary-light);
+    border: 2px solid var(--rd-primary);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-}
-
-.login-form-wrapper {
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.login-header {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.login-overline {
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
+    font-family: 'Grown', serif;
+    font-size: 24px;
     color: var(--rd-primary);
-    margin: 0;
+    margin-bottom: 16px;
 }
 
-.login-title {
-    font-size: 2.25rem;
+.child-status-badge {
+    background: #f0f9f4; /* Airy sage green */
+    color: #2d7a4d;
+    font-size: 10px;
     font-weight: 700;
-    color: var(--rd-text-title);
-    margin: 0;
-}
-
-.login-subtitle {
-    font-size: 0.875rem;
-    color: var(--rd-text-body);
-    margin: 0;
-}
-
-.login-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.login-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.login-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--rd-text-title);
-}
-
-.login-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--rd-border);
-    border-radius: var(--rd-radius-lg);
-    font-size: 0.875rem;
-    color: var(--rd-text-title);
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.login-input::placeholder {
-    color: var(--rd-text-caption);
-}
-
-.login-input:focus {
-    border-color: var(--rd-primary);
-    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
-}
-
-.login-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 1rem;
-}
-
-.login-return-link {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--rd-primary);
-    text-decoration: none;
-}
-
-.login-return-link:hover {
-    text-decoration: underline;
-}
-
-.login-submit-btn {
-    padding: 0.75rem 1.5rem;
-    background-color: var(--rd-primary);
-    color: #ffffff;
-    border: none;
-    border-radius: var(--rd-radius-lg);
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.login-submit-btn:hover {
-    background-color: var(--rd-primary-hover);
-}
-
-.login-footer {
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--rd-divider);
-    text-align: center;
-}
-
-.login-footer-text {
-    font-size: 0.875rem;
-    color: var(--rd-text-caption);
-    margin: 0;
+    padding: 4px 12px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 /* ========================================
-   Admin Dashboard Redesign (Figma)
+   4. RECENT BOOKINGS (Clean Minimal Table)
    ======================================== */
-
-:root {
-    --admin-sidebar-bg: #1F2937;
-    --admin-sidebar-active: #374151;
-    --admin-sidebar-text: #D1D5DB;
-    --admin-sidebar-text-active: #FFFFFF;
-    --admin-brand-icon: #8A5A16;
-    
-    --admin-header-bg: #FFFFFF;
-    --admin-header-border: #E5E7EB;
-    --admin-search-bg: #F3F4F6;
-    --admin-search-text: #9CA3AF;
-    
-    --admin-main-bg: #F9FAFB;
-    
-    --admin-card-bg: #FFFFFF;
-    --admin-card-border: #E5E7EB;
-    --admin-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    
-    --admin-text-primary: #111827;
-    --admin-text-secondary: #6B7280;
-    
-    --admin-trend-up: #10B981;
-    --admin-trend-down: #EF4444;
+.table-airy-wrapper {
+    background: var(--rd-card);
+    backdrop-filter: blur(10px);
+    border-radius: var(--rd-radius-xl);
+    padding: 24px;
+    border: 1px solid var(--rd-glass-border);
 }
 
-body.redesign .sidebar-main {
-    background-color: var(--admin-main-bg);
-    min-height: 100vh;
+body.redesign .table-airy {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
 }
 
-/* Sidebar */
-body.redesign #adminSidebar,
-body.redesign #portalSidebar {
-    background-color: var(--admin-sidebar-bg) !important;
-    border-right: none;
-    width: 260px;
-}
-
-body.redesign #adminSidebar .offcanvas-body,
-body.redesign #portalSidebar .offcanvas-body {
-    padding: 32px 24px !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.admin-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 40px;
-}
-
-.admin-brand-icon {
-    width: 32px;
-    height: 32px;
-    background-color: var(--admin-brand-icon);
-    border-radius: 50%;
-}
-
-.admin-brand-text {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 20px;
-    color: #FFFFFF;
-    margin: 0;
-}
-
-.admin-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-body.redesign #adminSidebar .nav-link,
-body.redesign #portalSidebar .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: var(--admin-sidebar-text);
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-body.redesign #adminSidebar .nav-link i,
-body.redesign #portalSidebar .nav-link i {
-    font-size: 20px;
-    margin: 0;
-    width: 20px;
-    text-align: center;
-    color: var(--admin-sidebar-text);
-}
-
-body.redesign #adminSidebar .nav-link:hover,
-body.redesign #portalSidebar .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--admin-sidebar-text-active);
-}
-
-body.redesign #adminSidebar .nav-link.active,
-body.redesign #portalSidebar .nav-link.active {
-    background-color: var(--admin-sidebar-active);
-    color: var(--admin-sidebar-text-active);
+body.redesign .table-airy th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--rd-text-caption);
+    padding: 0 16px;
+    border: none;
     font-weight: 600;
 }
 
-body.redesign #adminSidebar .nav-link.active i,
-body.redesign #portalSidebar .nav-link.active i {
-    color: var(--admin-brand-icon);
+body.redesign .table-airy td {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    border-top: 1px solid var(--rd-glass-border);
+    border-bottom: 1px solid var(--rd-glass-border);
+    color: var(--rd-text-body);
 }
 
-.admin-nav-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: auto;
+body.redesign .table-airy td:first-child {
+    border-left: 1px solid var(--rd-glass-border);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
 }
 
-.admin-nav-bottom .sidebar-action-form {
-    width: 100%;
+body.redesign .table-airy td:last-child {
+    border-right: 1px solid var(--rd-glass-border);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
 }
 
-.admin-nav-bottom .nav-link.logout {
-    color: #EF4444;
+body.redesign.site-home .table td,
+body.redesign .parent-bookings-table td {
+    padding: 14px 20px !important;
 }
 
-.admin-nav-bottom .nav-link.logout i {
-    color: #EF4444;
+body.redesign.site-home .table th,
+body.redesign .parent-bookings-table th {
+    padding: 12px 20px !important;
 }
 
-/* Header */
+/* Ghost Status Tags */
+.status-ghost {
+    background: transparent;
+    border: 1px solid var(--rd-primary);
+    color: var(--rd-primary);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* ========================================
+   5. TOP NAVBAR (Invisible/Airy)
+   ======================================== */
 body.redesign .sidebar-navbar {
-    background-color: var(--admin-header-bg);
-    border-bottom: 1px solid var(--admin-header-border);
-    padding: 24px 40px;
+    background: transparent !important;
+    border-bottom: none;
+    padding: 32px 40px;
 }
 
 body.redesign .sidebar-navbar .page-title {
+    font-family: 'Grown', serif;
+    font-size: 32px;
+    color: var(--rd-text-title);
+    letter-spacing: 0.02em;
+}
+
+body.redesign .admin-notification-dropdown {
+    position: relative;
+}
+
+body.redesign .admin-notification-button {
+    align-items: center;
+    background: rgba(210, 154, 88, 0.1);
+    border: 1px solid rgba(210, 154, 88, 0.24);
+    border-radius: 999px;
+    color: #8a5a16;
+    cursor: pointer;
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+    position: relative;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    width: 40px;
+}
+
+body.redesign .admin-notification-button:hover,
+body.redesign .admin-notification-button:focus-visible,
+body.redesign .admin-notification-button.show {
+    background: rgba(210, 154, 88, 0.18);
+    border-color: rgba(210, 154, 88, 0.48);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+body.redesign .admin-notification-button i {
+    font-size: 18px;
+}
+
+body.redesign .admin-notification-badge {
+    align-items: center;
+    background: #d29a58;
+    border: 2px solid #fdfaf7;
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-flex;
     font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    height: 20px;
+    justify-content: center;
+    min-width: 20px;
+    padding: 0 5px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+}
+
+/* User profile avatar in admin/portal navigation.
+   Default style applies globally so the bubble is always visible.
+   Inline width/height (e.g. attendance roster) still override here. */
+.admin-avatar {
+    align-items: center;
+    background: linear-gradient(135deg, #d29a58, #a86a1f);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(154, 100, 31, 0.22);
+    color: #ffffff;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
     font-weight: 600;
-    font-size: 24px;
-    color: var(--admin-text-primary);
+    height: 40px;
+    justify-content: center;
+    letter-spacing: 0.4px;
+    line-height: 1;
+    overflow: hidden;
+    text-transform: uppercase;
+    width: 40px;
+}
+
+[data-theme="dark"] .admin-avatar {
+    background: linear-gradient(135deg, #f0cf9c, #c69648);
+    border-color: rgba(0, 0, 0, 0.18);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    color: #2a1a08;
+}
+
+body.redesign .admin-notification-menu {
+    background: #ffffff;
+    border: 1.5px solid rgba(210, 154, 88, 0.28);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(47, 34, 25, 0.16);
+    min-width: 320px;
+    padding: 18px;
+}
+
+body.redesign .admin-notification-menu__eyebrow {
+    color: #8a5a16;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+body.redesign .admin-notification-menu__title {
+    color: #2f2219;
+    font-family: 'Grown', serif;
+    font-size: 1.1rem;
+    margin-bottom: 14px;
+}
+
+body.redesign .admin-notification-menu__list {
+    border-bottom: 1px solid rgba(210, 154, 88, 0.16);
+    border-top: 1px solid rgba(210, 154, 88, 0.16);
+    margin-bottom: 14px;
+    padding: 8px 0;
+}
+
+body.redesign .admin-notification-item {
+    align-items: center;
+    border-radius: 10px;
+    color: #2f2219;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 10px;
+    text-decoration: none;
+}
+
+body.redesign .admin-notification-item:hover {
+    background: rgba(210, 154, 88, 0.08);
+    color: #2f2219;
+    text-decoration: none;
+}
+
+body.redesign .admin-notification-item__name {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+body.redesign .admin-notification-item__meta {
+    color: #b8844a;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+body.redesign .admin-notification-menu__actions {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+body.redesign .admin-notification-menu__primary {
+    justify-content: center;
+    padding: 10px 16px;
+}
+
+body.redesign .admin-notification-menu__link {
+    color: #8a5a16;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+body.redesign .admin-notification-menu__empty {
+    color: #8f8076;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 8px 0 2px;
+}
+
+/* ========================================
+   6. PRIMARY BUTTON (Gold Shadow)
+   ======================================== */
+.btn-gold-airy {
+    background: var(--rd-primary);
+    color: white !important;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border: none;
+    box-shadow: 0 10px 20px rgba(210, 154, 88, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-gold-airy:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(210, 154, 88, 0.3);
+    background: var(--rd-primary-hover);
+}
+
+/* ------------------------------------------------------------
+   CANDLECRAFT LUXURY THEME REFINEMENTS (REWRITTEN)
+   ------------------------------------------------------------ */
+
+/* 1. Substantial Glass Cards */
+body.redesign .card {
+    border: 1px solid rgba(210, 154, 88, 0.25) !important; /* Increased border visibility */
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    border-radius: 20px !important;
+    /* Double Shadow: One for depth, one for soft glow */
+    box-shadow: 
+        0 10px 30px rgba(47, 34, 25, 0.08), 
+        0 4px 6px rgba(210, 154, 88, 0.04) !important;
+    transition: transform 0.3s ease, border-color 0.3s ease !important;
+}
+
+body.redesign .card:hover {
+    border-color: rgba(210, 154, 88, 0.45) !important;
+    transform: translateY(-2px);
+}
+
+/* 2. Stat card gold/bronze header bars */
+body.redesign .stat-card {
+    border-top: 4px solid transparent !important; /* Base for accents */
+}
+
+body.redesign .stat-card.stat-primary { border-top-color: #d29a58 !important; }
+body.redesign .stat-card.stat-success { border-top-color: #f0cf9c !important; }
+body.redesign .stat-card.stat-info    { border-top-color: #b8844a !important; }
+body.redesign .stat-card.stat-warning { border-top-color: #8a5a16 !important; }
+
+/* 3. Defined Section Headers */
+body.redesign .card-header {
+    border-bottom: 1.5px solid rgba(210, 154, 88, 0.2) !important; /* Thicker header line */
+    background: rgba(210, 154, 88, 0.03) !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+body.redesign .card-header h3, 
+body.redesign .card-header h4 {
+    font-family: 'Grown', serif !important;
+    color: #2f2219 !important;
+    letter-spacing: 0.04em;
     margin: 0;
 }
 
-.admin-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 24px;
+/* 4. Luxury Typography refinements */
+body.redesign .sidebar-navbar .page-title {
+    font-family: 'Grown', serif !important;
+    font-size: 32px !important;
+    letter-spacing: 0.04em !important;
+    color: #2f2219 !important;
+    font-weight: 400 !important;
 }
 
-.admin-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background-color: var(--admin-search-bg);
-    padding: 10px 16px;
-    border-radius: 20px;
-    border: 1px solid transparent;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+body.redesign .stat-card .stat-label {
+    font-size: 11px !important;
+    letter-spacing: 0.25em !important; /* Extra spacing for luxury feel */
+    text-transform: uppercase !important;
+    color: #a69182 !important;
+    font-weight: 700 !important;
 }
 
-.admin-search i {
-    color: var(--admin-search-text);
-    font-size: 16px;
+body.redesign .stat-card .stat-value {
+    font-family: 'Grown', serif !important;
+    font-size: 2.4rem !important;
+    color: #2f2219 !important;
+    line-height: 1;
+    margin-top: 5px;
 }
 
-.admin-search input {
-    border: none;
-    background: transparent;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    outline: none;
-    min-width: 0;
+/* 5. Table Polish (High contrast borders) */
+body.redesign .parent-bookings-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
 }
 
-.admin-search select {
-    border: none;
-    background: transparent;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    outline: none;
-    min-width: 0;
+body.redesign .parent-bookings-table th {
+    font-size: 11px !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    color: #8a5a16 !important; /* Darker gold for headers */
+    border-bottom: 2px solid rgba(210, 154, 88, 0.3) !important;
+    padding: 15px 20px !important;
+    background: transparent !important;
 }
 
-.admin-search input::placeholder {
-    color: var(--admin-search-text);
+body.redesign .parent-bookings-table td {
+    border-bottom: 1px solid rgba(210, 154, 88, 0.15) !important;
+    padding: 18px 20px !important;
+    color: #594a3e !important;
 }
 
-.admin-search:focus-within {
-    border-color: var(--rd-primary);
-    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
+body.redesign .parent-bookings-table tbody tr:hover td {
+    background: rgba(210, 154, 88, 0.05) !important;
+    color: #2f2219 !important;
 }
 
-.admin-avatar {
-    width: 40px;
-    height: 40px;
-    background-color: #D1D5DB;
-    border-radius: 50%;
+/* 6. Sidebar & Layout Spacing */
+body.redesign .admin-brand {
+    justify-content: center !important;
+    padding: 40px 24px 32px !important;
+    border-bottom: 1px solid rgba(210, 154, 88, 0.25) !important;
+    margin-bottom: 24px !important;
 }
 
-/* Main Content */
-body.redesign .sidebar-main > main {
-    background-color: transparent;
-    padding: 40px !important;
+/* Button & Action Refinement */
+body.redesign .btn-primary {
+    background: #d29a58 !important;
+    border: 1px solid #b8844a !important;
+    box-shadow: 0 4px 12px rgba(210, 154, 88, 0.2) !important;
+    font-weight: 600 !important;
+}
+
+body.redesign .parent-quick-actions a:hover {
+    background: rgba(210, 154, 88, 0.08) !important;
+    border-radius: 12px;
+}
+/* REFINED ADMIN DASHBOARD */
+body.redesign .sidebar-navbar {
+    padding: 24px 40px 10px !important; /* Tighter header spacing */
 }
 
 /* Stat Cards */
-.admin-stat-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: var(--admin-card-shadow);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-}
-
-.admin-stat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.admin-stat-value {
+    font-family: 'Grown', serif !important;
+    font-size: 32px !important;
+    color: #2f2219 !important;
 }
 
 .admin-stat-title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-secondary);
-    margin: 0;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
 }
 
-.admin-stat-icon {
-    width: 40px;
-    height: 40px;
-    background-color: var(--admin-search-bg);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--admin-text-secondary);
-    font-size: 20px;
+/* Links */
+a {
+    color: #d29a58 !important;
+    text-decoration: none !important;
+    font-weight: 600;
 }
 
-.admin-stat-value {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 32px;
-    color: var(--admin-text-primary);
-    margin: 0;
+a:hover {
+    color: #8a5a16 !important;
+    text-decoration: underline !important;
 }
 
-.admin-stat-trend {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
+/* Status Badges */
+.admin-badge {
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    background: rgba(210, 154, 88, 0.1) !important;
+    color: #d29a58 !important;
+    white-space: nowrap !important;
+}
+/* ========================================
+   ADMIN DASHBOARD: DEFINITION & CONTRAST
+   ======================================== */
+
+/* 1. Defined Stat Boxes */
+body.redesign .admin-stat-card {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(210, 154, 88, 0.3) !important; /* Definitive Gold Border */
+    border-radius: 16px !important;
+    padding: 24px !important;
+    box-shadow: 0 4px 12px rgba(47, 34, 25, 0.05) !important;
 }
 
-.admin-stat-trend.up { color: var(--admin-trend-up); }
-.admin-stat-trend.down { color: var(--admin-trend-down); }
-.admin-stat-trend.neutral { color: var(--admin-text-secondary); }
+/* ========================================
+   ADMIN DASHBOARD: ZEBRA STRIPE ENQUIRIES
+   ======================================== */
 
-/* Tables */
-.admin-table-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: var(--admin-card-shadow);
-    height: 100%;
+/* 1. The Container Box */
+.admin-enquiry-card {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(210, 154, 88, 0.25) !important;
+    border-radius: 16px !important;
+    overflow: hidden; /* Clips stripes to the border radius */
+    box-shadow: 0 4px 15px rgba(47, 34, 25, 0.04) !important;
 }
 
-.admin-table-header {
+/* 2. Striping the Rows */
+.admin-enquiry-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--admin-card-border);
-    margin-bottom: 16px;
+    padding: 16px 24px;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid rgba(210, 154, 88, 0.08);
 }
 
-.admin-table-title {
-    font-family: 'Inter', sans-serif;
+/* Every second row gets a soft beige tint */
+.admin-enquiry-row:nth-child(even) {
+    background-color: #fdfaf7 !important; /* Tonal Beige */
+}
+
+/* Every first row stays white */
+.admin-enquiry-row:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+/* Hover state for interaction */
+.admin-enquiry-row:hover {
+    background-color: rgba(210, 154, 88, 0.08) !important;
+    cursor: pointer;
+}
+
+/* 3. Typography & Micro-Details */
+.enquiry-sender {
+    font-weight: 700;
+    color: #2f2219; /* Espresso */
+    font-size: 14px;
+}
+
+.enquiry-meta {
+    font-size: 12px;
+    color: #a69182; /* Taupe */
+    letter-spacing: 0.02em;
+}
+
+.enquiry-status-dot {
+    height: 8px;
+    width: 8px;
+    background-color: #d29a58; /* Gold dot for "Unread" */
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* 3. Defined Booking Rows */
+.admin-booking-card {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(210, 154, 88, 0.25) !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+}
+
+.booking-item-row {
+    border-bottom: 1px solid rgba(210, 154, 88, 0.12) !important;
+    padding: 14px 0;
+}
+
+.booking-item-row:last-child {
+    border-bottom: none !important;
+}
+
+/* 4. Action Required Strip (Stronger Definition) */
+.admin-request-summary {
+    background: #fffcf0 !important; /* Soft Cream */
+    border: 2px solid #d29a58 !important; /* Stronger Gold Outline */
+    border-radius: 14px !important;
+    box-shadow: 0 8px 20px rgba(210, 154, 88, 0.1) !important;
+}
+
+/* 5. Typography Weight for Contrast */
+.admin-stat-title, .section-label-micro {
+    color: #8a5a16 !important; /* Deep Bronze */
+    font-weight: 700 !important;
+    letter-spacing: 0.15em !important;
+}
+
+.admin-stat-value {
+    color: #2f2219 !important; /* Espresso */
+    margin-top: 4px;
+}
+
+/* 6. Link Decoration for Clarity */
+a.view-link {
+    color: #d29a58 !important;
     font-weight: 600;
-    font-size: 18px;
+    text-decoration: underline rgba(210, 154, 88, 0.3) !important;
+}
+
+a.view-link:hover {
+    color: #2f2219 !important;
+    text-decoration-color: #2f2219 !important;
+}
+
+/* ========================================
+   ADMIN DESIGN SYSTEM - CSS VARIABLES
+   ======================================== */
+
+:root {
+    --admin-card-bg: #ffffff;
+    --admin-card-border: rgba(210, 154, 88, 0.25);
+    --admin-card-border-strong: rgba(210, 154, 88, 0.4);
+    --admin-text-primary: #2f2219;
+    --admin-text-secondary: #a69182;
+    --admin-brand-icon: #d29a58;
+    --admin-search-bg: #fdfaf7;
+    --admin-gold: #d29a58;
+    --admin-gold-hover: #b88244;
+    --admin-gold-light: rgba(210, 154, 88, 0.1);
+    --admin-table-header-border: rgba(210, 154, 88, 0.3);
+    --admin-table-row-border: rgba(210, 154, 88, 0.1);
+    --admin-page-bg: #fdfaf7;
+}
+
+[data-theme="dark"] {
+    --admin-card-bg: #1e160e;
+    --admin-card-border: rgba(210, 154, 88, 0.2);
+    --admin-card-border-strong: rgba(210, 154, 88, 0.35);
+    --admin-text-primary: #f5ece0;
+    --admin-text-secondary: #d8c4b2;
+    --admin-brand-icon: #d29a58;
+    --admin-search-bg: #160f08;
+    --admin-table-header-border: rgba(210, 154, 88, 0.25);
+    --admin-table-row-border: rgba(210, 154, 88, 0.08);
+    --admin-page-bg: #130d07;
+}
+
+/* ========================================
+   ADMIN DESIGN SYSTEM - COMPONENTS
+   ======================================== */
+
+/* --- Form Card --- */
+body.redesign .admin-form-card {
+    background: var(--admin-card-bg);
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(47, 34, 25, 0.05);
+    padding: 32px;
+}
+
+body.redesign .admin-form-title {
+    font-family: 'Grown', serif;
+    font-size: 1.4rem;
     color: var(--admin-text-primary);
+    margin: 0 0 16px;
+}
+
+/* --- Form Controls --- */
+body.redesign .admin-form-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--admin-text-secondary);
+    margin-bottom: 6px;
+    display: block;
+}
+
+body.redesign .admin-form-input,
+body.redesign .admin-form-select,
+body.redesign .admin-form-textarea {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--admin-text-primary);
+    background: var(--admin-search-bg);
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+body.redesign .admin-form-input:focus,
+body.redesign .admin-form-select:focus,
+body.redesign .admin-form-textarea:focus {
+    border-color: var(--admin-gold);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(210, 154, 88, 0.12);
+}
+
+body.redesign .admin-form-input.is-invalid,
+body.redesign .admin-form-select.is-invalid,
+body.redesign .admin-form-textarea.is-invalid,
+body.redesign form.was-validated .admin-form-input:invalid,
+body.redesign form.was-validated .admin-form-select:invalid,
+body.redesign form.was-validated .admin-form-textarea:invalid {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.14);
+}
+
+body.redesign .invalid-feedback {
+    color: #dc3545;
+}
+
+body.redesign .admin-form-group {
+    margin-bottom: 20px;
+}
+
+body.redesign .admin-form-actions {
+    display: flex;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+/* --- Buttons --- */
+
+body.redesign .admin-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #d29a58;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 12px rgba(210, 154, 88, 0.25);
+}
+
+body.redesign .admin-btn-primary:hover {
+    background: #b88244 !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px rgba(210, 154, 88, 0.3);
+    text-decoration: none !important;
+}
+
+body.redesign .admin-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--admin-gold) !important;
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+body.redesign .admin-btn-secondary:hover {
+    border-color: var(--admin-gold);
+    background: var(--admin-gold-light);
+    text-decoration: none !important;
+}
+
+/* --- Back Link --- */
+body.redesign .admin-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--admin-text-secondary) !important;
+    text-decoration: none !important;
+    transition: color 0.2s;
+}
+
+body.redesign .admin-back-link:hover {
+    color: var(--admin-text-primary) !important;
+    text-decoration: none !important;
+}
+
+/* --- Page Header --- */
+body.redesign .admin-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    /* Row gap keeps stacked items (tabs / search / action button) from
+       touching when the header wraps onto multiple lines; column gap keeps
+       them comfortably spaced when they share a single row. */
+    gap: 14px 16px;
+    margin-bottom: 28px;
+}
+
+body.redesign .admin-list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+body.redesign .admin-list-toolbar__leading,
+body.redesign .admin-list-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+body.redesign .admin-list-toolbar__actions {
+    margin-left: auto;
+}
+
+body.redesign .admin-list-toolbar__search {
+    width: min(400px, 36vw);
+    max-width: 400px;
     margin: 0;
 }
 
-.admin-btn-view-all {
-    background-color: var(--admin-search-bg);
-    color: var(--admin-text-secondary);
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: background-color 0.2s;
+body.redesign .admin-list-toolbar .admin-tabs,
+body.redesign .admin-list-toolbar .admin-pill-tabs {
+    margin-bottom: 0;
 }
 
-.admin-btn-view-all:hover {
-    background-color: #E5E7EB;
-    color: var(--admin-text-primary);
+@media (max-width: 992px) {
+    body.redesign .admin-list-toolbar,
+    body.redesign .admin-list-toolbar__leading,
+    body.redesign .admin-list-toolbar__actions {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    body.redesign .admin-list-toolbar__actions {
+        margin-left: 0;
+    }
+
+    body.redesign .admin-list-toolbar__search {
+        width: 100%;
+        max-width: none;
+    }
 }
 
-.admin-table {
+/* --- Table Card --- */
+body.redesign .admin-table-card {
+    background: var(--admin-card-bg);
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(47, 34, 25, 0.05);
+    margin-bottom: 24px;
+}
+
+body.redesign .admin-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.admin-table th {
+body.redesign .admin-table thead th {
     font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--admin-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--admin-card-border);
-    text-align: left;
+    letter-spacing: 0.12em;
+    color: var(--admin-text-secondary);
+    padding: 14px 20px;
+    border-bottom: 1.5px solid var(--admin-table-header-border);
+    background: transparent;
+    white-space: nowrap;
 }
 
-.admin-table.no-headers th {
-    display: none;
-}
-
-.admin-table tr {
-    border-bottom: 1px solid var(--admin-search-bg);
-}
-
-.admin-table tr:last-child {
-    border-bottom: none;
-}
-
-.admin-table td {
-    padding: 16px 0;
+body.redesign .admin-table tbody td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--admin-table-row-border);
     vertical-align: middle;
 }
 
-.admin-table-primary-text {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    margin: 0 0 4px 0;
+body.redesign .admin-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.admin-table-secondary-text {
+body.redesign .admin-table tbody tr:hover td {
+    background: rgba(210, 154, 88, 0.03);
+}
+
+body.redesign .admin-table-primary-text {
     font-family: 'Inter', sans-serif;
-    font-weight: 400;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--admin-text-primary);
+    margin: 0;
+}
+
+body.redesign .admin-table-secondary-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
     color: var(--admin-text-secondary);
     margin: 0;
 }
 
-.admin-badge {
-    display: inline-flex;
+/* --- Action Links (in tables) --- */
+body.redesign .admin-action-links {
+    display: flex;
+    gap: 8px;
     align-items: center;
-    padding: 4px 10px;
-    border-radius: 12px;
+}
+
+body.redesign .admin-action-link {
     font-family: 'Inter', sans-serif;
-    font-weight: 500;
     font-size: 12px;
-}
-
-.admin-badge-success { background-color: #D1FAE5; color: #065F46; }
-.admin-badge-warning { background-color: #FEF3C7; color: #92400E; }
-.admin-badge-danger { background-color: #FEE2E2; color: #991B1B; }
-.admin-badge-info { background-color: #DBEAFE; color: #1E40AF; }
-.admin-badge-neutral { background-color: #F3F4F6; color: #4B5563; }
-
-
-/* ========================================
-   Admin List Pages (Redesign)
-   ======================================== */
-
-.admin-page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.admin-tabs {
-    display: flex;
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
-}
-
-.admin-tab {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-secondary);
-    padding: 8px 16px;
+    font-weight: 600;
+    padding: 4px 10px;
     border-radius: 6px;
+    text-decoration: none !important;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+body.redesign .admin-action-link--view {
+    color: #d29a58 !important;
+    background: rgba(210, 154, 88, 0.1);
+}
+
+body.redesign .admin-action-link--view:hover {
+    background: rgba(210, 154, 88, 0.2) !important;
+    color: #b88244 !important;
+    text-decoration: none !important;
+}
+
+body.redesign .admin-action-link--edit {
+    color: #D97706 !important;
+    background: rgba(217, 119, 6, 0.08);
+}
+
+body.redesign .admin-action-link--edit:hover {
+    background: rgba(217, 119, 6, 0.16) !important;
+    color: #B45309 !important;
+    text-decoration: none !important;
+}
+
+body.redesign .admin-action-link--delete {
+    color: #EF4444 !important;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+body.redesign .admin-action-link--delete:hover {
+    background: rgba(239, 68, 68, 0.16) !important;
+    color: #DC2626 !important;
+    text-decoration: none !important;
+}
+
+/* --- Tabs --- */
+body.redesign .admin-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid var(--admin-card-border);
+    margin-bottom: 24px;
+}
+
+body.redesign .admin-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    color: var(--admin-text-secondary) !important;
+    text-decoration: none !important;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    border-radius: 6px 6px 0 0;
+}
+
+/* `.admin-tab` was originally an <a> tag, but several templates render it
+   as a <button> for a11y (e.g. consumer/bookings Upcoming/Completed tabs,
+   teacher/availability General/BlockOut tabs). Strip the user-agent
+   button chrome so the two element types look identical. */
+body.redesign button.admin-tab {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font: inherit;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+body.redesign .admin-tab:hover {
+    color: var(--admin-text-primary) !important;
+    text-decoration: none !important;
+}
+
+body.redesign .admin-tab.active {
+    color: var(--admin-gold) !important;
+    border-bottom-color: var(--admin-gold);
+}
+
+/* --- Pill Toggle (view switches, inline filters) --- */
+body.redesign .admin-pill-tabs {
+    display: flex;
+    gap: 3px;
+    background: var(--admin-search-bg);
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+body.redesign .admin-pill-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    color: var(--admin-text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
     text-decoration: none;
-    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    line-height: 1;
 }
 
-.admin-tab:hover {
+body.redesign .admin-pill-tab:hover {
     color: var(--admin-text-primary);
+    background: var(--admin-card-bg);
+    text-decoration: none;
 }
 
-.admin-tab.active {
-    background-color: var(--admin-sidebar-bg);
-    color: #FFFFFF;
+body.redesign .admin-pill-tab.active {
+    background: var(--admin-gold);
+    color: #fff;
 }
 
-.admin-btn-primary {
-    display: inline-flex;
+[data-theme="dark"] body.redesign .admin-pill-tab.active {
+    color: #1a0f00;
+}
+
+/* --- Search / Filter Bar --- */
+body.redesign .admin-search {
+    display: flex;
     align-items: center;
     gap: 8px;
-    background-color: var(--admin-brand-icon);
-    color: var(--admin-sidebar-bg);
+    background: var(--admin-search-bg);
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 10px;
+    padding: 8px 14px;
     font-family: 'Inter', sans-serif;
-    font-weight: 600;
     font-size: 14px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.admin-btn-primary:hover {
-    background-color: #F59E0B; /* Darker amber */
-    color: var(--admin-sidebar-bg);
-}
-
-.admin-btn-primary i {
-    font-size: 16px;
-}
-
-.admin-action-links {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.admin-action-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    color: var(--admin-text-secondary);
-    background-color: transparent;
-    transition: all 0.2s;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-}
-
-.admin-action-link i {
-    font-size: 16px;
-}
-
-.admin-action-link:hover {
-    background-color: var(--admin-search-bg);
     color: var(--admin-text-primary);
+    width: 100%;
+    max-width: 360px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.admin-action-link.view:hover { color: #3B82F6; background-color: #EFF6FF; }
-.admin-action-link.edit:hover { color: #F59E0B; background-color: #FEF3C7; }
-.admin-action-link.delete:hover { color: #EF4444; background-color: #FEE2E2; }
+body.redesign .admin-search:focus-within {
+    border-color: var(--admin-gold);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(210, 154, 88, 0.12);
+}
 
-/* Pagination */
+body.redesign .admin-search i {
+    flex-shrink: 0;
+    color: var(--admin-text-secondary);
+    font-size: 14px;
+}
+
+body.redesign .admin-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0 !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--admin-text-primary);
+    height: auto !important;
+    line-height: 1.4;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+}
+
+body.redesign .admin-search input::placeholder {
+    color: var(--admin-text-secondary);
+    opacity: 0.7;
+}
+
+body.redesign .admin-search select {
+    flex: 1;
+    min-width: 0;
+    border: 0 !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--admin-text-primary);
+    height: auto !important;
+    line-height: 1.4;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* --- Badge Variants --- */
+body.redesign .admin-badge-success {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #15803D !important;
+}
+
+body.redesign .admin-badge-warning {
+    background: rgba(234, 179, 8, 0.12) !important;
+    color: #A16207 !important;
+}
+
+body.redesign .admin-badge-danger {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #B91C1C !important;
+}
+
+body.redesign .admin-badge-info {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #1D4ED8 !important;
+}
+
+body.redesign .admin-badge-neutral {
+    background: rgba(166, 145, 130, 0.12) !important;
+    color: #78716C !important;
+}
+
+[data-theme="dark"] body.redesign .admin-badge-success,
+[data-theme="dark"] .admin-badge-success {
+    background: rgba(34, 197, 94, 0.15) !important;
+    color: #4ADE80 !important;
+}
+
+[data-theme="dark"] body.redesign .admin-badge-warning,
+[data-theme="dark"] .admin-badge-warning {
+    background: rgba(234, 179, 8, 0.15) !important;
+    color: #FCD34D !important;
+}
+
+[data-theme="dark"] body.redesign .admin-badge-danger,
+[data-theme="dark"] .admin-badge-danger {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #F87171 !important;
+}
+
+[data-theme="dark"] body.redesign .admin-badge-info,
+[data-theme="dark"] .admin-badge-info {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #93C5FD !important;
+}
+
+[data-theme="dark"] body.redesign .admin-badge-neutral,
+[data-theme="dark"] .admin-badge-neutral {
+    background: rgba(166, 145, 130, 0.15) !important;
+    color: #A8A29E !important;
+}
+
+/* --- Pagination --- */
+body.redesign .pagination {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
 .admin-pagination {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 8px;
     margin-top: 24px;
-    padding-top: 24px;
+    padding: 16px 24px;
     border-top: 1px solid var(--admin-card-border);
 }
 
 .admin-pagination .page-item {
+    display: inline-flex;
     list-style: none;
 }
 
-.admin-pagination .page-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 36px;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-secondary);
-    background-color: transparent;
-    border: 1px solid transparent;
-    text-decoration: none;
-    transition: all 0.2s;
-}
-
-.admin-pagination .page-link:hover {
-    background-color: var(--admin-search-bg);
-    color: var(--admin-text-primary);
-}
-
-.admin-pagination .page-item.active .page-link {
-    background-color: var(--admin-sidebar-bg);
-    color: #FFFFFF;
-    border-color: var(--admin-sidebar-bg);
-}
-
-.admin-pagination .page-item.disabled .page-link {
-    color: #D1D5DB;
-    pointer-events: none;
-}
-
-
-/* Custom scrollbar for sidebar */
-body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar {
-    width: 4px;
-}
-body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar-track {
-    background: transparent;
-}
-body.redesign #adminSidebar .flex-grow-1::-webkit-scrollbar-thumb {
-    background-color: var(--admin-sidebar-active);
-    border-radius: 4px;
-}
-
-/* Fix for courses card */
-.rd-course-card {
-    border: 1px solid var(--admin-card-border);
-    box-shadow: var(--admin-card-shadow);
-}
-.rd-course-card__name {
-    color: var(--admin-text-primary);
-}
-.rd-stat__label {
-    color: var(--admin-text-secondary);
-}
-.rd-stat__value {
-    color: var(--admin-text-primary);
-}
-
-/* Fix for table headers */
-.admin-table th {
-    display: table-cell !important;
-}
-
-/* ========================================
-   Dark Mode Theme
-   ======================================== */
-
-[data-theme="dark"] {
-    --admin-sidebar-bg: #111827;
-    --admin-sidebar-active: #1F2937;
-    --admin-sidebar-text: #9CA3AF;
-    --admin-sidebar-text-active: #F3F4F6;
-    
-    --admin-header-bg: #1F2937;
-    --admin-header-border: #374151;
-    --admin-search-bg: #374151;
-    --admin-search-text: #9CA3AF;
-    
-    --admin-main-bg: #111827;
-    
-    --admin-card-bg: #1F2937;
-    --admin-card-border: #374151;
-    --admin-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    
-    --admin-text-primary: #F9FAFB;
-    --admin-text-secondary: #9CA3AF;
-}
-
-/* Dark mode specific overrides */
-[data-theme="dark"] body.redesign {
-    background-color: var(--admin-main-bg);
-}
-
-[data-theme="dark"] .admin-badge-success { background-color: rgba(16, 185, 129, 0.2); color: #34D399; }
-[data-theme="dark"] .admin-badge-warning { background-color: rgba(245, 158, 11, 0.2); color: #FBBF24; }
-[data-theme="dark"] .admin-badge-danger { background-color: rgba(239, 68, 68, 0.2); color: #F87171; }
-[data-theme="dark"] .admin-badge-info { background-color: rgba(59, 130, 246, 0.2); color: #60A5FA; }
-[data-theme="dark"] .admin-badge-neutral { background-color: rgba(107, 114, 128, 0.2); color: #9CA3AF; }
-
-[data-theme="dark"] .admin-action-link.view:hover { color: #60A5FA; background-color: rgba(59, 130, 246, 0.2); }
-[data-theme="dark"] .admin-action-link.edit:hover { color: #FBBF24; background-color: rgba(245, 158, 11, 0.2); }
-[data-theme="dark"] .admin-action-link.delete:hover { color: #F87171; background-color: rgba(239, 68, 68, 0.2); }
-
-[data-theme="dark"] .admin-search input {
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] .admin-table tr {
-    border-bottom-color: var(--admin-card-border);
-}
-
-[data-theme="dark"] .border-top {
-    border-top-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .admin-btn-view-all:hover {
-    background-color: var(--admin-sidebar-active);
-}
-
-[data-theme="dark"] .admin-pagination .page-link:hover {
-    background-color: var(--admin-sidebar-active);
-}
-
-[data-theme="dark"] .admin-pagination .page-item.disabled .page-link {
-    color: #4B5563;
-}
-
-[data-theme="dark"] .admin-tab:hover {
-}
-
-/* ========================================
-   Admin Forms (Redesign)
-   ======================================== */
-
-.admin-form-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: var(--admin-card-shadow);
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.admin-form-header {
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--admin-card-border);
-}
-
-.admin-form-title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 20px;
-    color: var(--admin-text-primary);
+.admin-pagination {
+    list-style: none;
+    padding: 0;
     margin: 0;
 }
 
-.admin-form-group {
-    margin-bottom: 24px;
-}
-
-.admin-form-label {
-    display: block;
+body.redesign .page-item .page-link {
     font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    margin-bottom: 8px;
-}
-
-.admin-form-input,
-.admin-form-select,
-.admin-form-textarea {
-    width: 100%;
-    padding: 10px 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
     border-radius: 8px;
-    outline: none;
+    border: 1.5px solid var(--admin-card-border);
+    background: var(--admin-card-bg);
+    color: var(--admin-text-secondary) !important;
+    text-decoration: none !important;
     transition: all 0.2s;
 }
 
-.admin-form-input::placeholder,
-.admin-form-textarea::placeholder {
-    color: var(--admin-text-secondary);
+body.redesign .page-item .page-link:hover {
+    border-color: var(--admin-gold);
+    color: var(--admin-gold) !important;
+    background: var(--admin-gold-light);
 }
 
-.admin-form-input:focus,
-.admin-form-select:focus,
-.admin-form-textarea:focus {
-    border-color: var(--admin-brand-icon);
-    box-shadow: 0 0 0 3px rgba(138, 90, 22, 0.12);
+body.redesign .page-item.active .page-link {
+    background: var(--admin-gold) !important;
+    border-color: var(--admin-gold) !important;
+    color: #ffffff !important;
 }
 
-.admin-form-textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.admin-form-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-top: 40px;
-    padding-top: 24px;
-    border-top: 1px solid var(--admin-card-border);
-}
-
-.admin-btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-primary);
-    background-color: var(--admin-search-bg);
-    border: 1px solid transparent;
-    border-radius: 8px;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.admin-btn-secondary:hover {
-    background-color: var(--admin-card-border);
-    color: var(--admin-text-primary);
-}
-
-.admin-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--admin-text-secondary);
-    text-decoration: none;
-    margin-bottom: 24px;
-    transition: color 0.2s;
-}
-
-.admin-back-link:hover {
-    color: var(--admin-text-primary);
-}
-
-/* Dark mode form overrides */
-[data-theme="dark"] .admin-form-input,
-[data-theme="dark"] .admin-form-select,
-[data-theme="dark"] .admin-form-textarea {
-    background-color: var(--admin-search-bg);
-    border-color: var(--admin-search-bg);
-}
-
-[data-theme="dark"] .admin-form-input:focus,
-[data-theme="dark"] .admin-form-select:focus,
-[data-theme="dark"] .admin-form-textarea:focus {
-    border-color: var(--admin-brand-icon);
-}
-
-[data-theme="dark"] .admin-btn-secondary {
-    background-color: var(--admin-search-bg);
-}
-
-[data-theme="dark"] .admin-btn-secondary:hover {
-    background-color: var(--admin-sidebar-active);
-}
-
-/* Fix for Flash messages on login screen */
-.login-screen .message {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 0;
-}
-
-.login-screen .message.success {
-    background-color: #D1FAE5;
-    color: #065F46;
-    border: 1px solid #A7F3D0;
-}
-
-.login-screen .message.error {
-    background-color: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FECACA;
-}
-
-.login-screen .message.info {
-    background-color: #DBEAFE;
-    color: #1E40AF;
-    border: 1px solid #BFDBFE;
-}
-
-/* Ensure flash container doesn't take space when empty */
-.login-flash-container:empty {
-    display: none;
-}
-.login-flash-container {
-    margin-bottom: -16px; /* Pull up fields slightly when flash is present */
-}
-
-/* Fix for Quick Action Cards hover effect */
-a.admin-form-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] a.admin-form-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-}
-
-/* Welcome Banner */
-.welcome-banner {
-    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
-    color: #111827;
-}
-
-.welcome-banner .welcome-title {
-    color: #111827;
-}
-
-.welcome-banner .welcome-subtitle {
-    color: #374151;
-}
-
-[data-theme="dark"] .welcome-banner {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
-    border: 1px solid rgba(251, 191, 36, 0.2) !important;
-}
-
-[data-theme="dark"] .welcome-banner .welcome-title {
-    color: #FBBF24;
-}
-
-[data-theme="dark"] .welcome-banner .welcome-subtitle {
-    color: #D1D5DB;
-}
-
-/* Custom scrollbar for sidebar */
-body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar {
-    width: 4px;
-}
-body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar-track {
-    background: transparent;
-}
-body.redesign #portalSidebar .flex-grow-1::-webkit-scrollbar-thumb {
-    background-color: var(--admin-sidebar-active);
-    border-radius: 4px;
-}
-
-/* Fix for alerts in dark mode */
-[data-theme="dark"] .alert-info {
-    background-color: rgba(59, 130, 246, 0.1) !important;
-    border-color: rgba(59, 130, 246, 0.2) !important;
-    color: #93C5FD !important;
-}
-
-[data-theme="dark"] .alert-warning {
-    background-color: rgba(245, 158, 11, 0.1) !important;
-    border-color: rgba(245, 158, 11, 0.2) !important;
-    color: #FCD34D !important;
+body.redesign .page-item.disabled .page-link {
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 /* ========================================
-   Schedule / Calendar Redesign
+   CONSUMER PAYMENT PORTAL
    ======================================== */
 
-.sp-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    padding: 16px 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--admin-card-shadow);
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.sp-toolbar__center {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.sp-toolbar__title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--admin-text-primary);
-}
-
-.sp-view-btn {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    color: var(--admin-text-secondary);
-    border-color: var(--admin-card-border);
-    background-color: transparent;
-}
-
-.sp-view-btn:hover {
-    color: var(--admin-text-primary);
-}
-
-.sp-view-btn.active {
-    background-color: var(--admin-brand-icon);
-    color: #111827;
-    border-color: var(--admin-brand-icon);
-}
-
-/* Calendar Grid */
-.wc-wrapper {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--admin-card-shadow);
-}
-
-.wc-header {
-    display: flex;
-    border-bottom: 1px solid var(--admin-card-border);
-    background-color: var(--admin-search-bg);
-}
-
-.wc-gutter-header {
-    width: 60px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--admin-card-border);
-}
-
-.wc-col-header {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px 8px;
-    border-right: 1px solid var(--admin-card-border);
-}
-
-.wc-col-header:last-child {
-    border-right: none;
-}
-
-.wc-col-header__name {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--admin-text-secondary);
-    margin-bottom: 4px;
-}
-
-.wc-col-header__num {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 20px;
-    color: var(--admin-text-primary);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.wc-col-header--today .wc-col-header__name {
-    color: #3B82F6; /* Blue for today */
-}
-
-.wc-col-header__num--today {
-    background-color: #3B82F6;
-    color: #FFFFFF;
-}
-
-.wc-scroll {
-    overflow-y: auto;
-    max-height: 600px;
-}
-
-.wc-body-grid {
-    display: flex;
-    position: relative;
-    --wc-min-h: 1px;
-    --wc-hour-h: 60px;
-    height: calc(var(--wc-rows) * var(--wc-hour-h));
-}
-
-.wc-gutter {
-    width: 60px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--admin-card-border);
-    position: relative;
-    background-color: var(--admin-card-bg);
-}
-
-.wc-gutter__label {
-    position: absolute;
-    right: 8px;
-    transform: translateY(-50%);
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: var(--admin-text-secondary);
-}
-
-.wc-day {
-    flex: 1;
-    position: relative;
-    border-right: 1px solid var(--admin-card-border);
-    background-color: var(--admin-card-bg);
-}
-
-.wc-day:last-child {
-    border-right: none;
-}
-
-.wc-day--today {
-    background-color: rgba(59, 130, 246, 0.03);
-}
-
-[data-theme="dark"] .wc-day--today {
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.wc-hour-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background-color: var(--admin-card-border);
-}
-
-.wc-evt {
-    position: absolute;
-    left: 4px;
-    right: 4px;
-    border-radius: 6px;
-    padding: 6px 8px;
-    overflow: hidden;
-    text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    border-left: 3px solid var(--evt-color, var(--admin-brand-icon));
-    background-color: rgba(251, 191, 36, 0.1); /* Fallback bg */
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.wc-evt:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-}
-
-.wc-evt__title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--admin-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.wc-evt__time, .wc-evt__loc {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    color: var(--admin-text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.wc-now-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: #EF4444; /* Red for current time */
-    z-index: 10;
-}
-
-.wc-now-dot {
-    position: absolute;
-    left: -4px;
-    top: -4px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: #EF4444;
-}
-
-/* List View */
-.sp-list-date {
-    margin-bottom: 24px;
-}
-
-.sp-list-date__label {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--admin-text-primary);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.sp-list-date__badge {
-    background-color: var(--admin-brand-icon);
-    color: #111827;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 12px;
-}
-
-.sp-list-card {
-    display: flex;
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 12px;
-    box-shadow: var(--admin-card-shadow);
+body.redesign .z-billing-page {
+    display: grid;
     gap: 24px;
-    align-items: center;
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+body.redesign .z-billing-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 4px 0 2px;
     flex-wrap: wrap;
 }
 
-.sp-list-card__time {
-    display: flex;
-    flex-direction: column;
-    min-width: 100px;
-}
-
-.sp-list-card__time strong {
-    font-family: 'Inter', sans-serif;
-    font-size: 16px;
+body.redesign .z-billing-title {
+    margin: 0;
+    font-family: 'Grown', serif;
+    font-size: clamp(2.4rem, 5vw, 4.4rem);
+    line-height: 0.95;
+    letter-spacing: 0.04em;
     color: var(--admin-text-primary);
 }
 
-.sp-list-card__time span {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    color: var(--admin-text-secondary);
-}
-
-.sp-list-card__body {
-    flex: 1;
-    min-width: 200px;
-}
-
-.sp-list-card__body h6 {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--admin-text-primary);
-    margin-bottom: 8px;
-}
-
-.sp-list-card__meta {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.sp-list-card__meta span {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--admin-text-secondary);
-    display: flex;
+body.redesign .z-billing-tabs {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.sp-list-card__actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 12px;
-}
-
-/* Dark mode overrides for calendar */
-[data-theme="dark"] .sp-view-btn.active {
-    color: #111827;
-}
-
-[data-theme="dark"] .wc-evt {
-    background-color: rgba(255, 255, 255, 0.05); /* Subtle bg in dark mode */
-}
-
-[data-theme="dark"] .wc-evt:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Fix for calendar view buttons */
-.sp-view-btn {
-    border: none !important;
-}
-
-[data-theme="dark"] .sp-view-btn.active {
-    background-color: var(--admin-brand-icon);
-    color: #111827;
-}
-
-[data-theme="dark"] .sp-view-btn:not(.active):hover {
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] #calendarNav .admin-action-link.view {
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] #calendarNav .admin-action-link.view:hover {
-    background-color: var(--admin-sidebar-active);
-}
-
-/* Fix for calendar grid lines in dark mode */
-[data-theme="dark"] .wc-hour-line,
-[data-theme="dark"] .wc-gutter,
-[data-theme="dark"] .wc-day,
-[data-theme="dark"] .wc-col-header,
-[data-theme="dark"] .wc-gutter-header,
-[data-theme="dark"] .wc-header {
-    border-color: var(--admin-card-border);
-}
-
-[data-theme="dark"] .wc-gutter,
-[data-theme="dark"] .wc-day {
-    background-color: var(--admin-card-bg);
-}
-
-[data-theme="dark"] .wc-header {
-    background-color: var(--admin-search-bg);
-}
-
-/* Fix for Browse Courses page */
-.admin-form-card .admin-badge {
-    padding: 4px 10px;
-    font-size: 11px;
-}
-
-/* Enhance Dark Mode Polish */
-[data-theme="dark"] .admin-form-card,
-[data-theme="dark"] .admin-table-card,
-[data-theme="dark"] .admin-stat-card,
-[data-theme="dark"] .rd-course-card {
-    background-color: #1F2937;
-    border: 1px solid #374151;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-}
-
-[data-theme="dark"] .admin-btn-primary {
-    background-color: #F59E0B; /* Slightly darker amber for better contrast in dark mode */
-    color: #111827;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
-}
-
-[data-theme="dark"] .admin-btn-primary:hover {
-    background-color: #D97706;
-    color: #111827;
-}
-
-[data-theme="dark"] .admin-search {
-    background-color: #111827;
-    border: 1px solid #374151;
-}
-
-[data-theme="dark"] .admin-search:focus-within {
-    border-color: #C58A39;
-    box-shadow: 0 0 0 3px rgba(197, 138, 57, 0.2);
-}
-
-[data-theme="dark"] .admin-stat-icon {
-    background-color: #111827;
-    color: #9CA3AF;
-}
-
-[data-theme="dark"] .admin-badge-neutral {
-    background-color: #374151;
-    color: #D1D5DB;
-}
-
-[data-theme="dark"] .admin-action-link {
-    color: #9CA3AF;
-}
-
-[data-theme="dark"] .admin-action-link:hover {
-    background-color: #374151;
-    color: #F3F4F6;
-}
-
-[data-theme="dark"] body.redesign #adminSidebar,
-[data-theme="dark"] body.redesign #portalSidebar {
-    background-color: #111827 !important;
-    border-right: 1px solid #1F2937;
-}
-
-[data-theme="dark"] body.redesign .sidebar-navbar {
-    background-color: #1F2937;
-    border-bottom: 1px solid #374151;
-}
-
-[data-theme="dark"] .admin-avatar {
-    background-color: #374151;
-    border: 1px solid #4B5563;
-}
-
-/* Fix for calendar events in Browse Courses */
-.wc-evt {
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-}
-
-.wc-evt:hover {
-    z-index: 2;
-}
-
-[data-theme="dark"] .wc-evt {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Fix header layout in calendar views */
-.admin-page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-/* Fix for Admin Availability Calendar */
-.avail-grid {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--admin-card-shadow);
-    display: flex;
-}
-
-.avail-day {
-    flex: 1;
-    border-right: 1px solid var(--admin-card-border);
-    background-color: var(--admin-card-bg);
-}
-
-.avail-day:last-child {
-    border-right: none;
-}
-
-.avail-day--today {
-    background-color: rgba(59, 130, 246, 0.03);
-}
-
-[data-theme="dark"] .avail-day--today {
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.avail-day__header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px 8px;
-    border-bottom: 1px solid var(--admin-card-border);
-    background-color: var(--admin-search-bg);
-}
-
-.avail-day__name {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--admin-text-secondary);
-    margin-bottom: 4px;
-}
-
-.avail-day__num {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 20px;
-    color: var(--admin-text-primary);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.avail-day__header--today .avail-day__name {
-    color: #3B82F6;
-}
-
-.avail-day__header--today .avail-day__num {
-    background-color: #3B82F6;
-    color: #FFFFFF;
-}
-
-.avail-day__body {
-    padding: 8px;
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.avail-empty {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: var(--admin-text-secondary);
-    text-align: center;
-    padding: 16px 0;
-}
-
-.avail-slot {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    border-left: 3px solid var(--admin-brand-icon);
-    background-color: rgba(251, 191, 36, 0.1);
-    transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.avail-slot:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-}
-
-[data-theme="dark"] .avail-slot {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme="dark"] .avail-slot:hover {
-    background-color: rgba(255, 255, 255, 0.12);
-}
-
-.avail-slot--pottery {
-    border-left-color: #1D4ED8;
-    background-color: #DBEAFE;
-}
-
-[data-theme="dark"] .avail-slot--pottery {
-    background-color: rgba(29, 78, 216, 0.2);
-}
-
-.avail-slot--knitting {
-    border-left-color: #B45309;
-    background-color: #FEF3C7;
-}
-
-[data-theme="dark"] .avail-slot--knitting {
-    background-color: rgba(180, 83, 9, 0.2);
-}
-
-.avail-slot__time {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 11px;
-    color: var(--admin-text-secondary);
-}
-
-.avail-slot__title {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--admin-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.avail-slot__teacher,
-.avail-slot__spots {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    color: var(--admin-text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Course Summary Panel */
-.avail-course-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    padding: 16px;
-}
-
-.avail-course-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.avail-course-card__bar {
-    height: 4px;
-    background-color: var(--admin-brand-icon);
-}
-
-.avail-course-card--pottery .avail-course-card__bar { background-color: #1D4ED8; }
-.avail-course-card--knitting .avail-course-card__bar { background-color: #B45309; }
-
-.avail-course-card__body {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.avail-course-card__name {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--admin-text-primary);
-}
-
-.avail-course-card__meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.avail-course-card__type,
-.avail-course-card__level,
-.avail-course-card__price {
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background-color: var(--admin-search-bg);
-    color: var(--admin-text-secondary);
-}
-
-.avail-course-card--unscheduled {
-    opacity: 0.8;
-}
-
-/* Fix for calendar header background in dark mode */
-[data-theme="dark"] .wc-wrapper {
-    background-color: var(--admin-card-bg);
-}
-
-[data-theme="dark"] .admin-page-header {
-    background-color: transparent;
-}
-
-/* Fix calendar background in dark mode */
-[data-theme="dark"] body.redesign .wc-wrapper,
-[data-theme="dark"] body.redesign .wc-scroll {
-    background-color: var(--admin-card-bg);
-}
-
-[data-theme="dark"] body.redesign .wc-gutter,
-[data-theme="dark"] body.redesign .wc-day {
-    background-color: transparent;
-}
-
-[data-theme="dark"] body.redesign .wc-col-header__name {
-    color: var(--admin-text-secondary) !important;
-}
-
-[data-theme="dark"] body.redesign .wc-col-header__num {
-    color: var(--admin-text-primary) !important;
-}
-
-[data-theme="dark"] body.redesign .wc-col-header--today .wc-col-header__num {
-    color: #FFFFFF !important;
-}
-
-/* Fix for calendar scrollbar misalignment */
-.wc-wrapper {
-    overflow-y: auto;
-    max-height: 600px;
-}
-
-.wc-scroll {
-    overflow-y: visible;
-    max-height: none;
-}
-
-.wc-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-/* Fix dark mode background for sticky header */
-[data-theme="dark"] .wc-header {
-    background-color: var(--admin-search-bg) !important;
-}
-
-[data-theme="dark"] .wc-gutter {
-    background-color: var(--admin-card-bg) !important;
-}
-
-/* Custom scrollbar for calendar */
-.wc-wrapper::-webkit-scrollbar,
-.wc-scroll::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-.wc-wrapper::-webkit-scrollbar-track,
-.wc-scroll::-webkit-scrollbar-track {
+    padding: 6px;
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 14px;
+    background: var(--admin-card-bg);
+    box-shadow: 0 10px 28px rgba(47, 34, 25, 0.04);
+}
+
+body.redesign .z-billing-tab {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
     background: transparent;
-}
-.wc-wrapper::-webkit-scrollbar-thumb,
-.wc-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--admin-card-border);
-    border-radius: 4px;
-}
-[data-theme="dark"] .wc-wrapper::-webkit-scrollbar-thumb,
-[data-theme="dark"] .wc-scroll::-webkit-scrollbar-thumb {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-/* Fix dark mode background for sticky header */
-[data-theme="dark"] .wc-header {
-    background-color: var(--admin-search-bg) !important;
-}
-
-[data-theme="dark"] .wc-gutter {
-    background-color: var(--admin-card-bg) !important;
-}
-
-/* Fix for modal in dark mode */
-[data-theme="dark"] .modal-content {
-    background-color: var(--admin-card-bg) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .modal-header,
-[data-theme="dark"] .modal-footer {
-    border-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .modal-title {
-    color: var(--admin-text-primary) !important;
-}
-
-[data-theme="dark"] .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-/* Fix text-muted in dark mode */
-[data-theme="dark"] .text-muted {
-    color: var(--admin-text-secondary) !important;
-}
-
-/* Fix for checkbox in dark mode */
-[data-theme="dark"] input[type="checkbox"] {
-    accent-color: var(--admin-brand-icon) !important;
-    background-color: var(--admin-search-bg);
-    border-color: var(--admin-card-border);
-}
-
-/* Fix for empty state text in dark mode */
-[data-theme="dark"] .text-center p {
-    color: var(--admin-text-secondary) !important;
-}
-
-/* Fix for alerts in dark mode */
-[data-theme="dark"] .alert-info {
-    background-color: rgba(59, 130, 246, 0.1) !important;
-    border-color: rgba(59, 130, 246, 0.2) !important;
-    color: #93C5FD !important;
-}
-
-[data-theme="dark"] .alert-warning {
-    background-color: rgba(245, 158, 11, 0.1) !important;
-    border-color: rgba(245, 158, 11, 0.2) !important;
-    color: #FCD34D !important;
-}
-
-/* Removed Quick Action icon overrides to let inline styles work */
-
-/* Fix for Quick Action Cards hover effect */
-a.admin-form-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="dark"] a.admin-form-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-}
-
-/* Fix for alerts */
-.alert-info {
-    background-color: #E0F2FE;
-    color: #1E3A8A;
-    border-color: #BFDBFE;
-}
-.alert-info i { color: #2563EB; }
-
-.alert-warning {
-    background-color: #FEF3C7;
-    color: #92400E;
-    border-color: #FDE68A;
-}
-.alert-warning i { color: #D97706; }
-
-[data-theme="dark"] .alert-info {
-    background-color: rgba(59, 130, 246, 0.15) !important;
-    border-color: rgba(59, 130, 246, 0.3) !important;
-    color: #93C5FD !important;
-}
-[data-theme="dark"] .alert-info i { color: #60A5FA !important; }
-
-[data-theme="dark"] .alert-warning {
-    background-color: rgba(245, 158, 11, 0.15) !important;
-    border-color: rgba(245, 158, 11, 0.3) !important;
-    color: #FCD34D !important;
-}
-[data-theme="dark"] .alert-warning i { color: #FBBF24 !important; }
-
-/* Removed Quick Action icon overrides to let inline styles work */
-
-[data-theme="dark"] .admin-form-card .admin-badge-info {
-    background-color: rgba(59, 130, 246, 0.2);
-    color: #60A5FA;
-}
-
-/* Fix hover effect in dark mode for list view */
-.sp-list-card:hover {
-    background-color: var(--admin-search-bg);
-}
-
-[data-theme="dark"] .sp-list-card:hover {
-    background-color: var(--admin-search-bg);
-}
-
-/* Fix for list view hover and active states */
-.sp-list-card {
-    transition: background-color 0.2s, box-shadow 0.2s;
-}
-
-.sp-list-card:hover {
-    background-color: var(--admin-search-bg) !important;
-}
-
-[data-theme="dark"] .sp-list-card:hover {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-/* Fix for list view text colors */
-.sp-list-card__time strong,
-.sp-list-card__body h6 {
-    color: var(--admin-text-primary) !important;
-}
-
-.sp-list-card__time span,
-.sp-list-card__meta span {
-    color: var(--admin-text-secondary) !important;
-}
-
-.sp-list-date__label {
-    color: var(--admin-text-primary) !important;
-}
-
-/* Fix for list view text colors */
-.sp-list-card__time strong,
-.sp-list-card__body h6 {
-    color: var(--admin-text-primary) !important;
-}
-
-.sp-list-card__time span,
-.sp-list-card__meta span {
-    color: var(--admin-text-secondary) !important;
-}
-
-.sp-list-date__label {
-    color: var(--admin-text-primary) !important;
-}
-
-/* Fix border colors in dark mode for list view */
-[data-theme="dark"] .sp-list-card {
-    background-color: var(--admin-card-bg);
-    border-color: var(--admin-card-border);
-}
-
-/* Fix for background of view buttons */
-.admin-tab {
-    border: none;
+    color: var(--admin-text-secondary);
     cursor: pointer;
-}
-
-/* Fix for spacing and borders in dark mode */
-[data-theme="dark"] .sp-list-date__label {
-    border-bottom: 1px solid var(--admin-card-border);
-    padding-bottom: 8px;
-    margin-bottom: 16px;
-}
-
-/* View Toggle Active State Fixes */
-.sp-view-btn {
-    border-radius: 6px;
-}
-
-[data-theme="dark"] .sp-view-btn.active {
-    background-color: var(--admin-brand-icon) !important;
-    color: #111827 !important;
-}
-
-[data-theme="dark"] .sp-view-btn.active i {
-    color: #111827 !important;
-}
-
-/* Make sure active tab text is legible in dark mode */
-[data-theme="dark"] .admin-tab.active {
-    background-color: var(--admin-sidebar-active);
-    color: #FFFFFF;
-}
-
-/* Only change to yellow for the view toggle specifically */
-[data-theme="dark"] .admin-tabs .sp-view-btn.active {
-    background-color: var(--admin-brand-icon);
-    color: #111827;
-}
-
-/* Global fix for sp-list-card elements in dark mode */
-[data-theme="dark"] .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .sp-list-card:hover {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-/* Fix text and layout for list view items */
-[data-theme="dark"] .sp-list-card__time strong {
-    color: #F9FAFB !important;
-}
-
-[data-theme="dark"] .sp-list-card__time span {
-    color: #9CA3AF !important;
-}
-
-[data-theme="dark"] .sp-list-card__body h6 {
-    color: #F9FAFB !important;
-}
-
-[data-theme="dark"] .sp-list-card__meta span {
-    color: #9CA3AF !important;
-}
-
-[data-theme="dark"] .sp-list-date__label {
-    color: #F9FAFB !important;
-}
-
-[data-theme="dark"] .sp-list-card__actions .admin-btn-primary {
-    color: #111827 !important;
-}
-
-/* Fix for spacing issue on My Schedule List View */
-.sp-list-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 12px;
-    box-shadow: var(--admin-card-shadow);
-    display: flex;
-    gap: 24px;
-    align-items: center;
-    flex-wrap: wrap;
-    transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
-}
-
-[data-theme="dark"] .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .sp-list-card:hover {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-/* Force override of old legacy CakePHP styles on the List View */
-body.redesign .sp-list-card:hover {
-    background-color: var(--admin-search-bg) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card:hover {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    box-shadow: var(--admin-card-shadow) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card__meta span i {
-    color: var(--admin-text-secondary) !important;
-}
-/* Add styling for the empty state box */
-[data-theme="dark"] body.redesign .sp-view--list .text-center {
-    color: var(--admin-text-secondary) !important;
-}
-/* Fix the ugly background color from old cakephp theme */
-body.redesign .sp-view--list {
-    background: transparent !important;
-}
-
-/* Force reset old CakePHP styles for the List View wrapper */
-body.redesign .sp-view--list {
-    border: none !important;
-    padding: 0 !important;
-    background-color: transparent !important;
-}
-
-[data-theme="dark"] body.redesign .sp-view--list {
-    background-color: transparent !important;
-}
-
-/* Force calendar height fixes */
-.wc-wrapper {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow-y: visible !important;
-    max-height: none !important;
-    box-shadow: var(--admin-card-shadow);
-}
-
-.wc-body-grid {
-    height: 900px !important; /* 15 hours * 60px */
-}
-
-/* Fix day header positioning */
-.wc-day {
-    min-height: 900px !important;
-}
-
-[data-theme="dark"] #calendarNav .admin-form-title {
-    color: #F9FAFB !important;
-}
-
-/* Global fix for list view border radius */
-.sp-list-card {
-    border-radius: 12px !important;
-}
-
-[data-theme="dark"] .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* Fix for top right toggle buttons border radius */
-.admin-tabs {
-    border-radius: 8px !important;
-}
-.sp-view-btn {
-    border-radius: 6px !important;
-}
-
-/* Full override for the dark mode issue */
-[data-theme="dark"] body.redesign .sp-view--calendar {
-    background-color: transparent !important;
-}
-
-[data-theme="dark"] body.redesign .wc-wrapper {
-    background-color: var(--admin-card-bg) !important;
-}
-
-/* Force calendar height fixes */
-body.redesign .wc-scroll {
-    overflow-y: visible !important;
-    max-height: none !important;
-}
-
-/* Fix for overlapping header when scrolling */
-body.redesign .wc-header {
-    background-color: var(--admin-search-bg) !important;
-    z-index: 10 !important;
-}
-
-/* Force reset list view background wrapper for My Schedule */
-body.redesign .schedule-page {
-    background-color: transparent !important;
-    border: none !important;
-}
-
-/* Ensure wc-wrapper has a full 100% width and display block */
-body.redesign .wc-wrapper {
-    display: block !important;
-    width: 100% !important;
-}
-
-body.redesign .wc-body-grid {
-    display: flex !important;
-    width: 100% !important;
-}
-
-/* Fix for the list view inside schedule-page */
-body.redesign .schedule-page > div:not(.admin-page-header) {
-    background-color: transparent !important;
-}
-
-/* Fix for the list view inside schedule-page */
-body.redesign .sp-view {
-    background-color: transparent !important;
-}
-
-body.redesign .schedule-page {
-    background-color: transparent !important;
-    border-radius: 0 !important;
-    border: none !important;
-}
-
-/* Ensure table container spans full width in List View */
-body.redesign .sp-view--list:not(.d-none) {
-    display: block !important;
-    width: 100% !important;
-}
-
-/* Remove d-none when shown so flex works correctly */
-body.redesign .sp-view--list:not(.d-none) {
-    display: block !important;
-}
-
-/* Global fix for list view card border and background */
-body.redesign .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    border-radius: 12px !important;
-    box-shadow: var(--admin-card-shadow) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-}
-
-/* Ensure text on List view cards is visible */
-[data-theme="dark"] body.redesign .sp-list-card__time strong,
-[data-theme="dark"] body.redesign .sp-list-card__body h6 {
-    color: var(--admin-text-primary) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card__time span,
-[data-theme="dark"] body.redesign .sp-list-card__meta span,
-[data-theme="dark"] body.redesign .sp-list-card__meta span i {
-    color: var(--admin-text-secondary) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-date__label {
-    color: var(--admin-text-primary) !important;
-    border-bottom: 1px solid var(--admin-card-border);
-}
-
-/* Force calendar wrapper to fit container instead of overlapping */
-body.redesign .wc-wrapper {
-    box-sizing: border-box;
-}
-
-body.redesign .wc-body-grid {
-    box-sizing: border-box;
-}
-/* Fix overlapping in list view */
-body.redesign .sp-list-card {
-    display: flex !important;
-}
-
-/* Fix for spacing issue on My Schedule List View */
-body.redesign .sp-list-card {
-    gap: 24px !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    padding: 20px !important;
-    margin-bottom: 12px !important;
-}
-
-body.redesign .sp-list-date {
-    margin-bottom: 24px !important;
-}
-
-/* Ensure text on List view cards is visible */
-[data-theme="dark"] body.redesign .sp-list-card__time strong,
-[data-theme="dark"] body.redesign .sp-list-card__body h6 {
-    color: var(--admin-text-primary) !important;
-}
-
-/* Force calendar height fixes */
-body.redesign .wc-body-grid {
-    height: 900px !important; /* 15 hours * 60px */
-}
-
-/* Fix day header positioning */
-body.redesign .wc-day {
-    min-height: 900px !important;
-}
-
-/* Global fix for sp-list-card elements */
-body.redesign .sp-list-card {
-    background-color: var(--admin-card-bg) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-body.redesign .sp-list-card:hover {
-    background-color: var(--admin-search-bg) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-card:hover {
-    background-color: var(--admin-sidebar-active) !important;
-}
-
-/* Force calendar wrapper to fix overlaps */
-body.redesign .wc-wrapper {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-}
-
-body.redesign .wc-body-grid {
-    display: grid !important;
-    grid-template-columns: 60px repeat(7, 1fr) !important;
-    min-width: 800px !important;
-    width: 100% !important;
-}
-
-body.redesign .wc-header {
-    display: grid !important;
-    grid-template-columns: 60px repeat(7, 1fr) !important;
-    min-width: 800px !important;
-    width: 100% !important;
-}
-
-/* Restore grid behaviors */
-body.redesign .wc-col-header, body.redesign .wc-day {
-    min-width: 0 !important;
-}
-
-/* Fix the calendar scroll container */
-body.redesign .wc-scroll {
-    overflow-y: auto !important;
-    max-height: 600px !important;
-    min-width: 800px !important;
-    width: 100% !important;
-}
-
-/* Fix list view text overlap */
-body.redesign .sp-list-card__time {
-    display: flex !important;
-    flex-direction: column !important;
-    min-width: 100px !important;
-}
-
-body.redesign .sp-list-card__body {
-    flex: 1 !important;
-    min-width: 200px !important;
-}
-
-body.redesign .sp-list-card__meta {
-    display: flex !important;
-    gap: 16px !important;
-    flex-wrap: wrap !important;
-}
-
-body.redesign .sp-list-card__actions {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-end !important;
-    gap: 12px !important;
-}
-
-/* Fix the list view date header and wrapper */
-body.redesign .sp-list-date {
-    border: none !important;
-    background: transparent !important;
-    margin-bottom: 24px !important;
-    padding: 0 !important;
-}
-
-body.redesign .sp-list-date__label {
-    background: transparent !important;
-    border-bottom: 1px solid var(--admin-card-border) !important;
-    padding: 0 0 12px 0 !important;
-    margin-bottom: 16px !important;
-    font-size: 16px !important;
-    color: var(--admin-text-primary) !important;
-}
-
-[data-theme="dark"] body.redesign .sp-list-date__label {
-    color: var(--admin-text-primary) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-body.redesign .sp-list-card {
-    margin-bottom: 16px !important;
-}
-
-/* ========================================
-   Login Screen Dark Mode & Polish
-   ======================================== */
-
-[data-theme="dark"] .login-screen {
-    background-color: var(--admin-main-bg);
-}
-
-[data-theme="dark"] .login-title,
-[data-theme="dark"] .login-label {
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] .login-subtitle,
-[data-theme="dark"] .login-footer-text {
-    color: var(--admin-text-secondary);
-}
-
-[data-theme="dark"] .login-input {
-    background-color: var(--admin-card-bg);
-    border-color: var(--admin-card-border);
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] .login-input:focus {
-    border-color: var(--admin-brand-icon);
-}
-
-[data-theme="dark"] .login-input::placeholder {
-    color: var(--admin-text-secondary);
-}
-
-[data-theme="dark"] .login-image-container {
-    background-color: #111827;
-}
-
-[data-theme="dark"] body.site-home {
-    background-color: var(--admin-main-bg);
-}
-
-/* Make Login match dashboard style */
-.login-screen {
-    background-color: #F9FAFB;
-}
-
-.login-form-wrapper {
-    background-color: #FFFFFF;
-    padding: 48px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-    border: 1px solid #F3F4F6;
-    max-width: 480px;
-    width: 100%;
-}
-
-[data-theme="dark"] .login-form-wrapper {
-    background-color: var(--admin-card-bg);
-    border-color: var(--admin-card-border);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
-}
-
-.login-image-container {
-    padding: 24px;
-    background-color: #F9FAFB;
-}
-
-[data-theme="dark"] .login-image-container {
-    background-color: var(--admin-main-bg);
-}
-
-.login-image {
-    border-radius: 24px;
-    height: calc(100vh - 48px);
-    width: 100%;
-    object-fit: cover;
-}
-
-/* ========================================
-   Admin Tables (Redesign)
-   ======================================== */
-
-.admin-table-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    box-shadow: var(--admin-card-shadow);
-    overflow: hidden; /* Important for border radius on table corners */
-}
-
-.admin-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.admin-table th {
     font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 11px;
-    color: var(--admin-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--admin-card-border);
-    background-color: var(--admin-search-bg);
-    text-align: left;
-}
-
-.admin-table td {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--admin-card-border);
-    vertical-align: middle;
-}
-
-.admin-table tr:last-child td {
-    border-bottom: none;
-}
-
-.admin-table tr {
-    transition: background-color 0.15s;
-}
-
-.admin-table tr:hover {
-    background-color: rgba(0, 0, 0, 0.01);
-}
-
-[data-theme="dark"] .admin-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.02);
-}
-
-[data-theme="dark"] .admin-table th {
-    background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* Fix list view button sizing */
-.admin-tab {
-    font-size: 13px !important;
-    padding: 6px 14px !important;
-    border-radius: 6px !important;
-    background-color: transparent;
-}
-
-.admin-tabs {
-    padding: 4px;
-    border-radius: 8px;
-    background-color: var(--admin-search-bg);
-    border: none;
-    display: inline-flex;
-    gap: 4px;
-}
-
-[data-theme="dark"] .admin-tabs {
-    background-color: #111827;
-    border: 1px solid #374151;
-}
-
-.admin-tab.active {
-    background-color: #FFFFFF !important;
-    color: var(--admin-text-primary) !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-[data-theme="dark"] .admin-tab.active {
-    background-color: #374151 !important;
-    color: #F9FAFB !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-
-/* Fix course summary panel styles in availability page */
-.admin-availability-calendar .wc-scroll {
-    max-height: 720px;
-}
-
-.admin-availability-calendar .wc-body-grid {
-    min-height: calc(var(--wc-rows) * var(--wc-hour-h));
-}
-
-.admin-availability-calendar .wc-day {
-    min-width: 0;
-}
-
-.admin-availability-calendar .wc-evt {
-    left: 8px;
-    right: 8px;
-    border-left-width: 4px;
-    border-radius: 12px;
-    padding: 10px 10px 9px;
-    gap: 4px;
-}
-
-.admin-availability-calendar .wc-evt__title {
     font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 10px 16px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-.admin-availability-calendar .wc-evt__time {
-    font-size: 11px;
+body.redesign .z-billing-tab:hover,
+body.redesign .z-billing-tab:focus-visible {
+    color: var(--admin-text-primary);
+    background: var(--admin-gold-light);
+}
+
+body.redesign .z-billing-tab.active {
+    color: #ffffff;
+    background: var(--admin-gold);
+    box-shadow: 0 8px 18px rgba(210, 154, 88, 0.28);
+}
+
+body.redesign .z-billing-section {
+    animation: adminFadeIn 0.18s ease-out;
+}
+
+body.redesign .z-billing-section-title {
+    margin: 0 0 16px;
+    font-family: 'Grown', serif;
+    font-size: 2rem;
     color: var(--admin-text-primary);
 }
 
-.admin-availability-calendar .wc-evt__loc {
-    font-size: 11px;
+body.redesign .z-billing-balance-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 28px;
+    align-items: center;
+    padding: 32px;
+    border: 1.5px solid var(--admin-card-border);
+    border-radius: 24px;
+    background:
+        linear-gradient(135deg, rgba(210, 154, 88, 0.13), transparent 34%),
+        var(--admin-card-bg);
+    box-shadow: 0 18px 45px rgba(47, 34, 25, 0.07);
 }
 
-.admin-availability-empty-day {
+body.redesign .z-billing-balance-card::after {
+    content: "";
     position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: 'Inter', sans-serif;
-    font-size: 12px;
-    color: var(--admin-text-secondary);
-    opacity: 0.6;
+    right: -70px;
+    top: -90px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(210, 154, 88, 0.12);
     pointer-events: none;
 }
 
-.avail-course-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    padding: 16px;
-    background-color: var(--admin-main-bg);
-}
-
-[data-theme="dark"] .avail-course-grid {
-    background-color: var(--admin-main-bg);
-}
-
-.avail-course-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--admin-card-shadow);
-}
-
-[data-theme="dark"] .avail-course-card {
-    background-color: var(--admin-card-bg) !important;
-    border-color: var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .avail-course-card__name {
-    color: var(--admin-text-primary);
-}
-
-[data-theme="dark"] .avail-course-card__type,
-[data-theme="dark"] .avail-course-card__level,
-[data-theme="dark"] .avail-course-card__price {
-    background-color: var(--admin-search-bg);
-    color: var(--admin-text-secondary);
-}
-
-[data-theme="dark"] .card-header h6 {
-    color: var(--admin-text-primary);
-}
-
-/* Fix for overlapping header when scrolling */
-.wc-header {
-    background-color: var(--admin-search-bg) !important;
-    z-index: 10 !important;
-}
-
-/* Force calendar body width */
-.avail-grid {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
-    width: 100% !important;
-    min-width: 800px !important;
-}
-
-.avail-day {
-    flex: unset !important;
-    min-width: 0 !important;
-    border-right: 1px solid var(--admin-card-border) !important;
-}
-
-.avail-day:last-child {
-    border-right: none !important;
-}
-
-/* Weekly Calendar Grid */
-.avail-grid-wrapper {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    overflow-x: auto;
-    box-shadow: var(--admin-card-shadow);
-    width: 100%;
-    display: block;
-}
-
-[data-theme="dark"] .avail-grid-wrapper {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
-}
-
-.avail-grid {
-    display: flex;
-    min-width: 800px;
-    width: 100%;
-}
-
-/* Force calendar body width */
-[data-theme="dark"] .avail-grid-wrapper {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
-}
-
-[data-theme="dark"] .avail-day {
-    background-color: var(--admin-card-bg) !important;
-}
-
-/* Force reset old CakePHP styles */
-body.redesign .card:has(> .avail-grid-wrapper) {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-}
-
-[data-theme="dark"] body.redesign .card:has(> .avail-grid-wrapper) {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-body.redesign .avail-grid-wrapper {
-    display: block !important;
-    width: 100% !important;
-    border: 1px solid var(--admin-card-border) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-}
-
-body.redesign .avail-grid {
-    display: flex !important;
-    min-width: 800px !important;
-    width: 100% !important;
-    background-color: var(--admin-card-bg) !important;
-    border-radius: 12px !important;
-    border: none !important;
-    overflow: hidden !important;
-}
-
-body.redesign .avail-day {
-    flex: 1 1 0% !important;
-    min-width: 0 !important;
-    border-right: 1px solid var(--admin-card-border) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    background-color: transparent !important;
-}
-
-body.redesign .avail-day:last-child {
-    border-right: none !important;
-}
-
-body.redesign .avail-day__body {
-    flex-grow: 1 !important;
-    background-color: transparent !important;
-}
-
-/* Fix for dark mode text in avail-slot */
-[data-theme="dark"] .avail-slot__title {
-    color: #F9FAFB !important;
-}
-
-[data-theme="dark"] .avail-slot__time,
-[data-theme="dark"] .avail-slot__teacher,
-[data-theme="dark"] .avail-slot__spots {
-    color: #D1D5DB !important;
-}
-
-/* Fix missing border on the wrapper */
-.avail-grid-wrapper {
-    border: 1px solid var(--admin-card-border) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-}
-
-/* Fix for avail-empty text color */
-[data-theme="dark"] .avail-empty {
-    color: var(--admin-text-secondary) !important;
-}
-
-/* Fix overlapping wrapper for Availability grid */
-.avail-grid {
-    border-radius: 0 !important;
-}
-
-[data-theme="dark"] .avail-day__header {
-    background-color: var(--admin-search-bg) !important;
-    border-bottom: 1px solid var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] .avail-day__name {
-    color: var(--admin-text-secondary) !important;
-}
-
-[data-theme="dark"] .avail-day__num {
-    color: var(--admin-text-primary) !important;
-}
-
-/* Fix for the inner container border */
-.avail-grid {
-    border: none !important;
-}
-
-/* Global fix to hide original cakephp card styles causing duplicate borders */
-body.redesign .avail-grid-wrapper {
-    box-shadow: var(--admin-card-shadow) !important;
-}
-
-/* Fix overlapping borders */
-body.redesign .avail-day {
-    border-right: 1px solid var(--admin-card-border) !important;
-}
-
-/* Fix for dark mode font visibility inside slots */
-[data-theme="dark"] .avail-slot__title {
-    color: #F9FAFB !important;
-}
-
-/* Force reset old CakePHP styles */
-body.redesign .card:has(> .avail-grid-wrapper) {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-}
-
-/* Force calendar wrapper borders */
-[data-theme="dark"] body.redesign .card:has(> .avail-grid-wrapper) {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-/* Fix for the avail-grid-wrapper layout */
-body.redesign .avail-grid-wrapper {
-    display: block;
-    width: 100%;
-}
-
-/* Fix for the avail day container */
-.avail-day {
-    flex: 1;
-    min-width: 0;
-    border-right: 1px solid var(--admin-card-border);
-    display: flex;
-    flex-direction: column;
-}
-
-[data-theme="dark"] .avail-day {
-    border-right: 1px solid var(--admin-card-border) !important;
-}
-
-/* Force calendar body width */
-body.redesign .avail-grid {
-    display: flex !important;
-    min-width: 800px !important;
-    width: 100% !important;
-}
-
-/* Fix background overflow */
-.avail-grid {
-    background-color: var(--admin-card-bg);
-}
-
-.avail-day__body {
-    flex-grow: 1;
-    background-color: var(--admin-card-bg);
-}
-
-[data-theme="dark"] .avail-day__body {
-    background-color: var(--admin-card-bg);
-}
-
-/* Force reset old CakePHP styles for grid */
-body.redesign .avail-grid {
-    display: flex !important;
-    min-width: 800px !important;
-    width: 100% !important;
-}
-
-body.redesign .avail-day {
-    flex: 1 1 0% !important;
-    min-width: 0 !important;
-    border-right: 1px solid var(--admin-card-border) !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-body.redesign .avail-day:last-child {
-    border-right: none !important;
-}
-
-/* Force calendar height fixes */
-body.redesign .avail-grid {
-    border-radius: 12px;
-}
-
-/* Force calendar height fixes */
-body.redesign .avail-grid-wrapper {
-    border-radius: 12px !important;
-}
-
-/* Force calendar height fixes */
-body.redesign .avail-grid {
-    overflow: hidden;
-}
-
-/* Fix inner container overlapping border-radius */
-body.redesign .avail-grid {
-    overflow: hidden !important;
-}
-
-/* Fix for the left rounded corners overlap */
-body.redesign .avail-day:first-child .avail-day__header {
-    border-top-left-radius: 12px !important;
-}
-body.redesign .avail-day:last-child .avail-day__header {
-    border-top-right-radius: 12px !important;
-}
-
-/* Fix border radius header */
-body.redesign .avail-grid {
-    border-radius: 12px !important;
-}
-
-/* Remove the padding from the modal button to center icon and text properly */
-.avail-quick-add {
-    justify-content: center;
-}
-
-/* Fix for the avail day container */
-[data-theme="dark"] body.redesign .avail-day__header {
-    background-color: var(--admin-search-bg) !important;
-    border-bottom: 1px solid var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] body.redesign .avail-day__name {
-    color: var(--admin-text-secondary) !important;
-}
-
-[data-theme="dark"] body.redesign .avail-day__num {
-    color: var(--admin-text-primary) !important;
-}
-
-/* Full CSS rewrite for calendar corners and borders */
-body.redesign .avail-grid-wrapper {
-    background-color: var(--admin-card-bg) !important;
-    border: 1px solid var(--admin-card-border) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important; /* This is what makes the corners round */
-}
-
-body.redesign .avail-grid {
-    background-color: transparent !important;
-}
-
-body.redesign .avail-day__header {
-    background-color: var(--admin-search-bg) !important;
-}
-
-body.redesign .avail-day__body {
-    background-color: var(--admin-card-bg) !important;
-}
-
-/* Ensure inner cards in list view are displayed correctly */
-.sp-list-card {
-    display: flex !important;
-    gap: 24px !important;
-    align-items: center !important;
-    flex-wrap: wrap !important;
-    padding: 20px !important;
-    margin-bottom: 12px !important;
-}
-
-[data-theme="dark"] .sp-list-card__time strong,
-[data-theme="dark"] .sp-list-card__body h6 {
-    color: #F9FAFB !important;
-}
-
-[data-theme="dark"] .sp-list-card__time span,
-[data-theme="dark"] .sp-list-card__meta span,
-[data-theme="dark"] .sp-list-card__meta span i {
-    color: #9CA3AF !important;
-}
-
-/* Fix for the view buttons container width */
-.admin-page-header .d-flex.align-items-center.gap-3 {
-    flex-wrap: wrap;
-}
-
-[data-theme="dark"] .sp-list-date__label {
-    border-bottom: 1px solid var(--admin-card-border) !important;
-}
-
-/* Center calendar wrapper */
-body.redesign .wc-wrapper {
-    margin: 0 auto;
-    max-width: 1200px;
-}
-
-/* Fix container max-width to center the content */
-body.redesign .sp-view {
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-/* Global fix to ensure content container uses full width */
-body.redesign .sidebar-main > main {
-    max-width: 100% !important;
-    margin: 0 !important;
-}
-
-/* Revert max-width for sp-view so lists don't shrink weirdly */
-body.redesign .sp-view {
-    max-width: none !important;
-}
-
-body.redesign .admin-page-header {
-    max-width: none !important;
-}
-
-/* Fix the calendar wrapper so it takes full width but looks aligned */
-body.redesign .wc-wrapper {
-    max-width: none !important;
-}
-
-/* Fix for the list card meta container */
-.sp-list-card__meta {
-    margin-top: 4px !important;
-}
-
-.sp-list-card__body h6 {
-    margin-bottom: 2px !important;
-}
-
-/* Force calendar wrapper border */
-body.redesign .wc-wrapper {
-    border: 1px solid var(--admin-card-border) !important;
-}
-
-[data-theme="dark"] body.redesign .wc-wrapper {
-    border: 1px solid var(--admin-card-border) !important;
-}
-
-.admin-request-summary {
-    border: 1px solid rgba(245, 158, 11, 0.24);
-    background-color: #FFFBEB !important; /* Light yellow background */
-    background-image:
-        radial-gradient(circle at top right, rgba(251, 191, 36, 0.10), transparent 38%),
-        linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(251, 191, 36, 0.03));
-}
-
-.admin-request-summary__eyebrow {
-    color: #B45309;
-}
-
-.admin-request-item {
-    background-color: #FFFFFF !important;
-    border: 1px solid rgba(245, 158, 11, 0.24); /* Match the outer border */
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="dark"] .admin-request-summary {
-    border-color: rgba(251, 191, 36, 0.20);
-    background-color: rgba(245, 158, 11, 0.05) !important; /* Subtle dark yellow background */
-    background-image:
-        radial-gradient(circle at top right, rgba(251, 191, 36, 0.08), transparent 40%),
-        linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(251, 191, 36, 0.03));
-}
-
-[data-theme="dark"] .admin-request-summary__eyebrow {
-    color: #FBBF24;
-}
-
-[data-theme="dark"] .admin-request-item {
-    background-color: var(--admin-card-bg) !important;
-    box-shadow: none;
-    border-color: rgba(251, 191, 36, 0.14);
-}
-
-/* ========================================
-   Z-Billing Page (Payment Portal Redesign)
-   ======================================== */
-
-.z-billing-page {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-    max-width: 1000px;
-}
-
-.z-billing-header {
-    margin-bottom: 8px;
-}
-
-.z-billing-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--admin-text-primary);
-    margin: 0 0 24px 0;
-}
-
-.z-billing-tabs {
-    display: flex;
-    gap: 32px;
-    border-bottom: 1px solid var(--admin-card-border);
-}
-
-.z-billing-tab {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--admin-text-secondary);
-    padding-bottom: 12px;
-    text-decoration: none;
+body.redesign .z-billing-balance-main {
     position: relative;
-    transition: color 0.2s;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-}
-
-.z-billing-tab:hover {
-    color: var(--admin-text-primary);
-}
-
-.z-billing-tab.active {
-    color: var(--admin-text-primary);
-}
-
-.z-billing-tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: var(--admin-text-primary);
-}
-
-.z-billing-balance-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 16px;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.z-billing-balance-main {
+    z-index: 1;
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 28px;
 }
 
-.z-billing-amount {
+body.redesign .z-billing-amount {
+    min-width: 190px;
     font-family: 'Inter', sans-serif;
-    font-size: 48px;
-    font-weight: 600;
-    color: var(--admin-text-primary);
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    font-weight: 800;
     line-height: 1;
+    color: var(--admin-text-primary);
 }
 
-.z-billing-balance-divider {
+body.redesign .z-billing-balance-divider {
     width: 1px;
-    height: 48px;
-    background-color: var(--admin-card-border);
+    min-height: 82px;
+    background: var(--admin-card-border);
 }
 
-.z-billing-balance-details {
-    display: flex;
-    gap: 32px;
-}
-
-.z-billing-balance-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.z-billing-balance-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--admin-text-secondary);
-}
-
-.z-billing-balance-value {
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--admin-text-primary);
-}
-
-.z-billing-balance-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.z-billing-btn-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    background-color: var(--admin-text-primary);
-    color: var(--admin-card-bg);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 24px;
-    border: 0;
-    text-decoration: none;
-    transition: opacity 0.2s;
-    cursor: pointer;
-}
-
-.z-billing-btn-primary:hover {
-    opacity: 0.9;
-    color: var(--admin-card-bg);
-}
-
-.z-billing-grid {
+body.redesign .z-billing-balance-details {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
+    gap: 14px;
 }
 
-.z-billing-grid-card {
-    background-color: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    text-decoration: none;
-    transition: border-color 0.2s, background-color 0.2s;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
+body.redesign .z-billing-balance-item {
+    display: grid;
+    gap: 3px;
 }
 
-.z-billing-grid-card:hover {
-    border-color: var(--admin-text-secondary);
-    background-color: var(--admin-search-bg);
-}
-
-.z-billing-grid-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    background-color: var(--admin-search-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--admin-text-primary);
-    font-size: 20px;
-}
-
-.z-billing-grid-content {
-    flex: 1;
-}
-
-.z-billing-grid-content h3 {
+body.redesign .z-billing-balance-label {
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--admin-text-primary);
-    margin: 0 0 4px 0;
-}
-
-.z-billing-grid-content p {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--admin-text-secondary);
-    margin: 0;
-}
-
-.z-billing-grid-arrow {
-    color: var(--admin-text-secondary);
-    font-size: 16px;
-}
-
-.z-billing-section {
-    display: none;
-}
-
-.z-billing-section.active-section {
-    display: block;
-}
-
-.z-billing-section-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--admin-text-primary);
-    margin: 0 0 20px 0;
-}
-
-/* Dark mode specific overrides for Z-Billing */
-[data-theme="dark"] .z-billing-balance-card,
-[data-theme="dark"] .z-billing-grid-card {
-    background-color: #1A1A1A;
-    border-color: #333333;
-}
-
-[data-theme="dark"] .z-billing-grid-card:hover {
-    background-color: #222222;
-    border-color: #555555;
-}
-
-[data-theme="dark"] .z-billing-grid-icon {
-    background-color: #2A2A2A;
-}
-
-[data-theme="dark"] .z-billing-btn-primary {
-    background-color: #FFFFFF !important;
-    color: #000000 !important;
-}
-
-[data-theme="dark"] .z-billing-btn-primary:hover {
-    background-color: #E5E5E5 !important;
-}
-
-/* Hide old payment portal styles */
-.payment-portal-page { display: none; }
-
-.payment-portal-hero {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 28px 30px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, rgba(255, 199, 84, 0.13), rgba(255, 255, 255, 0.92));
-    border: 1px solid rgba(255, 199, 84, 0.28);
-}
-
-[data-theme="dark"] .payment-portal-hero {
-    background: linear-gradient(135deg, rgba(255, 199, 84, 0.12), rgba(21, 28, 40, 0.96));
-    border-color: rgba(255, 199, 84, 0.2);
-}
-
-.payment-portal-eyebrow {
-    margin: 0 0 10px 0;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #c88719;
-}
-
-.payment-portal-subtitle {
-    margin: 10px 0 0 0;
-    max-width: 760px;
-    font-size: 14px;
-    line-height: 1.7;
     color: var(--admin-text-secondary);
 }
 
-.payment-portal-stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.payment-portal-stat-card {
-    padding: 22px 24px;
-    border-radius: 18px;
-    background: var(--admin-card-bg);
-    border: 1px solid var(--admin-card-border);
-}
-
-.payment-portal-stat-label {
-    display: block;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-stat-value {
-    display: block;
-    font-size: 34px;
-    line-height: 1;
-    color: var(--admin-text-primary);
-}
-
-.payment-portal-history-shell,
-.payment-portal-detail-card {
-    padding: 28px 30px;
-}
-
-.payment-portal-section-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.payment-portal-section-copy {
-    margin: 8px 0 0 0;
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    min-height: 220px;
-    text-align: center;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-empty i {
-    font-size: 46px;
-}
-
-.payment-portal-history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.payment-portal-history-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 18px;
-    padding: 22px;
-    border-radius: 18px;
-    background: var(--admin-search-bg);
-    border: 1px solid var(--admin-card-border);
-}
-
-.payment-portal-history-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-}
-
-.payment-portal-history-title-row h4 {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-    color: var(--admin-text-primary);
-}
-
-.payment-portal-history-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-amount {
-    flex-shrink: 0;
-    font-size: 26px;
+body.redesign .z-billing-balance-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
     font-weight: 700;
-    line-height: 1;
     color: var(--admin-text-primary);
 }
 
-.payment-portal-history-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 16px;
-}
-
-.payment-portal-history-actions {
+body.redesign .z-billing-balance-actions {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
     justify-content: flex-end;
 }
 
-.payment-portal-muted {
-    font-size: 13px;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-receipt-link,
-.payment-portal-inline-link {
-    padding: 6px 12px;
-    width: auto;
-    height: auto;
-    font-size: 12px;
-}
-
-.payment-portal-details-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-    gap: 24px;
-    align-items: start;
-}
-
-.payment-portal-profile-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.payment-portal-profile-card {
-    padding: 18px;
-    border-radius: 16px;
-    background: var(--admin-search-bg);
-    border: 1px solid var(--admin-card-border);
-}
-
-.payment-portal-profile-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.payment-portal-profile-top strong {
-    display: block;
-    font-size: 16px;
-    color: var(--admin-text-primary);
-}
-
-.payment-portal-profile-email,
-.payment-portal-profile-body,
-.payment-portal-archived-list,
-.payment-portal-empty-note {
-    font-size: 14px;
-    line-height: 1.7;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-profile-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 14px;
-}
-
-.payment-portal-empty-note {
-    padding: 18px;
-    border-radius: 14px;
-    border: 1px dashed var(--admin-card-border);
-    background: var(--admin-search-bg);
-}
-
-.payment-portal-archived {
-    margin-top: 20px;
-    padding-top: 18px;
-    border-top: 1px solid var(--admin-card-border);
-}
-
-.payment-portal-archived-title {
-    margin-bottom: 10px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--admin-text-secondary);
-}
-
-.payment-portal-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px 18px;
-}
-
-.payment-portal-form-field--full {
-    grid-column: 1 / -1;
-}
-
-.payment-portal-checkbox {
+body.redesign .z-billing-btn-primary {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 18px;
+    border: 1.5px solid var(--admin-gold);
+    border-radius: 12px;
+    background: var(--admin-gold);
+    color: #ffffff !important;
+    box-shadow: 0 10px 22px rgba(210, 154, 88, 0.24);
+    font-family: 'Inter', sans-serif;
     font-size: 14px;
-    color: var(--admin-text-primary);
+    font-weight: 700;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-.payment-portal-form-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 24px;
+body.redesign .z-billing-btn-primary:hover,
+body.redesign .z-billing-btn-primary:focus-visible {
+    background: var(--admin-gold-hover);
+    border-color: var(--admin-gold-hover);
+    box-shadow: 0 14px 26px rgba(210, 154, 88, 0.3);
+    color: #ffffff !important;
+    transform: translateY(-1px);
 }
 
-@media (max-width: 1199px) {
-    .payment-portal-details-grid {
-        grid-template-columns: 1fr;
+body.redesign .z-billing-balance-actions [data-tab-trigger="history"] {
+    min-height: 42px;
+    padding: 10px 14px !important;
+    border: 1.5px solid var(--admin-card-border) !important;
+    border-radius: 12px;
+    color: var(--admin-text-primary) !important;
+    font-weight: 700;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+body.redesign .z-billing-balance-actions [data-tab-trigger="history"]:hover,
+body.redesign .z-billing-balance-actions [data-tab-trigger="history"]:focus-visible {
+    border-color: var(--admin-gold) !important;
+    background: var(--admin-gold-light) !important;
+    color: var(--admin-gold-hover) !important;
+}
+
+body.redesign .admin-table.no-headers tbody tr {
+    transition: background 0.2s;
+}
+
+body.redesign .admin-table.no-headers tbody td:last-child {
+    width: 180px;
+}
+
+body.redesign .admin-action-link.view,
+body.redesign .admin-action-link.edit,
+body.redesign .admin-action-link.delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+
+body.redesign .admin-action-link.view {
+    color: #d29a58 !important;
+    background: rgba(210, 154, 88, 0.1);
+}
+
+body.redesign .admin-action-link.edit {
+    color: #d97706 !important;
+    background: rgba(217, 119, 6, 0.08);
+}
+
+body.redesign .admin-action-link.delete {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+@keyframes adminFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-@media (max-width: 991px) {
-    .payment-portal-hero,
-    .payment-portal-history-title-row {
-        flex-direction: column;
-    }
-
-    .payment-portal-stats {
+@media (max-width: 900px) {
+    body.redesign .z-billing-header,
+    body.redesign .z-billing-balance-card,
+    body.redesign .z-billing-balance-main {
+        display: grid;
         grid-template-columns: 1fr;
     }
 
-    .payment-portal-history-card {
-        grid-template-columns: 1fr;
+    body.redesign .z-billing-balance-divider {
+        width: 100%;
+        min-height: 1px;
+        height: 1px;
     }
 
-    .payment-portal-history-actions {
+    body.redesign .z-billing-balance-actions {
         justify-content: flex-start;
     }
 }
 
-@media (max-width: 767px) {
-    .payment-portal-hero,
-    .payment-portal-history-shell,
-    .payment-portal-detail-card {
-        padding: 22px 20px;
-    }
-
-    .payment-portal-form-grid {
+/* The default `.z-billing-tabs { display: inline-flex }` lays the three
+   billing tabs (Overview / Payment History / Billing Details) horizontally,
+   which overflows the viewport on phones AND most narrow tablets/portrait
+   iPad widths. Stack the tabs vertically as soon as we hit a tablet
+   breakpoint (≤ 820px) instead of waiting for ≤ 640px. */
+@media (max-width: 820px) {
+    body.redesign .z-billing-tabs {
+        width: 100%;
+        display: grid;
         grid-template-columns: 1fr;
     }
+
+    body.redesign .z-billing-tab {
+        width: 100%;
+        text-align: center;
+    }
+
+    body.redesign .z-billing-balance-card {
+        padding: 22px;
+        border-radius: 18px;
+    }
+
+    body.redesign .z-billing-balance-actions,
+    body.redesign .z-billing-btn-primary,
+    body.redesign .z-billing-balance-actions [data-tab-trigger="history"] {
+        width: 100%;
+    }
+}
+
+/* --- Dark Mode Card / Table overrides --- */
+[data-theme="dark"] body.redesign .admin-form-card,
+[data-theme="dark"] body.redesign .admin-table-card {
+    background: var(--admin-card-bg);
+    border-color: var(--admin-card-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] body.redesign .admin-table thead th {
+    border-bottom-color: var(--admin-table-header-border);
+}
+
+[data-theme="dark"] body.redesign .admin-table tbody td {
+    border-bottom-color: var(--admin-table-row-border);
+}
+
+/* ========================================
+   ACCESSIBILITY CONTRAST OVERRIDES
+   Keep portal text readable in both themes.
+   ======================================== */
+
+body.redesign {
+    color: #3b2a20 !important;
+    background-color: #fdfaf7 !important;
+}
+
+body.redesign .sidebar-main,
+body.redesign main#main-content {
+    background: transparent !important;
+}
+
+body.redesign .admin-brand-text,
+body.redesign #portalSidebar .admin-brand-text {
+    color: #f8efe4 !important;
+    opacity: 1 !important;
+}
+
+body.redesign #portalSidebar .nav-link {
+    color: #d8c4b2 !important;
+}
+
+body.redesign #portalSidebar .nav-link:hover,
+body.redesign #portalSidebar .nav-link:focus-visible {
+    color: #ffffff !important;
+    background: rgba(210, 154, 88, 0.16) !important;
+}
+
+body.redesign #portalSidebar .nav-link.active {
+    color: #ffd89f !important;
+    background: rgba(210, 154, 88, 0.22) !important;
+}
+
+body.redesign .admin-nav-bottom .nav-link,
+body.redesign .admin-nav-bottom .nav-link span,
+body.redesign .admin-nav-bottom .nav-link i {
+    color: #e7d7c4 !important;
+    opacity: 1 !important;
+}
+
+body.redesign .admin-nav-bottom .nav-link:hover,
+body.redesign .admin-nav-bottom .nav-link:focus-visible {
+    color: #ffffff !important;
+    background: rgba(210, 154, 88, 0.16) !important;
+}
+
+body.redesign .sidebar-navbar .page-title,
+body.redesign .admin-user-label,
+body.redesign .admin-header-actions,
+body.redesign .admin-header-actions i {
+    color: #2f2219 !important;
+}
+
+body.redesign .z-billing-title {
+    color: #2f2219 !important;
+    opacity: 1 !important;
+}
+
+body.redesign .z-billing-tabs {
+    background: #ffffff !important;
+    border-color: #ead7c0 !important;
+}
+
+body.redesign .z-billing-tab {
+    color: #7b604b !important;
+}
+
+body.redesign .z-billing-tab.active {
+    color: #ffffff !important;
+    background: #d29a58 !important;
+}
+
+body.redesign .z-billing-balance-card {
+    background:
+        linear-gradient(135deg, rgba(210, 154, 88, 0.12), rgba(255, 255, 255, 0) 36%),
+        #ffffff !important;
+    border-color: #ead7c0 !important;
+}
+
+body.redesign .z-billing-amount,
+body.redesign .z-billing-balance-value,
+body.redesign .z-billing-balance-actions [data-tab-trigger="history"] {
+    color: #1f130c !important;
+}
+
+body.redesign .z-billing-balance-label {
+    color: #80654f !important;
+}
+
+[data-theme="dark"] body.redesign {
+    color: #f5ece0 !important;
+    background-color: #130d07 !important;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(210, 154, 88, 0.08) 0px, transparent 46%),
+        radial-gradient(at 100% 100%, rgba(210, 154, 88, 0.06) 0px, transparent 48%) !important;
+}
+
+[data-theme="dark"] body.redesign .sidebar-navbar .page-title,
+[data-theme="dark"] body.redesign .admin-user-label,
+[data-theme="dark"] body.redesign .admin-header-actions,
+[data-theme="dark"] body.redesign .admin-header-actions i {
+    color: #f8efe4 !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-title {
+    color: #f8efe4 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-tabs {
+    background: #21150d !important;
+    border-color: rgba(240, 207, 156, 0.42) !important;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28) !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-tab {
+    color: #d8c4b2 !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-tab:hover,
+[data-theme="dark"] body.redesign .z-billing-tab:focus-visible {
+    color: #ffffff !important;
+    background: rgba(210, 154, 88, 0.18) !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-tab.active {
+    color: #1a120c !important;
+    background: #f0cf9c !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-balance-card {
+    background:
+        linear-gradient(135deg, rgba(240, 207, 156, 0.14), rgba(0, 0, 0, 0) 36%),
+        #1a120c !important;
+    border-color: rgba(240, 207, 156, 0.32) !important;
+    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-amount,
+[data-theme="dark"] body.redesign .z-billing-balance-value {
+    color: #fff8ef !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-balance-label {
+    color: #d8c4b2 !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-balance-divider {
+    background: rgba(240, 207, 156, 0.28) !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-balance-actions [data-tab-trigger="history"] {
+    color: #fff8ef !important;
+    border-color: rgba(240, 207, 156, 0.36) !important;
+}
+
+[data-theme="dark"] body.redesign .z-billing-balance-actions [data-tab-trigger="history"]:hover,
+[data-theme="dark"] body.redesign .z-billing-balance-actions [data-tab-trigger="history"]:focus-visible {
+    color: #1a120c !important;
+    background: #f0cf9c !important;
+    border-color: #f0cf9c !important;
+}
+
+/* ========================================
+   PORTAL CONTENT SPACING
+   Give every customer page a clear gap from the sidebar.
+   ======================================== */
+
+body.redesign .sidebar-main {
+    min-width: 0;
+}
+
+body.redesign main#main-content.container-fluid {
+    width: 100%;
+    max-width: 1480px;
+    margin: 0 auto;
+    padding: 22px 56px 72px !important;
+}
+
+body.redesign .admin-page-header,
+body.redesign .z-billing-page {
+    width: 100%;
+}
+
+body.redesign .admin-page-header {
+    padding: 12px 0 22px;
+    border-bottom: 1px solid rgba(210, 154, 88, 0.18);
+}
+
+body.redesign .admin-page-header .admin-form-title {
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+}
+
+body.redesign .admin-page-header p {
+    color: #6f5a49 !important;
+    font-size: 15px !important;
+    line-height: 1.65;
+}
+
+body.redesign .z-billing-page {
+    max-width: 1280px;
+}
+
+body.redesign .z-billing-header {
+    padding-top: 10px;
+}
+
+[data-theme="dark"] body.redesign .admin-page-header {
+    border-bottom-color: rgba(240, 207, 156, 0.22);
+}
+
+[data-theme="dark"] body.redesign .admin-page-header p {
+    color: #d8c4b2 !important;
+}
+
+@media (max-width: 1180px) {
+    body.redesign main#main-content.container-fluid {
+        padding: 20px 36px 60px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.redesign main#main-content.container-fluid {
+        padding: 18px 20px 48px !important;
+    }
+
+    body.redesign .admin-page-header {
+        align-items: flex-start !important;
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+/* ========================================
+   ADMIN PORTAL THEME CONTRAST
+   Dashboard and tables contain inline colors, so admin needs scoped overrides.
+   ======================================== */
+
+body.admin-portal {
+    color: #2f2219 !important;
+}
+
+body.admin-portal main#main-content.container-fluid {
+    width: 100%;
+    padding: 24px 56px 72px !important;
+}
+
+body.admin-portal .sidebar-navbar .page-title,
+body.admin-portal .admin-user-label,
+body.admin-portal .admin-header-actions,
+body.admin-portal .admin-header-actions i {
+    color: #2f2219 !important;
+}
+
+body.admin-portal .admin-stat-card {
+    background: #ffffff !important;
+    border-color: #ead7c0 !important;
+}
+
+body.admin-portal .admin-stat-title {
+    color: #7c5f49 !important;
+}
+
+body.admin-portal .admin-stat-value {
+    color: #1f130c !important;
+}
+
+body.admin-portal .admin-stat-trend,
+body.admin-portal .admin-stat-trend.neutral,
+body.admin-portal .admin-stat-trend.up,
+body.admin-portal .admin-stat-trend.down {
+    color: #9a641f !important;
+    opacity: 1 !important;
+}
+
+body.admin-portal .admin-table-card,
+body.admin-portal .admin-form-card,
+body.admin-portal .admin-dashboard-wrapper [style*="background: #fff"],
+body.admin-portal .admin-dashboard-wrapper [style*="background: #ffffff"] {
+    background-color: #ffffff !important;
+    color: #2f2219 !important;
+    border-color: #ead7c0 !important;
+}
+
+body.admin-portal .admin-table thead th,
+body.admin-portal .admin-table-primary-text,
+body.admin-portal .admin-dashboard-wrapper h3,
+body.admin-portal .admin-dashboard-wrapper p[style*="color: #2f2219"] {
+    color: #2f2219 !important;
+}
+
+body.admin-portal .admin-table-secondary-text,
+body.admin-portal .admin-dashboard-wrapper p[style*="color: #a69182"],
+body.admin-portal .admin-dashboard-wrapper div[style*="color: #a69182"] {
+    color: #6f5a49 !important;
+}
+
+body.admin-portal .admin-tabs {
+    border-bottom-color: rgba(154, 100, 31, 0.34) !important;
+}
+
+body.admin-portal .admin-tab {
+    color: #705642 !important;
+}
+
+body.admin-portal .admin-tab.active {
+    color: #b4762d !important;
+}
+
+[data-theme="dark"] body.admin-portal {
+    color: #f8efe4 !important;
+    background-color: #130d07 !important;
+}
+
+[data-theme="dark"] body.admin-portal main#main-content.container-fluid {
+    background: transparent !important;
+}
+
+[data-theme="dark"] body.admin-portal .sidebar-navbar .page-title,
+[data-theme="dark"] body.admin-portal .admin-user-label,
+[data-theme="dark"] body.admin-portal .admin-header-actions,
+[data-theme="dark"] body.admin-portal .admin-header-actions i {
+    color: #fff8ef !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-stat-card,
+[data-theme="dark"] body.admin-portal .admin-table-card,
+[data-theme="dark"] body.admin-portal .admin-form-card,
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper [style*="background: #fff"],
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper [style*="background: #ffffff"] {
+    background: #1a120c !important;
+    color: #f8efe4 !important;
+    border-color: rgba(240, 207, 156, 0.34) !important;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36) !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper [style*="background: #fdfaf7"],
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper a[style*="background: #fdfaf7"] {
+    background: #21150d !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper [style*="background: rgba(210, 154, 88, 0.03)"] {
+    background: rgba(240, 207, 156, 0.08) !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-stat-title,
+[data-theme="dark"] body.admin-portal .admin-table thead th {
+    color: #d8c4b2 !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-stat-value,
+[data-theme="dark"] body.admin-portal .admin-table-primary-text,
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper h3,
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper p[style*="color: #2f2219"],
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper div[style*="color: #2f2219"] {
+    color: #fff8ef !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-stat-trend,
+[data-theme="dark"] body.admin-portal .admin-stat-trend.neutral,
+[data-theme="dark"] body.admin-portal .admin-stat-trend.up,
+[data-theme="dark"] body.admin-portal .admin-stat-trend.down,
+[data-theme="dark"] body.admin-portal .admin-table-secondary-text,
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper p[style*="color: #a69182"],
+[data-theme="dark"] body.admin-portal .admin-dashboard-wrapper div[style*="color: #a69182"] {
+    color: #d8c4b2 !important;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-table tbody td {
+    color: #f8efe4 !important;
+    border-bottom-color: rgba(240, 207, 156, 0.16) !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-table tbody tr:hover td {
+    background: rgba(240, 207, 156, 0.07) !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-tabs {
+    border-bottom-color: rgba(240, 207, 156, 0.28) !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-tab {
+    color: #c7ae9b !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-tab:hover,
+[data-theme="dark"] body.admin-portal .admin-tab:focus-visible {
+    color: #fff8ef !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-tab.active {
+    color: #f0cf9c !important;
+}
+
+[data-theme="dark"] body.admin-portal .admin-action-link.view,
+[data-theme="dark"] body.admin-portal .admin-action-link.edit,
+[data-theme="dark"] body.admin-portal .admin-action-link.delete {
+    background: rgba(210, 154, 88, 0.15) !important;
+}
+
+.login-toast-region {
+    position: fixed;
+    top: 18px;
+    right: 24px;
+    z-index: 2200;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.login-toast-region .alert {
+    pointer-events: auto;
+    margin: 0;
+    padding: 14px 44px 14px 18px;
+    border: 1px solid rgba(210, 154, 88, 0.44);
+    border-radius: 12px;
+    background: #fff8ef;
+    color: #2f2219;
+    box-shadow: 0 18px 40px rgba(47, 34, 25, 0.18);
+    font-family: "Inter", Arial, sans-serif;
+    font-weight: 700;
+    animation: loginToastFade 5.5s ease forwards;
+}
+
+.login-toast-region .alert-success {
+    border-left: 5px solid #d29a58;
+}
+
+.sp-date-nav[hidden],
+#listNav[hidden] {
+    display: none !important;
+}
+
+.sp-date-nav--calendar {
+    margin: 0 0 14px;
+    padding: 0 0 12px;
+    border-bottom: 1px solid rgba(210, 154, 88, 0.16);
+}
+
+body.redesign .sp-list-date {
+    border-bottom-color: var(--admin-card-border);
+}
+
+body.redesign .sp-list-date__label {
+    background: var(--admin-search-bg);
+    border: 1px solid var(--admin-card-border);
+    border-radius: 0;
+    color: var(--admin-text-primary);
+}
+
+body.redesign .sp-list-date__label h5,
+body.redesign .sp-list-date__label strong {
+    color: var(--admin-text-primary) !important;
+}
+
+body.redesign .sp-list-card {
+    background: var(--admin-card-bg) !important;
+    border-color: var(--admin-card-border) !important;
+    color: var(--admin-text-primary);
+}
+
+body.redesign .sp-list-card:hover {
+    background: var(--admin-search-bg) !important;
+}
+
+body.redesign .sp-list-card h4,
+body.redesign .sp-list-card h5,
+body.redesign .sp-list-card h6 {
+    color: var(--admin-text-primary) !important;
+}
+
+body.redesign .sp-list-card .text-muted,
+body.redesign .sp-list-card small,
+body.redesign .sp-list-card .small {
+    color: var(--admin-text-secondary) !important;
+}
+
+.login-toast-region .btn-close {
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.55;
+}
+
+[data-theme="dark"] .login-toast-region .alert {
+    background: #1a120c;
+    color: #fff8ef;
+    border-color: rgba(240, 207, 156, 0.4);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes loginToastFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    10%,
+    78% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+@media (max-width: 1180px) {
+    body.admin-portal main#main-content.container-fluid {
+        padding: 22px 36px 60px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.admin-portal main#main-content.container-fluid {
+        padding: 18px 20px 48px !important;
+    }
+}
+
+/* ---- Clickable class card (Consumer portal) ---- */
+.cc-class-card-bookable:hover {
+    border-color: var(--admin-brand-icon) !important;
+    box-shadow: 0 2px 10px rgba(192, 135, 58, 0.14);
+}
+
+/* ---- Profile dropdown (admin + portal navbars) ---- */
+.admin-header-actions .dropdown > button {
+    cursor: pointer;
+    color: inherit;
+    line-height: 1;
+}
+.admin-header-actions .dropdown > button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+.admin-header-actions .dropdown-menu {
+    min-width: 180px;
+    padding: 6px 0;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+.admin-header-actions .dropdown-item-text {
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    color: inherit;
+    opacity: 0.7;
+}
+.admin-header-actions .dropdown-item.text-danger {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    padding: 7px 16px;
+}
+.admin-header-actions .dropdown-item.text-danger:hover,
+.admin-header-actions .dropdown-item.text-danger:focus {
+    background-color: rgba(220, 53, 69, 0.08);
+    color: #c0392b !important;
 }

@@ -12,7 +12,7 @@ class CoursesFixture extends TestFixture
         $this->records = [
             [
                 'course_id' => 1,
-                'course_name' => 'Beginner Pottery',
+                'course_name' => 'Introduction to Pottery',
                 'course_type' => 'pottery',
                 'course_level' => 'beginner',
                 'course_price' => 50.00,

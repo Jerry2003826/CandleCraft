@@ -9,9 +9,9 @@
 ?>
 Hello <?= $recipient_name ?: 'there' ?>,
 
-<?= $sent_by_name ?: 'CandleCraft Academy' ?> has replied to your enquiry.
+Thank you for contacting CandleCraft Academy. <?= $sent_by_name ?: 'CandleCraft Academy' ?> has replied to your enquiry.
 
-Reply:
+Our response:
 <?= $reply_message ?>
 
 Your original enquiry:

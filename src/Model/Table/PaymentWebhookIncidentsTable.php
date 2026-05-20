@@ -8,6 +8,11 @@ use Cake\Validation\Validator;
 
 class PaymentWebhookIncidentsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -40,6 +45,11 @@ class PaymentWebhookIncidentsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -104,5 +114,4 @@ class PaymentWebhookIncidentsTable extends Table
 
         return $validator;
     }
-
 }

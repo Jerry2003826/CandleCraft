@@ -41,7 +41,7 @@ class DeploymentScriptsTest extends TestCase
             escapeshellarg('deployuser'),
             escapeshellarg('package-only.local'),
             escapeshellarg('deployuser'),
-            escapeshellarg('shared-db-password')
+            escapeshellarg('shared-db-password'),
         ));
 
         foreach (['dev', 'production', 'review'] as $environment) {
@@ -76,7 +76,7 @@ class DeploymentScriptsTest extends TestCase
                 escapeshellarg('deployuser'),
                 escapeshellarg('package-only.local'),
                 escapeshellarg('deployuser'),
-                escapeshellarg($password)
+                escapeshellarg($password),
             ));
 
             foreach (['dev', 'production', 'review'] as $environment) {
@@ -99,7 +99,7 @@ class DeploymentScriptsTest extends TestCase
             escapeshellarg('deployuser'),
             escapeshellarg('package-only.local'),
             escapeshellarg('deployuser'),
-            escapeshellarg('shared-db-password')
+            escapeshellarg('shared-db-password'),
         ));
 
         $this->assertNotSame(0, $exitCode);
@@ -120,7 +120,7 @@ class DeploymentScriptsTest extends TestCase
             escapeshellarg($outputDir),
             escapeshellarg('dev-secret'),
             escapeshellarg('prod-secret'),
-            escapeshellarg('review-secret')
+            escapeshellarg('review-secret'),
         ));
 
         foreach (['dev', 'production', 'review'] as $environment) {
@@ -141,8 +141,8 @@ class DeploymentScriptsTest extends TestCase
         $this->assertStringContainsString('seed_admin.sql', $databaseReadme);
         $this->assertStringNotContainsString('schema.sql', $databaseReadme);
         $this->assertStringContainsString('config/app_local.template.php', $deploymentReadme);
-        $this->assertStringContainsString("/home/cpaneluser/dev_app/storage/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
-        $this->assertStringContainsString("/resources", (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
+        $this->assertStringContainsString('/home/cpaneluser/dev_app/storage/resources', (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
+        $this->assertStringContainsString('/resources', (string)file_get_contents($outputDir . '/dev_app/config/app_local.template.php'));
         $this->assertStringContainsString('Require all denied', (string)file_get_contents($outputDir . '/public_html_dev/uploads/resources/.htaccess'));
     }
 
@@ -168,7 +168,7 @@ class DeploymentScriptsTest extends TestCase
                 escapeshellarg($outputDir),
                 escapeshellarg($password),
                 escapeshellarg($password),
-                escapeshellarg($password)
+                escapeshellarg($password),
             ));
 
             foreach (['dev', 'production', 'review'] as $environment) {

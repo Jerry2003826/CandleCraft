@@ -8,9 +8,39 @@ use App\Mailer\PortalAccountMailer;
 use Cake\I18n\DateTime;
 use Cake\Routing\Router;
 use RuntimeException;
+use Throwable;
 
 class MessagesController extends AppController
 {
+    private const DEFAULT_PORTAL_PASSWORD = 'FIT3047185';
+
+    /**
+     * Prefix a raw application-relative path (e.g. "/admin/messages") with the
+     * current request's webroot, so it works in subdirectory deployments such
+     * as production at https://host/production/. Returns the path unchanged
+     * for absolute URLs (with a scheme) and for empty values.
+     */
+    private function withWebrootPrefix(string $path): string
+    {
+        if ($path === '' || preg_match('#^https?://#i', $path) === 1) {
+            return $path;
+        }
+
+        $webroot = (string)($this->request->getAttribute('webroot') ?? '/');
+        $prefix = rtrim($webroot, '/');
+        $normalized = '/' . ltrim($path, '/');
+
+        // Avoid double-prefixing if the caller already included the webroot.
+        if ($prefix !== '' && str_starts_with($normalized, $prefix . '/')) {
+            return $normalized;
+        }
+
+        return $prefix . $normalized;
+    }
+
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $messagesTable = $this->fetchTable('Messages');
@@ -29,6 +59,11 @@ class MessagesController extends AppController
         $this->set(compact('messages', 'status'));
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $id Id.
+     */
     public function view(?string $id = null): void
     {
         $messagesTable = $this->fetchTable('Messages');
@@ -49,7 +84,7 @@ class MessagesController extends AppController
             }
         }
 
-        if ($message->message_status === 'unread') {
+        if ($message->message_status === 'unread' && !$this->request->getQuery('keep_unread')) {
             $message->message_status = 'read';
             $messagesTable->save($message);
         }
@@ -63,6 +98,12 @@ class MessagesController extends AppController
         $this->set(compact('message', 'replies', 'requestMeta', 'existingUser', 'linkedStudent'));
     }
 
+    /**
+     * Create account.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function createAccount(?string $id = null)
     {
         $messagesTable = $this->fetchTable('Messages');
@@ -70,7 +111,9 @@ class MessagesController extends AppController
         $requestMeta = $this->extractAccountRequestMeta($message);
 
         if (!$requestMeta['is_account_request']) {
-            $this->Flash->error(__('This message is not an account request.'));
+            $this->Flash->error(__(
+                'This message is not an account request.',
+            ));
 
             return $this->redirect(['action' => 'view', $id]);
         }
@@ -92,7 +135,7 @@ class MessagesController extends AppController
                 (string)$message->sender_name,
             ),
             'email' => (string)$message->sender_email,
-            'password' => '',
+            'password' => self::DEFAULT_PORTAL_PASSWORD,
             'account_status' => 'active',
             'profile_name' => (string)$message->sender_name,
             'phone_number' => (string)$message->sender_phone,
@@ -131,9 +174,13 @@ class MessagesController extends AppController
             $account['medical_notes'] = trim((string)($account['medical_notes'] ?? ''));
             $account['specialization'] = trim((string)($account['specialization'] ?? ''));
             $account['declared_age'] = $this->normaliseDeclaredAge($account['declared_age'] ?? null);
+            $account['password'] = self::DEFAULT_PORTAL_PASSWORD;
 
             if ($existingUser) {
-                $this->Flash->error(__('An account already exists for {0}.', $existingUser->email));
+                $this->Flash->error(__(
+                    'An account already exists for {0}.',
+                    $existingUser->email,
+                ));
             } else {
                 try {
                     $createdAccount = $this->createRequestedAccount($account);
@@ -145,11 +192,17 @@ class MessagesController extends AppController
                             recipientName: (string)$account['profile_name'],
                             recipientEmail: (string)$account['email'],
                             loginEmail: (string)$account['email'],
-                            temporaryPassword: (string)$account['password'],
+                            temporaryPassword: self::DEFAULT_PORTAL_PASSWORD,
+                            changePasswordUrl: Router::url([
+                                'prefix' => false,
+                                'controller' => 'Users',
+                                'action' => 'resetPassword',
+                                $createdAccount['password_reset_token'],
+                            ], true),
                             declaredAge: $account['declared_age'],
                         );
                         $emailSent = true;
-                    } catch (\Throwable $mailException) {
+                    } catch (Throwable $mailException) {
                         $mailFailureMessage = $mailException->getMessage();
                     }
 
@@ -157,12 +210,15 @@ class MessagesController extends AppController
                     $messagesTable->save($message);
 
                     if ($emailSent) {
-                        $this->Flash->success(__('Account created for {0} and the login email has been sent.', $account['email']));
+                        $this->Flash->success(__(
+                            'Account created for {0} and the login email has been sent.',
+                            $account['email'],
+                        ));
                     } else {
                         $this->Flash->warning(__(
                             'Account created for {0}, but the email could not be sent automatically. Temporary password: {1}. {2}',
                             $account['email'],
-                            (string)$account['password'],
+                            self::DEFAULT_PORTAL_PASSWORD,
                             $mailFailureMessage ?: 'Please share the credentials manually or configure email delivery.',
                         ));
                     }
@@ -193,12 +249,20 @@ class MessagesController extends AppController
             'accountStatusOptions',
             'profileStatusOptions',
         ));
+        $this->set('defaultPortalPassword', self::DEFAULT_PORTAL_PASSWORD);
     }
 
+    /**
+     * Reply.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function reply(?string $id = null)
     {
         $messagesTable = $this->fetchTable('Messages');
         $originalMessage = $messagesTable->get($id, contain: ['SenderUsers']);
+        $replySubject = $this->buildReplySubject((string)$originalMessage->subject);
 
         if ($originalMessage->message_status === 'unread') {
             $originalMessage->message_status = 'read';
@@ -211,7 +275,9 @@ class MessagesController extends AppController
             $recipientName = trim((string)($originalMessage->sender_name ?? ''));
 
             if ($recipientEmail === '') {
-                $this->Flash->error(__('This enquiry does not include an external email address.'));
+                $this->Flash->error(__(
+                    'This enquiry does not include an external email address.',
+                ));
 
                 return $this->redirect(['action' => 'view', $id]);
             }
@@ -222,7 +288,7 @@ class MessagesController extends AppController
                 'parent_message_id' => $originalMessage->message_id,
                 'recipient_name' => $recipientName,
                 'recipient_email' => $recipientEmail,
-                'subject' => 'Re: ' . $originalMessage->subject,
+                'subject' => $replySubject,
                 'message_text' => trim((string)$this->request->getData('message_text')),
                 'message_type' => 'email_reply',
                 'message_status' => 'read',
@@ -251,10 +317,19 @@ class MessagesController extends AppController
                     $originalMessage->message_status = 'replied';
                     $messagesTable->save($originalMessage);
 
-                    $this->Flash->success(__('Reply sent successfully to {0}.', $recipientEmail));
+                    $this->Flash->success(__(
+                        'Reply sent successfully to {0}.',
+                        $recipientEmail,
+                    ));
 
-                    return $this->redirect(['action' => 'view', $id]);
-                } catch (\Throwable $mailException) {
+                    $postedReturnUrl = (string)($this->request->getData('return_url') ?? '');
+
+                    return $this->redirect(
+                        $postedReturnUrl !== ''
+                            ? $this->withWebrootPrefix($postedReturnUrl)
+                            : ['action' => 'view', $id],
+                    );
+                } catch (Throwable $mailException) {
                     $reply->delivery_status = 'failed';
                     $messagesTable->save($reply);
 
@@ -265,17 +340,70 @@ class MessagesController extends AppController
 
                     $this->Flash->warning(__(
                         'The enquiry reply was saved, but the email could not be delivered automatically. {0}',
-                        $mailException->getMessage()
+                        $mailException->getMessage(),
                     ));
                 }
             } else {
-                $this->Flash->error(__('Failed to save the enquiry reply. Please try again.'));
+                $this->Flash->error(__(
+                    'Failed to save the enquiry reply. Please try again.',
+                ));
             }
         }
 
-        $this->set(compact('originalMessage'));
+        $this->set(compact('originalMessage', 'replySubject'));
     }
 
+    /**
+     * Mark unread.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
+    public function markUnread(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        $messagesTable = $this->fetchTable('Messages');
+        $message = $messagesTable->get($id);
+
+        if ($message->message_status === 'archived') {
+            $this->Flash->warning(__(
+                'Archived enquiries cannot be marked as unread.',
+            ));
+
+            return $this->redirect($this->referer(['action' => 'view', $id], true));
+        }
+
+        $message->message_status = 'unread';
+        if ($messagesTable->save($message)) {
+            $this->Flash->success(__(
+                'The enquiry has been marked as unread.',
+            ));
+        } else {
+            $this->Flash->error(__(
+                'The enquiry could not be marked as unread. Please try again.',
+            ));
+        }
+
+        $returnUrl = (string)($this->request->getQuery('return_url') ?? '');
+        if ($returnUrl !== '' && $this->request->getQuery('redirect') === 'return_url') {
+            return $this->redirect($this->withWebrootPrefix($returnUrl));
+        }
+
+        $query = ['keep_unread' => 1];
+        if ($returnUrl !== '') {
+            $query['return_url'] = $returnUrl;
+        }
+
+        return $this->redirect(['action' => 'view', $id, '?' => $query]);
+    }
+
+    /**
+     * Delete.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
@@ -284,20 +412,32 @@ class MessagesController extends AppController
         $message = $messagesTable->get($id);
 
         if ($message->message_status !== 'archived') {
-            $this->Flash->warning(__('Please archive the enquiry before deleting it permanently.'));
+            $this->Flash->warning(__(
+                'Please archive the enquiry before deleting it permanently.',
+            ));
 
             return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
 
         if ($messagesTable->delete($message)) {
-            $this->Flash->success(__('The enquiry has been deleted.'));
+            $this->Flash->success(__(
+                'The enquiry has been deleted.',
+            ));
         } else {
-            $this->Flash->error(__('The enquiry could not be deleted. Please try again.'));
+            $this->Flash->error(__(
+                'The enquiry could not be deleted. Please try again.',
+            ));
         }
 
-        return $this->redirect(['action' => 'index']);
+        return $this->redirect($this->referer(['action' => 'index', '?' => ['status' => 'archived']], true));
     }
 
+    /**
+     * Archive.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function archive(?string $id = null)
     {
         $this->request->allowMethod(['post']);
@@ -306,21 +446,33 @@ class MessagesController extends AppController
         $message = $messagesTable->get($id);
 
         if ($message->message_status === 'archived') {
-            $this->Flash->info(__('This enquiry is already archived.'));
+            $this->Flash->info(__(
+                'This enquiry is already archived.',
+            ));
 
             return $this->redirect($this->referer(['action' => 'index', '?' => ['status' => 'archived']], true));
         }
 
         $message->message_status = 'archived';
         if ($messagesTable->save($message)) {
-            $this->Flash->success(__('The enquiry has been archived.'));
+            $this->Flash->success(__(
+                'The enquiry has been archived.',
+            ));
         } else {
-            $this->Flash->error(__('The enquiry could not be archived. Please try again.'));
+            $this->Flash->error(__(
+                'The enquiry could not be archived. Please try again.',
+            ));
         }
 
         return $this->redirect($this->referer(['action' => 'index'], true));
     }
 
+    /**
+     * Restore.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function restore(?string $id = null)
     {
         $this->request->allowMethod(['post']);
@@ -329,21 +481,32 @@ class MessagesController extends AppController
         $message = $messagesTable->get($id);
 
         if ($message->message_status !== 'archived') {
-            $this->Flash->info(__('Only archived enquiries can be restored.'));
+            $this->Flash->info(__(
+                'Only archived enquiries can be restored.',
+            ));
 
             return $this->redirect($this->referer(['action' => 'index'], true));
         }
 
         $message->message_status = 'read';
         if ($messagesTable->save($message)) {
-            $this->Flash->success(__('The enquiry has been restored to the inbox.'));
+            $this->Flash->success(__(
+                'The enquiry has been restored to the inbox.',
+            ));
         } else {
-            $this->Flash->error(__('The enquiry could not be restored. Please try again.'));
+            $this->Flash->error(__(
+                'The enquiry could not be restored. Please try again.',
+            ));
         }
 
         return $this->redirect($this->referer(['action' => 'index'], true));
     }
 
+    /**
+     * Extract account request meta.
+     *
+     * @param mixed $message Message.
+     */
     private function extractAccountRequestMeta(object $message): array
     {
         $messageText = (string)($message->message_text ?? '');
@@ -362,6 +525,9 @@ class MessagesController extends AppController
                 '/^\[LEGACY PROFILE TYPE:\s*[^\]]+\]\s*$/mi',
                 '/^\[SELF DECLARED 18\+:\s*[^\]]+\]\s*$/mi',
                 '/^\[DECLARED AGE:\s*[^\]]+\]\s*$/mi',
+                '/^\[STUDENT_NAME:\s*[^\]]+\]\s*$/mi',
+                '/^\[STUDENT_DOB:\s*[^\]]+\]\s*$/mi',
+                '/^\[CLASS_TYPE:\s*[^\]]+\]\s*$/mi',
             ],
             '',
             $messageText,
@@ -385,6 +551,12 @@ class MessagesController extends AppController
         ];
     }
 
+    /**
+     * Extract tagged value.
+     *
+     * @param mixed $messageText Messagetext.
+     * @param mixed $label Label.
+     */
     private function extractTaggedValue(string $messageText, string $label): ?string
     {
         $pattern = '/^\[' . preg_quote($label, '/') . ':\s*([^\]]+)\]\s*$/mi';
@@ -395,6 +567,11 @@ class MessagesController extends AppController
         return null;
     }
 
+    /**
+     * Normalise declared age.
+     *
+     * @param mixed $declaredAge Declaredage.
+     */
     private function normaliseDeclaredAge(mixed $declaredAge): ?int
     {
         if ($declaredAge === null || $declaredAge === '') {
@@ -412,6 +589,12 @@ class MessagesController extends AppController
         return null;
     }
 
+    /**
+     * Build suggested username.
+     *
+     * @param mixed $email Email.
+     * @param mixed $name Name.
+     */
     private function buildSuggestedUsername(string $email, string $name): string
     {
         $usersTable = $this->fetchTable('Users');
@@ -445,15 +628,23 @@ class MessagesController extends AppController
         return $candidate;
     }
 
+    /**
+     * Create requested account.
+     *
+     * @param mixed $account Account.
+     */
     private function createRequestedAccount(array $account): array
     {
         $role = (string)($account['user_role'] ?? '');
         if (!in_array($role, ['student', 'teacher'], true)) {
-            throw new RuntimeException(__('Please choose a valid account type.'));
+            throw new RuntimeException(
+                __('Please choose a valid account type.'),
+            );
         }
 
         $usersTable = $this->fetchTable('Users');
         $connection = $usersTable->getConnection();
+        $passwordResetToken = bin2hex(random_bytes(32));
         $connection->begin();
 
         try {
@@ -466,6 +657,8 @@ class MessagesController extends AppController
                     'account_status' => $account['account_status'] ?? 'active',
                     'age_verified_by_admin' => false,
                     'self_declared_adult' => (bool)($account['self_declared_adult'] ?? false),
+                    'reset_token' => $passwordResetToken,
+                    'reset_token_expires' => new DateTime('+7 days'),
                 ],
                 [
                     'accessibleFields' => [
@@ -473,17 +666,25 @@ class MessagesController extends AppController
                         'account_status' => true,
                         'age_verified_by_admin' => true,
                         'self_declared_adult' => true,
+                        'reset_token' => true,
+                        'reset_token_expires' => true,
                     ],
                 ],
             );
 
             if ($user->hasErrors()) {
-                throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'The user account details are invalid.'));
+                throw new RuntimeException($this->extractFirstValidationError(
+                    $user->getErrors(),
+                    'The user account details are invalid.',
+                ));
             }
 
             $savedUser = $usersTable->save($user);
             if (!$savedUser) {
-                throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'The user account could not be saved.'));
+                throw new RuntimeException($this->extractFirstValidationError(
+                    $user->getErrors(),
+                    'The user account could not be saved.',
+                ));
             }
 
             if ($role === 'student') {
@@ -509,11 +710,17 @@ class MessagesController extends AppController
             }
 
             if ($profile->hasErrors()) {
-                throw new RuntimeException($this->extractFirstValidationError($profile->getErrors(), 'The profile details are invalid.'));
+                throw new RuntimeException($this->extractFirstValidationError(
+                    $profile->getErrors(),
+                    'The profile details are invalid.',
+                ));
             }
 
             if (!$profileTable->save($profile)) {
-                throw new RuntimeException($this->extractFirstValidationError($profile->getErrors(), 'The profile could not be saved.'));
+                throw new RuntimeException($this->extractFirstValidationError(
+                    $profile->getErrors(),
+                    'The profile could not be saved.',
+                ));
             }
 
             $connection->commit();
@@ -522,27 +729,43 @@ class MessagesController extends AppController
                 'role' => $role,
                 'user' => $savedUser,
                 'profile' => $profile,
+                'password_reset_token' => $passwordResetToken,
             ];
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $connection->rollback();
 
             if ($exception instanceof RuntimeException) {
                 throw $exception;
             }
 
-            throw new RuntimeException('The account could not be created. Please try again.');
+            throw new RuntimeException(
+                'The account could not be created. Please try again.',
+            );
         }
     }
 
+    /**
+     * Send portal credentials email.
+     *
+     * @param mixed $recipientName Recipientname.
+     * @param mixed $recipientEmail Recipientemail.
+     * @param mixed $loginEmail Loginemail.
+     * @param mixed $temporaryPassword Temporarypassword.
+     * @param mixed $changePasswordUrl Changepasswordurl.
+     * @param mixed $declaredAge Declaredage.
+     */
     private function sendPortalCredentialsEmail(
         string $recipientName,
         string $recipientEmail,
         string $loginEmail,
         string $temporaryPassword,
+        string $changePasswordUrl,
         ?int $declaredAge,
     ): void {
         if ($recipientEmail === '') {
-            throw new RuntimeException('No requester email address is available for delivery.');
+            throw new RuntimeException(
+                'No requester email address is available for delivery.',
+            );
         }
 
         $mailer = new PortalAccountMailer('default');
@@ -551,6 +774,7 @@ class MessagesController extends AppController
             'recipient_email' => $recipientEmail,
             'login_email' => $loginEmail,
             'temporary_password' => $temporaryPassword,
+            'change_password_url' => $changePasswordUrl,
             'login_url' => Router::url([
                 'prefix' => false,
                 'controller' => 'Users',
@@ -560,6 +784,17 @@ class MessagesController extends AppController
         ]]);
     }
 
+    /**
+     * Send enquiry reply email.
+     *
+     * @param mixed $recipientName Recipientname.
+     * @param mixed $recipientEmail Recipientemail.
+     * @param mixed $subject Subject.
+     * @param mixed $replyMessage Replymessage.
+     * @param mixed $originalSubject Originalsubject.
+     * @param mixed $originalMessage Originalmessage.
+     * @param mixed $sentByName Sentbyname.
+     */
     private function sendEnquiryReplyEmail(
         string $recipientName,
         string $recipientEmail,
@@ -581,6 +816,27 @@ class MessagesController extends AppController
         ]]);
     }
 
+    /**
+     * Build reply subject.
+     *
+     * @param mixed $subject Subject.
+     */
+    private function buildReplySubject(string $subject): string
+    {
+        $subject = trim($subject);
+        if ($subject === '') {
+            $subject = 'Enquiry';
+        }
+
+        return preg_match('/^re:/i', $subject) === 1 ? $subject : 'Re: ' . $subject;
+    }
+
+    /**
+     * Extract first validation error.
+     *
+     * @param mixed $errors Errors.
+     * @param mixed $fallback Fallback.
+     */
     private function extractFirstValidationError(array $errors, string $fallback): string
     {
         foreach ($errors as $fieldErrors) {

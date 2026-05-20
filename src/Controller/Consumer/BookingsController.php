@@ -4,11 +4,14 @@ declare(strict_types=1);
 namespace App\Controller\Consumer;
 
 use App\Service\BookingCancellationService;
+use App\Service\BookingConfirmationEmailService;
+use App\Service\BookingEnrollmentStateService;
 use App\Service\BookingService;
-use Cake\I18n\DateTime;
 use Cake\Http\Response;
+use Cake\I18n\DateTime;
 use Cake\Log\Log;
 use RuntimeException;
+use Throwable;
 
 class BookingsController extends AppController
 {
@@ -49,7 +52,6 @@ class BookingsController extends AppController
     {
         $identity = $this->Authentication->getIdentity();
         $classesTable = $this->fetchTable('Classes');
-        $bookingsTable = $this->fetchTable('Bookings');
 
         $class = $classesTable->find()
             ->contain(['Courses', 'Teachers'])
@@ -59,25 +61,30 @@ class BookingsController extends AppController
             ])
             ->firstOrFail();
 
-        $bookingsCount = $bookingsTable->find()
-            ->where([
-                'Bookings.class_id' => $classId,
-                'Bookings.booking_status IN' => ['pending', 'confirmed'],
-            ])
-            ->count();
+        $bookingsCount = (new BookingEnrollmentStateService())->countBlockingBookingsForClass((int)$classId);
         $availableSlots = $class->capacity - $bookingsCount;
 
         // Best-effort display check only; BookingService applies the canonical capacity guard on POST.
         if (!$this->request->is('post') && $availableSlots <= 0) {
-            $this->Flash->error(__('This class is fully booked.'));
+            $this->Flash->error(__(
+                'This class is fully booked.',
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']);
         }
 
-        return $this->addAsStudent($identity, $class, $classId, $availableSlots, $bookingsTable);
+        return $this->addAsStudent($identity, $class, $classId, $availableSlots);
     }
 
-    private function addAsStudent($identity, $class, int $classId, int $availableSlots, $bookingsTable): ?Response
+    /**
+     * Add as student.
+     *
+     * @param mixed $identity Identity.
+     * @param mixed $class Class.
+     * @param mixed $classId Classid.
+     * @param mixed $availableSlots Availableslots.
+     */
+    private function addAsStudent(mixed $identity, mixed $class, int $classId, int $availableSlots): ?Response
     {
         $student = $this->getStudentEntity($identity);
 
@@ -96,7 +103,16 @@ class BookingsController extends AppController
         return null;
     }
 
-    private function processBooking(int $classId, int $studentId, ?int $parentId, $class, $identity): ?Response
+    /**
+     * Process booking.
+     *
+     * @param mixed $classId Classid.
+     * @param mixed $studentId Studentid.
+     * @param mixed $parentId Parentid.
+     * @param mixed $class Class.
+     * @param mixed $identity Identity.
+     */
+    private function processBooking(int $classId, int $studentId, ?int $parentId, mixed $class, mixed $identity): ?Response
     {
         try {
             $result = (new BookingService())->createBookingForStudent($classId, $studentId, $parentId);
@@ -112,7 +128,7 @@ class BookingsController extends AppController
                     $className,
                     $schedule,
                 );
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 Log::warning('Booking confirmation notification failed.', [
                     'booking_id' => $booking->booking_id ?? null,
                     'student_id' => $studentId,
@@ -120,11 +136,16 @@ class BookingsController extends AppController
                     'error' => $exception->getMessage(),
                 ]);
             }
+            $this->sendBookingConfirmationEmail((int)$booking->booking_id, 'Consumer');
 
             if (!empty($result['reactivated'])) {
-                $this->Flash->success(__('Previous cancelled booking has been reactivated. Continue to payment to confirm it.'));
+                $this->Flash->success(__(
+                    'Previous cancelled booking has been reactivated. Continue to payment to confirm it.',
+                ));
             } else {
-                $this->Flash->success(__('Your class has been reserved temporarily. Complete payment to confirm the booking.'));
+                $this->Flash->success(__(
+                    'Your class has been reserved temporarily. Complete payment to confirm the booking.',
+                ));
             }
 
             return $this->redirect([
@@ -133,13 +154,20 @@ class BookingsController extends AppController
                 'action' => 'process',
                 $booking->booking_id,
             ]);
-        } catch (\RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
         }
 
         return null;
     }
 
+    /**
+     * Cancel.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function cancel(?int $bookingId = null): ?Response
     {
         $this->request->allowMethod(['post']);
@@ -157,9 +185,13 @@ class BookingsController extends AppController
             (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
                 'portal_source' => 'consumer_portal',
             ]);
-            $this->Flash->success(__('Booking has been cancelled.'));
+            $this->Flash->success(__(
+                'Booking has been cancelled.',
+            ));
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
@@ -167,14 +199,27 @@ class BookingsController extends AppController
 
     // --- Helper methods ---
 
-    private function getStudentEntity($identity)
+    /**
+     * Get student entity.
+     *
+     * @param mixed $identity Identity.
+     * @return mixed
+     */
+    private function getStudentEntity(mixed $identity)
     {
         return $this->fetchTable('Students')->find()
             ->where(['Students.user_id' => $identity->get('user_id')])
             ->firstOrFail();
     }
 
-    private function buildCalendarEvents($bookings, $weekStart, $weekEnd): array
+    /**
+     * Build calendar events.
+     *
+     * @param mixed $bookings Bookings.
+     * @param mixed $weekStart Weekstart.
+     * @param mixed $weekEnd Weekend.
+     */
+    private function buildCalendarEvents(mixed $bookings, mixed $weekStart, mixed $weekEnd): array
     {
         $eventColors = ['#1a73e8', '#0b8043', '#8e24aa', '#d81b60', '#e37400', '#039be5', '#616161', '#c0ca33'];
         $courseColorMap = [];
@@ -204,7 +249,7 @@ class BookingsController extends AppController
             }
 
             $calendarEvents[] = [
-                'day_index' => (int)$start->format('w'),
+                'full_date' => $dateStr,
                 'start_hour' => (int)$start->format('G'),
                 'start_minute' => (int)$start->format('i'),
                 'end_hour' => (int)$end->format('G'),
@@ -212,9 +257,6 @@ class BookingsController extends AppController
                 'title' => $b->class_entity?->course?->course_name ?? 'Class',
                 'class_code' => $b->class_entity?->class_code ?? '',
                 'location' => $b->class_entity?->location ?? '',
-                'student_name' => $b->student?->student_name ?? '',
-                'attendance_status' => $b->attendance_record?->attendance_status ?? '',
-                'reminder_sent_at' => $b->reminder_sent_at,
                 'color' => $courseColorMap[$courseId],
                 'booking_id' => $b->booking_id,
             ];
@@ -223,6 +265,11 @@ class BookingsController extends AppController
         return $calendarEvents;
     }
 
+    /**
+     * Resolve week reference.
+     *
+     * @param mixed $weekStartParam Weekstartparam.
+     */
     private function resolveWeekReference(mixed $weekStartParam): DateTime
     {
         if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
@@ -231,8 +278,24 @@ class BookingsController extends AppController
 
         try {
             return new DateTime($weekStartParam);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return new DateTime('now');
         }
+    }
+
+    /**
+     * Send booking confirmation email.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $portalPrefix Portalprefix.
+     */
+    private function sendBookingConfirmationEmail(int $bookingId, string $portalPrefix): void
+    {
+        $identity = $this->Authentication->getIdentity();
+        (new BookingConfirmationEmailService())->sendForBooking($bookingId, [
+            'portal_prefix' => $portalPrefix,
+            'recipient_email' => (string)($identity?->get('email') ?? ''),
+            'recipient_name' => (string)($identity?->get('username') ?? ''),
+        ]);
     }
 }

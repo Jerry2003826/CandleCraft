@@ -9,11 +9,17 @@ $this->assign('title', 'Browse Courses');
 <?php foreach ($courseData as $item):
     $course = $item['course'];
     $classes = $item['classes'];
+    $courseBooked = !empty($item['booked_by_current_customer']);
 ?>
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="mb-1"><?= h($course->course_name) ?></h5>
+            <h5 class="mb-1">
+                <?= h($course->course_name) ?>
+                <?php if ($courseBooked): ?>
+                    <span class="badge text-bg-success ms-2">已订购</span>
+                <?php endif; ?>
+            </h5>
             <small class="text-muted">
                 <?= h(ucfirst($course->course_type)) ?>
                 &middot;
@@ -32,7 +38,7 @@ $this->assign('title', 'Browse Courses');
 
     <?php if (empty($classes)): ?>
         <div class="text-center py-4 text-muted">
-            <p class="mb-0">No upcoming classes available for this course.</p>
+            <p class="mb-0">No upcoming classes for this course.</p>
         </div>
     <?php else: ?>
         <div class="card-body">
@@ -44,11 +50,6 @@ $this->assign('title', 'Browse Courses');
                                 <p class="portal-class-card__eyebrow"><?= h($class->class_code) ?></p>
                                 <h3><?= $class->start_datetime ? $class->start_datetime->format('D j M Y') : 'Date TBA' ?></h3>
                             </div>
-                            <?php if ($class->available_slots <= 0): ?>
-                                <span class="badge badge-cancelled">Full</span>
-                            <?php else: ?>
-                                <span class="badge badge-confirmed"><?= h((string)$class->available_slots) ?> spot<?= $class->available_slots !== 1 ? 's' : '' ?> left</span>
-                            <?php endif; ?>
                         </div>
                         <div class="portal-class-card__meta">
                             <span><i class="bi bi-clock me-1"></i><?= $class->start_datetime ? $class->start_datetime->format('g:ia') : '' ?><?= $class->end_datetime ? ' – ' . $class->end_datetime->format('g:ia') : '' ?></span>
@@ -61,12 +62,16 @@ $this->assign('title', 'Browse Courses');
                                 <strong>$<?= number_format((float)$course->course_price, 2) ?></strong>
                             </div>
                             <div>
-                                <?php if ($class->available_slots > 0): ?>
-                                    <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>" class="btn btn-sm btn-primary">
+                                <?php if (!empty($class->booked_by_current_customer)): ?>
+                                    <span class="btn btn-sm btn-outline-success disabled">
+                                        <i class="bi bi-check-circle me-1"></i> 已订购
+                                    </span>
+                                <?php elseif ($class->available_slots > 0): ?>
+                                    <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>" class="btn btn-sm btn-primary stretched-link">
                                         <i class="bi bi-plus-circle me-1"></i> Book Now
                                     </a>
                                 <?php else: ?>
-                                    <button class="btn btn-sm btn-outline-secondary" disabled>Full</button>
+                                    <button class="btn btn-sm btn-outline-secondary" disabled>Unavailable</button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -81,6 +86,6 @@ $this->assign('title', 'Browse Courses');
 <?php if (empty($courseData)): ?>
     <div class="text-center py-5 text-muted">
         <i class="bi bi-palette" style="font-size: 48px;"></i>
-        <p class="mt-3">No courses available at the moment. Please check back soon.</p>
+        <p class="mt-3">No courses are ready at the moment. Please check back soon.</p>
     </div>
 <?php endif; ?>

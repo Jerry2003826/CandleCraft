@@ -13,11 +13,23 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class ConditionalCsrfProtectionMiddleware implements MiddlewareInterface
 {
+    /**
+     * Construct.
+     *
+     * @param mixed $csrfProtectionMiddleware Csrfprotectionmiddleware.
+     * @return mixed
+     */
     public function __construct(
         private readonly CsrfProtectionMiddleware $csrfProtectionMiddleware,
     ) {
     }
 
+    /**
+     * Process.
+     *
+     * @param mixed $request Request.
+     * @param mixed $handler Handler.
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (

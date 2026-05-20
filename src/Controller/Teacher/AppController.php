@@ -8,6 +8,11 @@ use Cake\Event\EventInterface;
 
 class AppController extends BaseAppController
 {
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -16,7 +21,7 @@ class AppController extends BaseAppController
         if (!$identity) {
             $this->shortCircuitRequest(
                 $event,
-                $this->rejectUnauthenticatedAccess('Please sign in with a teacher account to continue.')
+                $this->rejectUnauthenticatedAccess('Please sign in with a teacher account to continue.'),
             );
 
             return;
@@ -30,7 +35,7 @@ class AppController extends BaseAppController
         if ((string)$currentUser->get('user_role') !== 'teacher') {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a teacher account to continue.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a teacher account to continue.'),
             );
 
             return;
@@ -43,18 +48,25 @@ class AppController extends BaseAppController
             'welcome' => 'Teaching Hub',
             'nav' => [
                 [
+                    'label' => 'Dashboard',
+                    'icon' => 'bi bi-speedometer2',
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Dashboard', 'action' => 'index'],
+                    'controller' => 'Dashboard',
+                    'action' => 'index',
+                ],
+                [
                     'label' => 'View Schedule',
                     'icon' => 'bi bi-calendar-event',
-                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],
-                    'controller' => 'Availability',
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Schedule', 'action' => 'index'],
+                    'controller' => 'Schedule',
                     'action' => 'index',
                 ],
                 [
                     'label' => 'Manage Availability',
                     'icon' => 'bi bi-sliders',
-                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'edit'],
+                    'url' => ['prefix' => 'Teacher', 'controller' => 'Availability', 'action' => 'index'],
                     'controller' => 'Availability',
-                    'action' => 'edit',
+                    'action' => 'index',
                 ],
                 [
                     'label' => 'Manage Attendance',

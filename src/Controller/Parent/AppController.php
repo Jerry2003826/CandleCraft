@@ -14,6 +14,11 @@ class AppController extends BaseAppController
     protected bool $paymentAccessEnabled = false;
     protected bool $ageVerifiedByAdmin = false;
 
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -23,7 +28,7 @@ class AppController extends BaseAppController
         if (!$identity) {
             $this->shortCircuitRequest(
                 $event,
-                $this->rejectUnauthenticatedAccess('Please sign in with a parent account to continue.')
+                $this->rejectUnauthenticatedAccess('Please sign in with a parent account to continue.'),
             );
 
             return;
@@ -34,11 +39,13 @@ class AppController extends BaseAppController
             ->first();
 
         if (!$currentUser || (string)$currentUser->get('account_status') !== 'active') {
-            $this->Flash->error(__('Your account is no longer active. Please contact an administrator.'));
+            $this->Flash->error(__(
+                'Your account is no longer active. Please contact an administrator.',
+            ));
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']),
             );
 
             return;
@@ -49,7 +56,7 @@ class AppController extends BaseAppController
         if ((string)$currentUser->get('user_role') !== 'parent') {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a parent account to continue.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'Please sign in with a parent account to continue.'),
             );
 
             return;
@@ -61,11 +68,13 @@ class AppController extends BaseAppController
             ])
             ->first();
         if (!$parent) {
-            $this->Flash->error(__('Your parent profile could not be found. Please contact an administrator.'));
+            $this->Flash->error(__(
+                'Your parent profile could not be found. Please contact an administrator.',
+            ));
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']),
             );
 
             return;
@@ -102,12 +111,12 @@ class AppController extends BaseAppController
                     'action' => 'children',
                 ],
                 [
-                    'label' => 'View Schedule & Attendance',
+                    'label' => 'My Schedule',
                     'icon' => 'bi bi-calendar-event',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Bookings', 'action' => 'index'],
                     'controller' => 'Bookings',
                 ],
-                [
+                /*[
                     'label' => 'Learning Resources',
                     'icon' => 'bi bi-folder',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Resources', 'action' => 'index'],
@@ -118,7 +127,7 @@ class AppController extends BaseAppController
                     'icon' => 'bi bi-bell',
                     'url' => ['prefix' => 'Parent', 'controller' => 'Notifications', 'action' => 'index'],
                     'controller' => 'Notifications',
-                ],
+                ],*/
             ],
         ];
         if ($this->bookingAccessEnabled) {
@@ -143,6 +152,9 @@ class AppController extends BaseAppController
         $this->set('ageVerifiedByAdmin', $this->ageVerifiedByAdmin);
     }
 
+    /**
+     * Enforce age restrictions.
+     */
     private function enforceAgeRestrictions(): ?Response
     {
         $controller = $this->request->getParam('controller');
@@ -158,7 +170,11 @@ class AppController extends BaseAppController
         }
 
         if ($blocked) {
-            $this->Flash->warning(__('Your adult verification is still pending. You can manage linked students, schedules, and learning resources now. Booking and payment will unlock after an administrator confirms you are 18 or older.'));
+            $this->Flash->warning(__(
+                'Your adult verification is still pending. You can manage linked students, schedules, and' .
+                'learning resources now. Booking and payment will unlock after an administrator confirms' .
+                'you are 18 or older.',
+            ));
 
             return $this->redirect(['prefix' => 'Parent', 'controller' => 'Dashboard', 'action' => 'index']);
         }

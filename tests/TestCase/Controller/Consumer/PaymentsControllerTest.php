@@ -71,6 +71,7 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         Configure::delete('Payments.demo_mode');
         Configure::delete('Stripe.secret_key');
         Configure::delete('Stripe.webhook_secret');
+        Configure::delete('Stripe.environment');
 
         parent::tearDown();
     }
@@ -102,6 +103,23 @@ class PaymentsControllerTest extends AppIntegrationTestCase
 
         $this->assertSame('pending', $payment->payment_status);
         $this->assertSame('pending', $booking->booking_status);
+    }
+
+    public function testSuccessAcceptsSessionIdFromPathSegment(): void
+    {
+        $this->loginAsStudent();
+
+        // The new success_url passes the Stripe session id as a path
+        // segment (avoiding shared-host ModSecurity false positives on the
+        // long `cs_test_*` query parameter). The action must still accept
+        // it and route to the user's bookings index.
+        $this->get('/consumer/payments/success/cs_owned');
+
+        $this->assertResponseCode(302);
+        $this->assertRedirectContains('/consumer/bookings');
+
+        $payment = FactoryLocator::get('Table')->get('Payments')->get(1);
+        $this->assertSame('pending', $payment->payment_status);
     }
 
     public function testProcessFailsClosedWhenStripeIsMissing(): void
@@ -139,17 +157,88 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         $this->assertSame('cancelled', $booking->booking_status);
     }
 
-    public function testPaymentPortalOnlyOffersCardPaymentDetails(): void
+    public function testPaymentPortalDoesNotExposeSavedPaymentDetails(): void
     {
         $this->loginAsStudent();
 
         $this->get('/consumer/payments');
 
         $this->assertResponseOk();
-        $this->assertResponseContains('Card');
+        $this->assertResponseNotContains('Saved Details');
+        $this->assertResponseNotContains('Saved Payment Details');
+        $this->assertResponseNotContains('Add Card Billing Details');
+        $this->assertResponseNotContains('Save Details');
         $this->assertResponseNotContains('Bank Transfer');
         $this->assertResponseNotContains('Cash');
         $this->assertResponseNotContains('Other');
+    }
+
+    public function testPaymentPortalShowsRefundRequestForPaidPayment(): void
+    {
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'paid';
+        $payment->payment_date = '2026-04-11 10:00:00';
+        $payments->saveOrFail($payment);
+
+        $this->loginAsStudent();
+
+        $this->get('/consumer/payments');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('Request Refund');
+        $this->assertResponseContains('/consumer/payments/request-refund/1');
+    }
+
+    public function testStudentCanRequestRefundFromConsumerPortal(): void
+    {
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $bookings = FactoryLocator::get('Table')->get('Bookings');
+        $booking = $bookings->get(1);
+        $booking->booking_status = 'confirmed';
+        $bookings->saveOrFail($booking);
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(1);
+        $payment->payment_status = 'paid';
+        $payment->payment_date = '2026-04-11 10:00:00';
+        $payment->stripe_payment_intent_id = 'pi_customer_refund_request';
+        $payments->saveOrFail($payment);
+
+        $this->post('/consumer/payments/request-refund/1');
+
+        $this->assertRedirectContains('/consumer/payments');
+        $payment = $payments->get(1);
+        $this->assertSame('refund_required', $payment->payment_status);
+        $this->assertSame(0.0, (float)$payment->refunded_amount);
+        $this->assertStringContainsString('"refund_requested_by_customer":true', (string)$payment->notes);
+        $this->assertStringContainsString('"refund_request_portal":"consumer_portal"', (string)$payment->notes);
+    }
+
+    public function testStudentCannotRequestRefundForAnotherStudentsPayment(): void
+    {
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $payments = FactoryLocator::get('Table')->get('Payments');
+        $payment = $payments->get(2);
+        $payment->payment_status = 'paid';
+        $payments->saveOrFail($payment);
+
+        $this->post('/consumer/payments/request-refund/2');
+
+        $this->assertResponseCode(404);
+        $payment = $payments->get(2);
+        $this->assertSame('paid', $payment->payment_status);
     }
 
     public function testProcessStripeDoesNotRedirectWhenPaymentSaveFails(): void
@@ -247,7 +336,8 @@ class PaymentsControllerTest extends AppIntegrationTestCase
 
     public function testProcessFailsClosedWhenWebhookSecretIsMissing(): void
     {
-        Configure::write('Stripe.secret_key', 'sk_test_liveish');
+        Configure::write('Stripe.environment', 'live');
+        Configure::write('Stripe.secret_key', 'sk_live_liveish');
         Configure::write('Stripe.webhook_secret', null);
         Configure::write('Payments.demo_mode', false);
         $this->loginAsStudent();
@@ -263,6 +353,41 @@ class PaymentsControllerTest extends AppIntegrationTestCase
         $booking = FactoryLocator::get('Table')->get('Bookings')->get(1);
         $this->assertSame('pending', $payment->payment_status);
         $this->assertSame('pending', $booking->booking_status);
+    }
+
+    public function testStripeTestModeCanProceedWithoutWebhookSecretForDemo(): void
+    {
+        Configure::write('Payments.gateway_class', FakeStripeCheckoutGateway::class);
+        Configure::write('Stripe.environment', 'test');
+        Configure::write('Stripe.secret_key', 'sk_test_demo');
+        Configure::write('Stripe.webhook_secret', null);
+        Configure::write('Payments.demo_mode', false);
+        $bookingId = $this->insertBooking([
+            'class_id' => 2,
+            'student_id' => 1,
+            'parent_id' => null,
+            'booking_status' => 'pending',
+            'price_at_booking' => 65.00,
+            'booking_date' => '2026-04-10 12:00:00',
+            'created_at' => '2026-04-10 12:00:00',
+            'updated_at' => '2026-04-10 12:00:00',
+        ]);
+        $this->loginAsStudent();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+
+        $this->post('/consumer/payments/process/' . $bookingId);
+
+        $this->assertResponseCode(302);
+        $this->assertRedirect('https://checkout.stripe.test/cs_fake_default');
+
+        $payload = FakeStripeCheckoutGateway::$createdPayloads[0];
+        $this->assertStringContainsString(
+            '/consumer/payments/success/{CHECKOUT_SESSION_ID}',
+            $payload['success_url'],
+        );
+        $this->assertStringNotContainsString('%7BCHECKOUT_SESSION_ID%7D', $payload['success_url']);
+        $this->assertStringNotContainsString('?session_id=', $payload['success_url']);
     }
 
     public function testZeroAmountBookingDoesNotRedirectToStripe(): void

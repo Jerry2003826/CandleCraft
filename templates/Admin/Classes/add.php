@@ -11,9 +11,11 @@ $this->assign('title', 'Add Class');
 $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Classes
-</a>
+<div class="mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link" onclick="history.back(); return false;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
 <div class="admin-form-card">
     <div class="admin-form-header">
@@ -28,10 +30,21 @@ $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APO
             </p>
         </div>
         
+        <div class="admin-form-group">
+            <label for="class-name" class="admin-form-label">Class Name <span aria-hidden="true" style="color:#c0392b;">*</span></label>
+            <?= $this->Form->text('class_name', [
+                'id' => 'class-name',
+                'required' => true,
+                'placeholder' => 'e.g. Monday Morning Knitting',
+                'maxlength' => 100,
+                'class' => 'admin-form-input'
+            ]) ?>
+        </div>
+
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="course-id" class="admin-form-label">Course</label>
+                    <label for="course-id" class="admin-form-label">Course <span aria-hidden="true" style="color:#c0392b;">*</span></label>
                     <?= $this->Form->select('course_id', $courses, [
                         'id' => 'course-id', 
                         'empty' => '-- Select Course --', 
@@ -42,7 +55,7 @@ $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APO
             </div>
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="teacher-id" class="admin-form-label">Teacher</label>
+                    <label for="teacher-id" class="admin-form-label">Teacher <span aria-hidden="true" style="color:#c0392b;">*</span></label>
                     <?= $this->Form->select('teacher_id', $teachers, [
                         'id' => 'teacher-id', 
                         'empty' => '-- Select Teacher --', 
@@ -56,7 +69,7 @@ $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APO
         <div class="row g-4 mt-1">
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="start-datetime" class="admin-form-label">Start Date & Time</label>
+                    <label for="start-datetime" class="admin-form-label">Start Date &amp; Time <span aria-hidden="true" style="color:#c0392b;">*</span></label>
                     <?= $this->Form->text('start_datetime', [
                         'type' => 'datetime-local', 
                         'id' => 'start-datetime', 
@@ -82,7 +95,7 @@ $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APO
         </div>
         
         <div class="admin-form-group mt-4">
-            <label for="location" class="admin-form-label">Location</label>
+            <label for="location" class="admin-form-label">Location <span aria-hidden="true" style="color:#c0392b;">*</span></label>
             <?= $this->Form->select('location', $locationOptions, [
                 'id' => 'location', 
                 'empty' => '-- Select Location --',

@@ -3,11 +3,17 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class TeacherAvailabilitiesTable extends Table
 {
+    /**
+     * Initialize the table mapping and associations.
+     *
+     * @param array<string,mixed> $config Table configuration.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -25,6 +31,9 @@ class TeacherAvailabilitiesTable extends Table
         $this->addBehavior('Timestamp');
     }
 
+    /**
+     * Build validation rules for teacher availability slots.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -59,13 +68,35 @@ class TeacherAvailabilitiesTable extends Table
             ]);
 
         $validator
+            ->date('valid_from')
+            ->allowEmptyDate('valid_from');
+
+        $validator
+            ->date('valid_until')
+            ->allowEmptyDate('valid_until')
+            ->add('valid_until', 'afterValidFrom', [
+                'rule' => static function (mixed $value, array $context): bool {
+                    $validFrom = $context['data']['valid_from'] ?? null;
+                    if ($validFrom === null || $validFrom === '' || $value === null || $value === '') {
+                        return true;
+                    }
+
+                    return (string)$value >= (string)$validFrom;
+                },
+                'message' => 'End date must be the same as or after start date.',
+            ]);
+
+        $validator
             ->boolean('is_available')
             ->notEmptyString('is_available');
 
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build application integrity rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('teacher_id', 'Teachers'), ['errorField' => 'teacher_id']);
 

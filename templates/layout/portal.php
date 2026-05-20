@@ -15,11 +15,16 @@ $displayName = 'User';
 if ($identity) {
     $displayName = h((string)($identity->get('username') ?: $identity->get('email')));
 }
+$displayInitial = strtoupper(mb_substr(trim((string)$displayName), 0, 1) ?: 'U');
 $logoutUrl = '/logout';
 $redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
     ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
     : (string)time();
 $redesignCssUrl = $this->Url->assetUrl('css/redesign.css') . '?v=' . $redesignCssVersion;
+$mobileCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'mobile.css')
+    ? (string)filemtime(WWW_ROOT . 'css' . DS . 'mobile.css')
+    : (string)time();
+$mobileCssUrl = $this->Url->assetUrl('css/mobile.css') . '?v=' . $mobileCssVersion;
 
 $this->Form->setTemplates([
     'inputContainer' => '<div class="mb-3">{{content}}</div>',
@@ -52,24 +57,24 @@ $this->Paginator->setTemplates([
         <?php if ($this->fetch('title')): ?> | <?= $this->fetch('title') ?><?php endif; ?>
     </title>
     <script>
-        // Apply theme immediately to prevent FOUC
+        // Apply saved theme immediately to prevent FOUC. Light is the default.
         const savedTheme = localStorage.getItem('admin-theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        if (savedTheme === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
         }
     </script>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['admin-bootstrap', 'bootstrap-icons', 'admin']) ?>
     <link rel="stylesheet" href="<?= h($redesignCssUrl) ?>">
+    <link rel="stylesheet" href="<?= h($mobileCssUrl) ?>">
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
 </head>
-<body class="redesign">
+<body class="redesign site-home">
     <a href="#main-content" class="visually-hidden-focusable">Skip to main content</a>
 
     <!-- Sidebar -->
-    <aside class="offcanvas-lg offcanvas-start" id="portalSidebar" tabindex="-1" aria-label="Portal navigation">
+    <aside class="offcanvas offcanvas-start" id="portalSidebar" tabindex="-1" aria-label="Portal navigation">
         <div class="offcanvas-header d-lg-none">
             <div class="d-flex align-items-center gap-3">
                 <div class="admin-brand-icon"></div>
@@ -107,15 +112,10 @@ $this->Paginator->setTemplates([
                 <button type="button" class="nav-link nav-link--button" id="themeToggle" aria-pressed="false">
                     <i class="bi bi-moon" aria-hidden="true"></i><span id="themeToggleText">Dark Mode</span>
                 </button>
-                <?= $this->Form->create(null, [
-                    'url' => $logoutUrl,
-                    'class' => 'm-0 sidebar-action-form',
-                ]) ?>
-                    <?= $this->Form->button('<i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>', [
-                        'type' => 'submit',
-                        'escapeTitle' => false,
-                        'class' => 'nav-link nav-link--button logout',
-                    ]) ?>
+                <?= $this->Form->create(null, ['url' => $logoutUrl, 'class' => 'm-0']) ?>
+                    <button type="submit" class="nav-link nav-link--button">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>
+                    </button>
                 <?= $this->Form->end() ?>
             </div>
         </div>
@@ -140,10 +140,24 @@ $this->Paginator->setTemplates([
                 <h1 class="page-title"><?= $this->fetch('title') ?></h1>
             </div>
             <div class="admin-header-actions">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="bi bi-bell text-muted" style="font-size: 20px;" aria-hidden="true"></i>
-                    <span class="admin-user-label"><?= $displayName ?></span>
-                    <div class="admin-avatar" title="<?= $displayName ?>"></div>
+                <div class="dropdown">
+                    <button class="d-flex align-items-center gap-3 btn p-0 border-0 bg-transparent"
+                            type="button" id="profileDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="admin-user-label"><?= $displayName ?></span>
+                        <div class="admin-avatar" title="<?= $displayName ?>" aria-hidden="true"><?= $displayInitial ?></div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                        <li><span class="dropdown-item-text fw-semibold"><?= $displayName ?></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <?= $this->Form->create(null, ['url' => $logoutUrl, 'class' => 'm-0']) ?>
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i><span>Logout</span>
+                                </button>
+                            <?= $this->Form->end() ?>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -153,6 +167,10 @@ $this->Paginator->setTemplates([
             <div aria-live="polite"><?= $this->Flash->render() ?></div>
             <?= $this->fetch('content') ?>
         </main>
+    </div>
+
+    <div class="login-toast-region" aria-live="polite" aria-atomic="true">
+        <?= $this->Flash->render('login_toast') ?>
     </div>
 
     <?= $this->Html->script(['site-accessibility', 'admin-bootstrap', 'admin-app']) ?>
@@ -203,6 +221,21 @@ $this->Paginator->setTemplates([
             sidebarElement.addEventListener('hidden.bs.offcanvas', () => {
                 sidebarToggle.setAttribute('aria-expanded', 'false');
             });
+
+            const mobileQuery = window.matchMedia('(max-width: 991.98px)');
+            const closeSidebarOnMobile = () => {
+                if (!mobileQuery.matches) return;
+                const instance = bootstrap.Offcanvas.getInstance(sidebarElement);
+                if (instance) {
+                    instance.hide();
+                }
+            };
+
+            sidebarElement
+                .querySelectorAll('a.nav-link, a.sidebar-link')
+                .forEach((link) => {
+                    link.addEventListener('click', closeSidebarOnMobile);
+                });
         }
 
         if (sidebarScrollContainer) {
@@ -225,3 +258,5 @@ $this->Paginator->setTemplates([
     <?= $this->fetch('script') ?>
 </body>
 </html>
+
+<!-- Your comment goes here --> 

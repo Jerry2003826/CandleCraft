@@ -3,11 +3,17 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class AttendanceRecordsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -28,6 +34,11 @@ class AttendanceRecordsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -46,7 +57,12 @@ class AttendanceRecordsTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('booking_id', 'Bookings'), ['errorField' => 'booking_id']);
         $rules->add($rules->existsIn('marked_by_teacher_id', 'Teachers'), ['errorField' => 'marked_by_teacher_id']);

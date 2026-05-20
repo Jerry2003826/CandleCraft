@@ -25,6 +25,16 @@ class PaymentCheckoutService
     private PendingPaymentDispositionService $pendingPaymentDispositionService;
     private StripeCheckoutSessionClassifier $sessionClassifier;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $tableLocator Tablelocator.
+     * @param mixed $gateway Gateway.
+     * @param mixed $paymentConfirmationService Paymentconfirmationservice.
+     * @param mixed $pendingPaymentDispositionService Pendingpaymentdispositionservice.
+     * @param mixed $sessionClassifier Sessionclassifier.
+     * @return mixed
+     */
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
@@ -39,21 +49,33 @@ class PaymentCheckoutService
         $this->paymentConfirmationService = $paymentConfirmationService ?? new PaymentConfirmationService($locator);
         $this->pendingPaymentDispositionService = $pendingPaymentDispositionService ?? new PendingPaymentDispositionService(
             $locator,
-            $this->gateway
+            $this->gateway,
         );
         $this->sessionClassifier = $sessionClassifier ?? new StripeCheckoutSessionClassifier();
     }
 
+    /**
+     * Is stripe configured.
+     */
     public function isStripeConfigured(): bool
     {
-        return StripeConfiguration::isCheckoutReady();
+        return StripeConfiguration::isHostedCheckoutReady();
     }
 
+    /**
+     * Is demo mode enabled.
+     */
     public function isDemoModeEnabled(): bool
     {
-        return (bool)Configure::read('debug') && (bool)Configure::read('Payments.demo_mode');
+        return (bool)Configure::read('Payments.demo_mode');
     }
 
+    /**
+     * Start checkout.
+     *
+     * @param mixed $booking Booking.
+     * @param mixed $context Context.
+     */
     public function startCheckout(object $booking, array $context): array
     {
         if ($this->isZeroAmountBooking($booking)) {
@@ -68,9 +90,68 @@ class PaymentCheckoutService
             return $this->completeDemoPayment((int)$booking->booking_id, $context);
         }
 
-        throw new RuntimeException('Online payments are temporarily unavailable.');
+        throw new RuntimeException(
+            'Online payments are temporarily unavailable.',
+        );
     }
 
+    /**
+     * Sync checkout session.
+     *
+     * @param mixed $sessionId Sessionid.
+     */
+    public function syncCheckoutSession(string $sessionId): string
+    {
+        if ($sessionId === '' || !$this->isStripeConfigured()) {
+            return 'unavailable';
+        }
+
+        try {
+            $session = $this->gateway->retrieveCheckoutSession($sessionId);
+        } catch (Throwable $exception) {
+            Log::warning('Unable to retrieve Stripe checkout session during success sync: ' . json_encode([
+                'session_id' => $sessionId,
+                'error' => $exception->getMessage(),
+            ]));
+
+            return 'unavailable';
+        }
+
+        $classification = $this->sessionClassifier->classify($session);
+        if (($classification['state'] ?? null) !== StripeCheckoutSessionClassifier::STATE_PAID) {
+            return 'pending';
+        }
+
+        try {
+            return $this->paymentConfirmationService->confirmCheckoutSession(
+                $session,
+                'checkout.session.success_page_sync',
+                'checkout_success_page',
+            );
+        } catch (PaymentWebhookException $exception) {
+            Log::warning('Stripe success-page sync could not confirm payment: ' . json_encode([
+                'session_id' => $sessionId,
+                'reason_code' => $exception->getContext()['reason_code'] ?? 'unknown_reason',
+                'error' => $exception->getMessage(),
+            ]));
+
+            return 'manual_review';
+        } catch (Throwable $exception) {
+            Log::warning('Stripe success-page sync failed unexpectedly: ' . json_encode([
+                'session_id' => $sessionId,
+                'error' => $exception->getMessage(),
+            ]));
+
+            return 'unavailable';
+        }
+    }
+
+    /**
+     * Complete zero amount payment.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $context Context.
+     */
     private function completeZeroAmountPayment(int $bookingId, array $context): array
     {
         $connection = $this->paymentsTable->getConnection();
@@ -79,12 +160,14 @@ class PaymentCheckoutService
             $booking = $this->loadBookingForUpdate($bookingId);
 
             if (!$this->isZeroAmountBooking($booking)) {
-                throw new RuntimeException('Booking amount changed during checkout. Please retry.');
+                throw new RuntimeException(
+                    'Booking amount changed during checkout. Please retry.',
+                );
             }
 
             $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
+                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
                 ->first();
@@ -97,11 +180,15 @@ class PaymentCheckoutService
                     return ['kind' => 'already_paid'];
                 }
 
-                throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                throw new RuntimeException(
+                    'This booking already has a processed payment and requires manual review.',
+                );
             }
 
             if ($booking->booking_status === 'cancelled') {
-                throw new RuntimeException('Cancelled bookings cannot be paid.');
+                throw new RuntimeException(
+                    'Cancelled bookings cannot be paid.',
+                );
             }
 
             $pendingPayments = $this->findPaymentsForUpdate($bookingId)
@@ -145,6 +232,12 @@ class PaymentCheckoutService
         });
     }
 
+    /**
+     * Start stripe checkout.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $context Context.
+     */
     private function startStripeCheckout(int $bookingId, array $context): array
     {
         $connection = $this->paymentsTable->getConnection();
@@ -153,12 +246,14 @@ class PaymentCheckoutService
             $booking = $this->loadBookingForUpdate($bookingId);
 
             if ($this->isZeroAmountBooking($booking)) {
-                throw new RuntimeException('Booking amount changed during checkout. Please retry.');
+                throw new RuntimeException(
+                    'Booking amount changed during checkout. Please retry.',
+                );
             }
 
             $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
+                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
                 ->first();
@@ -171,11 +266,15 @@ class PaymentCheckoutService
                     return ['kind' => 'already_paid'];
                 }
 
-                throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                throw new RuntimeException(
+                    'This booking already has a processed payment and requires manual review.',
+                );
             }
 
             if ($booking->booking_status === 'cancelled') {
-                throw new RuntimeException('Cancelled bookings cannot be paid.');
+                throw new RuntimeException(
+                    'Cancelled bookings cannot be paid.',
+                );
             }
 
             $pendingPayments = $this->findPaymentsForUpdate($bookingId)
@@ -201,7 +300,7 @@ class PaymentCheckoutService
                         $result = $this->paymentConfirmationService->confirmCheckoutSession(
                             $inspection['session'],
                             'checkout.session.recovered_from_checkout_scan',
-                            'checkout_recovery'
+                            'checkout_recovery',
                         );
                     } catch (PaymentWebhookException $exception) {
                         $this->logCheckoutFailure(
@@ -209,17 +308,21 @@ class PaymentCheckoutService
                             $booking,
                             $context,
                             (string)($inspection['session']->id ?? $pendingPayment->transaction_reference ?? ''),
-                            $exception
+                            $exception,
                         );
 
-                        throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                        throw new RuntimeException(
+                            'This booking already has a processed payment and requires manual review.',
+                        );
                     }
 
                     if (in_array($result, ['confirmed', 'idempotent'], true)) {
                         return ['kind' => 'already_paid'];
                     }
 
-                    throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                    throw new RuntimeException(
+                        'This booking already has a processed payment and requires manual review.',
+                    );
                 }
 
                 if (($inspection['kind'] ?? null) === 'stale') {
@@ -230,7 +333,9 @@ class PaymentCheckoutService
                 }
 
                 if (($inspection['kind'] ?? null) === 'awaiting_payment') {
-                    throw new RuntimeException(self::SESSION_PENDING_ERROR);
+                    throw new RuntimeException(
+                        self::SESSION_PENDING_ERROR,
+                    );
                 }
 
                 if (($inspection['kind'] ?? null) === 'inspection_failed') {
@@ -242,7 +347,9 @@ class PaymentCheckoutService
                         'error' => (string)($inspection['error'] ?? ''),
                     ]));
 
-                    throw new RuntimeException(self::SESSION_RECOVERY_ERROR);
+                    throw new RuntimeException(
+                        self::SESSION_RECOVERY_ERROR,
+                    );
                 }
             }
 
@@ -259,6 +366,7 @@ class PaymentCheckoutService
                 'payment_method' => 'online',
                 'payment_status' => 'pending',
                 'transaction_reference' => (string)$session->id,
+                'stripe_session_id' => (string)$session->id,
                 'notes' => PaymentNotes::merge(null, [
                     'stripe_checkout' => true,
                     'portal_source' => $portalSource,
@@ -273,7 +381,9 @@ class PaymentCheckoutService
                 $this->expireSessionAfterPersistenceFailure((string)$session->id);
                 $this->logCheckoutFailure('Failed to persist Stripe checkout session', $booking, $context, $session->id, $exception);
 
-                throw new RuntimeException('Payment could not be initiated. Please try again later.');
+                throw new RuntimeException(
+                    'Payment could not be initiated. Please try again later.',
+                );
             }
 
             return [
@@ -284,6 +394,12 @@ class PaymentCheckoutService
         });
     }
 
+    /**
+     * Complete demo payment.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $context Context.
+     */
     private function completeDemoPayment(int $bookingId, array $context): array
     {
         $connection = $this->paymentsTable->getConnection();
@@ -292,12 +408,14 @@ class PaymentCheckoutService
             $booking = $this->loadBookingForUpdate($bookingId);
 
             if ($booking->booking_status === 'cancelled') {
-                throw new RuntimeException('Cancelled bookings cannot be paid.');
+                throw new RuntimeException(
+                    'Cancelled bookings cannot be paid.',
+                );
             }
 
             $blockingPayment = $this->findPaymentsForUpdate($bookingId)
                 ->where([
-                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded'],
+                    'Payments.payment_status IN' => ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'],
                 ])
                 ->orderBy(['Payments.payment_id' => 'DESC'])
                 ->first();
@@ -310,7 +428,9 @@ class PaymentCheckoutService
                     return ['kind' => 'already_paid'];
                 }
 
-                throw new RuntimeException('This booking already has a processed payment and requires manual review.');
+                throw new RuntimeException(
+                    'This booking already has a processed payment and requires manual review.',
+                );
             }
 
             $pendingPayments = $this->findPaymentsForUpdate($bookingId)
@@ -352,6 +472,11 @@ class PaymentCheckoutService
         });
     }
 
+    /**
+     * Inspect pending session.
+     *
+     * @param mixed $payment Payment.
+     */
     private function inspectPendingSession(object $payment): array
     {
         $transactionReference = (string)($payment->transaction_reference ?? '');
@@ -401,19 +526,25 @@ class PaymentCheckoutService
         return ['kind' => 'stale'];
     }
 
+    /**
+     * Create stripe session.
+     *
+     * @param mixed $booking Booking.
+     * @param mixed $context Context.
+     * @param mixed $clientReferenceId Clientreferenceid.
+     * @param mixed $sessionMetadata Sessionmetadata.
+     */
     private function createStripeSession(
         object $booking,
         array $context,
         string $clientReferenceId,
         array $sessionMetadata,
-    ): object
-    {
+    ): object {
         $courseName = $booking->class_entity?->course?->course_name ?? 'Class Booking';
         $amountInCents = (int)round((float)$booking->price_at_booking * 100);
 
         try {
-            $session = $this->gateway->createCheckoutSession([
-                'payment_method_types' => ['card'],
+            $payload = [
                 'client_reference_id' => $clientReferenceId,
                 'line_items' => [[
                     'price_data' => [
@@ -429,30 +560,51 @@ class PaymentCheckoutService
                 'mode' => 'payment',
                 'success_url' => (string)$context['success_url'],
                 'cancel_url' => (string)$context['cancel_url'],
+                'billing_address_collection' => 'required',
+                'customer_creation' => 'always',
+                'invoice_creation' => [
+                    'enabled' => true,
+                ],
                 'metadata' => $sessionMetadata,
                 'payment_intent_data' => [
                     'description' => sprintf(
                         'Booking #%d',
-                        (int)$booking->booking_id
+                        (int)$booking->booking_id,
                     ),
                     'metadata' => $sessionMetadata,
                 ],
-            ]);
+            ];
+
+            $customerEmail = $this->resolveCustomerEmail($booking, $context);
+            if ($customerEmail !== '') {
+                $payload['customer_email'] = $customerEmail;
+            }
+
+            $session = $this->gateway->createCheckoutSession($payload);
         } catch (Throwable $exception) {
             $this->logCheckoutFailure('Stripe checkout session creation failed', $booking, $context, null, $exception);
 
-            throw new RuntimeException('Payment could not be initiated. Please try again later.');
+            throw new RuntimeException(
+                'Payment could not be initiated. Please try again later.',
+            );
         }
 
         if (empty($session->id) || empty($session->url)) {
             $this->logCheckoutFailure('Stripe checkout session response was incomplete', $booking, $context, $session->id ?? null, null);
 
-            throw new RuntimeException('Payment could not be initiated. Please try again later.');
+            throw new RuntimeException(
+                'Payment could not be initiated. Please try again later.',
+            );
         }
 
         return $session;
     }
 
+    /**
+     * Expire session after persistence failure.
+     *
+     * @param mixed $sessionId Sessionid.
+     */
     private function expireSessionAfterPersistenceFailure(string $sessionId): void
     {
         if ($sessionId === '' || !StripeConfiguration::canManageCheckoutSessions()) {
@@ -469,6 +621,13 @@ class PaymentCheckoutService
         }
     }
 
+    /**
+     * Transition payment.
+     *
+     * @param mixed $payment Payment.
+     * @param mixed $status Status.
+     * @param mixed $notes Notes.
+     */
     private function transitionPayment(object $payment, string $status, array $notes): void
     {
         $payment->payment_status = $status;
@@ -476,10 +635,15 @@ class PaymentCheckoutService
         $this->paymentsTable->saveOrFail($payment);
     }
 
+    /**
+     * Load booking for update.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     private function loadBookingForUpdate(int $bookingId): object
     {
         $query = $this->bookingsTable->find()
-            ->contain(['Students', 'Classes' => ['Courses']])
+            ->contain(['Students' => ['Users'], 'Classes' => ['Courses']])
             ->where(['Bookings.booking_id' => $bookingId]);
 
         if ($this->supportsRowLocking()) {
@@ -489,7 +653,13 @@ class PaymentCheckoutService
         return $query->firstOrFail();
     }
 
-    private function findPaymentsForUpdate(int $bookingId)
+    /**
+     * Find payments for update.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @return mixed
+     */
+    private function findPaymentsForUpdate(int $bookingId): mixed
     {
         $query = $this->paymentsTable->find()
             ->where(['Payments.booking_id' => $bookingId]);
@@ -501,21 +671,40 @@ class PaymentCheckoutService
         return $query;
     }
 
+    /**
+     * Supports row locking.
+     */
     private function supportsRowLocking(): bool
     {
         return $this->paymentsTable->getConnection()->getDriver() instanceof Mysql;
     }
 
+    /**
+     * Build checkout attempt id.
+     */
     private function buildCheckoutAttemptId(): string
     {
         return bin2hex(random_bytes(8));
     }
 
+    /**
+     * Build client reference id.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $checkoutAttemptId Checkoutattemptid.
+     */
     private function buildClientReferenceId(int $bookingId, string $checkoutAttemptId): string
     {
         return sprintf('booking:%d:attempt:%s', $bookingId, $checkoutAttemptId);
     }
 
+    /**
+     * Build stripe session metadata.
+     *
+     * @param mixed $booking Booking.
+     * @param mixed $portalSource Portalsource.
+     * @param mixed $checkoutAttemptId Checkoutattemptid.
+     */
     private function buildStripeSessionMetadata(object $booking, string $portalSource, string $checkoutAttemptId): array
     {
         return [
@@ -526,6 +715,11 @@ class PaymentCheckoutService
         ];
     }
 
+    /**
+     * Normalize portal source.
+     *
+     * @param mixed $value Value.
+     */
     private function normalizePortalSource(mixed $value): string
     {
         $source = strtolower(trim((string)$value));
@@ -540,6 +734,25 @@ class PaymentCheckoutService
         ], true) ? $source : 'unknown';
     }
 
+    /**
+     * Resolve customer email.
+     *
+     * @param mixed $booking Booking.
+     * @param mixed $context Context.
+     */
+    private function resolveCustomerEmail(object $booking, array $context): string
+    {
+        $email = trim((string)($context['payer_email'] ?? ''));
+        if ($email === '' && isset($booking->student?->user?->email)) {
+            $email = trim((string)$booking->student->user->email);
+        }
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
+    }
+
+    /**
+     * Build gateway.
+     */
     private function buildGateway(): StripeCheckoutGatewayInterface
     {
         $gatewayClass = (string)Configure::read('Payments.gateway_class', StripeCheckoutGateway::class);
@@ -552,6 +765,15 @@ class PaymentCheckoutService
         return $gateway;
     }
 
+    /**
+     * Log checkout failure.
+     *
+     * @param mixed $message Message.
+     * @param mixed $booking Booking.
+     * @param mixed $context Context.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $exception Exception.
+     */
     private function logCheckoutFailure(
         string $message,
         object $booking,
@@ -569,6 +791,11 @@ class PaymentCheckoutService
         ]));
     }
 
+    /**
+     * Is zero amount booking.
+     *
+     * @param mixed $booking Booking.
+     */
     private function isZeroAmountBooking(object $booking): bool
     {
         return round((float)($booking->price_at_booking ?? 0), 2) === 0.0;

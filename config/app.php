@@ -5,7 +5,29 @@ use Cake\Database\Connection;
 use Cake\Database\Driver\Mysql;
 use Cake\Log\Engine\FileLog;
 use Cake\Mailer\Transport\MailTransport;
+use Cake\Mailer\Transport\SmtpTransport;
 use function Cake\Core\env;
+
+$emailSmtpHost = trim((string)env('EMAIL_SMTP_HOST', ''));
+$emailSmtpUsername = trim((string)env('EMAIL_SMTP_USERNAME', ''));
+$emailSmtpPassword = (string)env('EMAIL_SMTP_PASSWORD', '');
+$emailTransportUrl = trim((string)env('EMAIL_TRANSPORT_DEFAULT_URL', ''));
+$emailUsesSmtp = $emailTransportUrl !== ''
+    || $emailSmtpHost !== ''
+    || $emailSmtpUsername !== ''
+    || $emailSmtpPassword !== '';
+$emailFromAddress = trim((string)env('EMAIL_FROM_ADDRESS', ''));
+if ($emailFromAddress === '' && $emailSmtpUsername !== '') {
+    $emailFromAddress = $emailSmtpUsername;
+}
+$emailProfile = [
+    'transport' => 'default',
+];
+if ($emailFromAddress !== '') {
+    $emailProfile['from'] = [
+        $emailFromAddress => env('EMAIL_FROM_NAME', 'CandleCraft Academy'),
+    ];
+}
 
 return [
     /*
@@ -52,8 +74,8 @@ return [
     'App' => [
         'namespace' => 'App',
         'encoding' => env('APP_ENCODING', 'UTF-8'),
-        'defaultLocale' => env('APP_DEFAULT_LOCALE', 'en_US'),
-        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'UTC'),
+        'defaultLocale' => env('APP_DEFAULT_LOCALE', 'en_AU'),
+        'defaultTimezone' => env('APP_DEFAULT_TIMEZONE', 'Australia/Melbourne'),
         'base' => false,
         'dir' => 'src',
         'webroot' => 'webroot',
@@ -132,6 +154,20 @@ return [
             'serialize' => true,
             'duration' => '+1 years',
             'url' => env('CACHE_CAKEMODEL_URL', null),
+        ],
+
+        /*
+         * Cache for the self-built CMS module. One key per page slug
+         * (`cms.page.{slug}`). Invalidated on save / restore in
+         * App\Service\Cms\ContentResolver.
+         */
+        'cms' => [
+            'className' => FileEngine::class,
+            'prefix' => 'myapp_cms_',
+            'path' => CACHE . 'cms' . DS,
+            'serialize' => true,
+            'duration' => '+1 hour',
+            'url' => env('CACHE_CMS_URL', null),
         ],
     ],
 
@@ -221,21 +257,21 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'className' => MailTransport::class,
+            'className' => $emailUsesSmtp ? SmtpTransport::class : MailTransport::class,
             /*
              * The keys host, port, timeout, username, password, client and tls
              * are used in SMTP transports
              */
-            'host' => 'localhost',
-            'port' => 25,
+            'host' => env('EMAIL_SMTP_HOST', 'localhost'),
+            'port' => (int)env('EMAIL_SMTP_PORT', $emailUsesSmtp ? 465 : 25),
             'timeout' => 30,
             /*
              * It is recommended to set these options through your environment or app_local.php
              */
-            //'username' => null,
-            //'password' => null,
+            'username' => env('EMAIL_SMTP_USERNAME', null),
+            'password' => env('EMAIL_SMTP_PASSWORD', null),
             'client' => null,
-            'tls' => false,
+            'tls' => filter_var(env('EMAIL_SMTP_TLS', false), FILTER_VALIDATE_BOOLEAN),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
@@ -250,9 +286,7 @@ return [
      * for more information.
      */
     'Email' => [
-        'default' => [
-            'transport' => 'default',
-            'from' => 'you@localhost',
+        'default' => $emailProfile + [
             /*
              * Will by default be set to config value of App.encoding, if that exists otherwise to UTF-8.
              */
@@ -422,6 +456,9 @@ return [
 
     'Payments' => [
         'demo_mode' => filter_var(env('PAYMENTS_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
+        'admin_alerts' => [
+            'email_enabled' => filter_var(env('PAYMENT_ALERT_EMAILS', false), FILTER_VALIDATE_BOOLEAN),
+        ],
     ],
 
     'Uploads' => [
@@ -444,7 +481,7 @@ return [
      *  - `forceEnable` - Force DebugKit to display. Careful with this, it is usually safer to simply whitelist
      *     your local TLDs.
      *  - `ignorePathsPattern` - Regex pattern (including delimiter) to ignore paths.
-     *     DebugKit won’t save data for request URLs that match this regex.
+     *     DebugKit wont save data for request URLs that match this regex.
      *  - `ignoreAuthorization` - Set to true to ignore Cake Authorization plugin for DebugKit requests.
      *     Disabled by default.
      *  - `maxDepth` - Defines how many levels of nested data should be shown in general for debug output.

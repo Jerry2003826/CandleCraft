@@ -3,17 +3,26 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Service\BookingEnrollmentStateService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 
 class CoursesController extends AppController
 {
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
         $this->Authentication->addUnauthenticatedActions(['index', 'view']);
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $coursesTable = $this->fetchTable('Courses');
@@ -34,10 +43,16 @@ class CoursesController extends AppController
         $this->set('title', $type ? ucfirst($type) . ' Courses' : 'Our Courses');
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $courseId Courseid.
+     */
     public function view(?int $courseId = null): ?Response
     {
         $coursesTable = $this->fetchTable('Courses');
         $classesTable = $this->fetchTable('Classes');
+        $enrollmentState = new BookingEnrollmentStateService();
 
         $course = $coursesTable->get($courseId);
 
@@ -51,12 +66,7 @@ class CoursesController extends AppController
             ->all();
 
         foreach ($classes as $class) {
-            $bookingsCount = $this->fetchTable('Bookings')->find()
-                ->where([
-                    'Bookings.class_id' => $class->class_id,
-                    'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                ])
-                ->count();
+            $bookingsCount = $enrollmentState->countBlockingBookingsForClass((int)$class->class_id);
             $class->booked_count = $bookingsCount;
             $class->available_slots = $class->capacity - $bookingsCount;
         }

@@ -9,9 +9,15 @@ use Cake\Event\EventInterface;
 use Cake\I18n\Date;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use DateTimeImmutable;
 
 class StudentsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -37,6 +43,11 @@ class StudentsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -67,7 +78,7 @@ class StudentsTable extends Table
                         return true;
                     }
 
-                    return $value <= new \DateTimeImmutable('today');
+                    return $value <= new DateTimeImmutable('today');
                 },
                 'message' => 'Date of birth cannot be in the future.',
             ]);
@@ -84,6 +95,13 @@ class StudentsTable extends Table
         return $validator;
     }
 
+    /**
+     * Before save.
+     *
+     * @param mixed $event Event.
+     * @param mixed $entity Entity.
+     * @param mixed $options Options.
+     */
     public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
     {
         if (
@@ -99,7 +117,7 @@ class StudentsTable extends Table
             return;
         }
 
-        $birthYear = max(1900, ((int)date('Y')) - (int)$declaredAge);
+        $birthYear = max(1900, (int)date('Y') - (int)$declaredAge);
         $entity->set('date_of_birth', new Date(sprintf('%04d-01-01', $birthYear)));
     }
 }

@@ -17,6 +17,14 @@ SKIP_COMPOSER_INSTALL=false
 EMBED_SECRETS=false
 KEEP_ARTIFACTS=false
 
+EMAIL_SMTP_HOST="${EMAIL_SMTP_HOST:-}"
+EMAIL_SMTP_PORT="${EMAIL_SMTP_PORT:-465}"
+EMAIL_SMTP_USERNAME="${EMAIL_SMTP_USERNAME:-}"
+EMAIL_SMTP_PASSWORD="${EMAIL_SMTP_PASSWORD:-}"
+EMAIL_SMTP_TLS="${EMAIL_SMTP_TLS:-false}"
+EMAIL_FROM_ADDRESS="${EMAIL_FROM_ADDRESS:-}"
+EMAIL_FROM_NAME="${EMAIL_FROM_NAME:-CandleCraft Academy}"
+
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -52,6 +60,23 @@ php_literal() {
     php -r 'echo var_export($argv[1], true);' "$1"
 }
 
+php_nullable_literal() {
+    local value="${1-}"
+    if [ -z "$value" ]; then
+        echo "null"
+    else
+        php_literal "$value"
+    fi
+}
+
+php_bool_literal() {
+    local value="${1-}"
+    case "$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" in
+        1|true|yes|y|on) echo "true" ;;
+        *) echo "false" ;;
+    esac
+}
+
 prompt_for_password() {
     local env_name="$1"
     local current_value="$2"
@@ -80,7 +105,10 @@ write_app_local() {
     local uploads_url_prefix="${10}"
 
     local host_literal user_literal pass_literal database_literal salt_literal
+    local email_host_literal email_port_literal email_user_literal email_pass_literal
+    local email_tls_literal email_from_address_literal email_from_name_literal
     local uploads_root_literal uploads_url_prefix_literal
+    local email_host_default email_user_default email_from_default
     host_literal="$(php_literal 'localhost')"
     user_literal="$(php_literal "$db_user")"
     pass_literal="$(php_literal "$db_pass")"
@@ -88,11 +116,22 @@ write_app_local() {
     salt_literal="$(php_literal "$salt")"
     uploads_root_literal="$(php_literal "$uploads_root")"
     uploads_url_prefix_literal="$(php_literal "$uploads_url_prefix")"
+    email_host_default="${EMAIL_SMTP_HOST:-ssl://${DOMAIN}}"
+    email_user_default="${EMAIL_SMTP_USERNAME:-${CPANEL_USER}@${DOMAIN}}"
+    email_from_default="${EMAIL_FROM_ADDRESS:-$email_user_default}"
+    email_host_literal="$(php_nullable_literal "$email_host_default")"
+    email_port_literal="$(php_literal "$EMAIL_SMTP_PORT")"
+    email_user_literal="$(php_nullable_literal "$email_user_default")"
+    email_pass_literal="$(php_nullable_literal "$EMAIL_SMTP_PASSWORD")"
+    email_tls_literal="$(php_bool_literal "$EMAIL_SMTP_TLS")"
+    email_from_address_literal="$(php_literal "$email_from_default")"
+    email_from_name_literal="$(php_literal "$EMAIL_FROM_NAME")"
 
     if [ "$embed_secrets" = true ]; then
         cat > "$file_path" <<PHPEOF
 <?php
 
+use Cake\Mailer\Transport\SmtpTransport;
 use function Cake\Core\env;
 
 return [
@@ -121,12 +160,24 @@ return [
 
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
+            'className' => SmtpTransport::class,
+            'host' => env('EMAIL_SMTP_HOST', ${email_host_literal}),
+            'port' => (int)env('EMAIL_SMTP_PORT', ${email_port_literal}),
+            'timeout' => 30,
+            'username' => env('EMAIL_SMTP_USERNAME', ${email_user_literal}),
+            'password' => env('EMAIL_SMTP_PASSWORD', ${email_pass_literal}),
             'client' => null,
+            'tls' => filter_var(env('EMAIL_SMTP_TLS', ${email_tls_literal}), FILTER_VALIDATE_BOOLEAN),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+        ],
+    ],
+
+    'Email' => [
+        'default' => [
+            'transport' => 'default',
+            'from' => [
+                env('EMAIL_FROM_ADDRESS', ${email_from_address_literal}) => env('EMAIL_FROM_NAME', ${email_from_name_literal}),
+            ],
         ],
     ],
 
@@ -151,6 +202,7 @@ PHPEOF
         cat > "$file_path" <<PHPEOF
 <?php
 
+use Cake\Mailer\Transport\SmtpTransport;
 use function Cake\Core\env;
 
 return [
@@ -179,12 +231,24 @@ return [
 
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
+            'className' => SmtpTransport::class,
+            'host' => env('EMAIL_SMTP_HOST', ${email_host_literal}),
+            'port' => (int)env('EMAIL_SMTP_PORT', ${email_port_literal}),
+            'timeout' => 30,
+            'username' => env('EMAIL_SMTP_USERNAME', ${email_user_literal}),
+            'password' => env('EMAIL_SMTP_PASSWORD', ${email_pass_literal}),
             'client' => null,
+            'tls' => filter_var(env('EMAIL_SMTP_TLS', ${email_tls_literal}), FILTER_VALIDATE_BOOLEAN),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+        ],
+    ],
+
+    'Email' => [
+        'default' => [
+            'transport' => 'default',
+            'from' => [
+                env('EMAIL_FROM_ADDRESS', ${email_from_address_literal}) => env('EMAIL_FROM_NAME', ${email_from_name_literal}),
+            ],
         ],
     ],
 

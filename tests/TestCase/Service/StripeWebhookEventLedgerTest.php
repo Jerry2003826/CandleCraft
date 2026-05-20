@@ -30,7 +30,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_new',
             'checkout.session.completed',
             'cs_new',
-            '{"id":"evt_new"}'
+            '{"id":"evt_new"}',
         );
 
         $event = $this->eventsTable->find()
@@ -63,7 +63,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_processing',
             'checkout.session.completed',
             'cs_processing',
-            '{"id":"evt_processing"}'
+            '{"id":"evt_processing"}',
         );
 
         $event = $this->eventsTable->find()
@@ -73,7 +73,7 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
         $this->assertSame(
             $freshTime->format('Y-m-d H:i:s'),
-            $event->processing_started_at->format('Y-m-d H:i:s')
+            $event->processing_started_at->format('Y-m-d H:i:s'),
         );
     }
 
@@ -95,7 +95,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_stale_processing',
             'checkout.session.completed',
             'cs_stale_processing',
-            '{"id":"evt_stale_processing"}'
+            '{"id":"evt_stale_processing"}',
         );
 
         $event = $this->eventsTable->find()
@@ -106,7 +106,7 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('processing', $event->processing_status);
         $this->assertGreaterThanOrEqual(
             DateTime::now()->subMinutes(1)->getTimestamp(),
-            $event->processing_started_at->getTimestamp()
+            $event->processing_started_at->getTimestamp(),
         );
     }
 
@@ -129,7 +129,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_processed',
             'checkout.session.completed',
             'cs_processed',
-            '{"id":"evt_processed","changed":true}'
+            '{"id":"evt_processed","changed":true}',
         );
 
         $event = $this->eventsTable->find()
@@ -159,7 +159,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_duplicate_business_event',
             'checkout.session.completed',
             'cs_same_business_event',
-            '{"id":"evt_duplicate_business_event"}'
+            '{"id":"evt_duplicate_business_event"}',
         );
 
         $event = $this->eventsTable->find()
@@ -172,7 +172,7 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('evt_duplicate_business_event', $event->last_replay_event_id);
         $this->assertSame(
             hash('sha256', '{"id":"evt_duplicate_business_event"}'),
-            $event->last_replay_payload_hash
+            $event->last_replay_payload_hash,
         );
         $this->assertNotNull($event->last_replay_seen_at);
     }
@@ -195,7 +195,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_business_processing_duplicate',
             'checkout.session.completed',
             'cs_business_processing',
-            '{"id":"evt_business_processing_duplicate"}'
+            '{"id":"evt_business_processing_duplicate"}',
         );
 
         $this->assertSame(StripeWebhookEventLedger::RESULT_IN_PROGRESS, $claimed);
@@ -231,7 +231,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_original_key',
             'checkout.session.completed',
             'cs_other_key',
-            '{"id":"evt_original_key"}'
+            '{"id":"evt_original_key"}',
         );
 
         $original = $this->eventsTable->find()
@@ -274,7 +274,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_suspicious_processing',
             'checkout.session.completed',
             'cs_suspicious_processing',
-            '{"id":"evt_suspicious_processing"}'
+            '{"id":"evt_suspicious_processing"}',
         );
 
         $event = $this->eventsTable->find()
@@ -285,7 +285,7 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('processing', $event->processing_status);
         $this->assertSame(
             $staleTime->format('Y-m-d H:i:s'),
-            $event->processing_started_at->format('Y-m-d H:i:s')
+            $event->processing_started_at->format('Y-m-d H:i:s'),
         );
     }
 
@@ -312,7 +312,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_suspicious_business_retry',
             'checkout.session.completed',
             'cs_suspicious_business',
-            '{"id":"evt_suspicious_business_retry"}'
+            '{"id":"evt_suspicious_business_retry"}',
         );
 
         $event = $this->eventsTable->find()
@@ -347,7 +347,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_retry',
             'checkout.session.completed',
             'cs_claim_reuse',
-            '{"id":"evt_retry"}'
+            '{"id":"evt_retry"}',
         );
 
         $event = $this->eventsTable->find()
@@ -363,7 +363,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_retry',
             'checkout.session.completed',
             'cs_claim_reuse',
-            '{"id":"evt_retry"}'
+            '{"id":"evt_retry"}',
         );
 
         $updated = $this->eventsTable->find()
@@ -409,7 +409,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_detached',
             'checkout.session.completed',
             'cs_detached_retry',
-            '{"id":"evt_detached"}'
+            '{"id":"evt_detached"}',
         );
 
         $this->assertSame(StripeWebhookEventLedger::RESULT_CLAIMED, $claimed);
@@ -418,7 +418,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_detached',
             'checkout.session.completed',
             'cs_detached_retry',
-            '{"id":"evt_detached"}'
+            '{"id":"evt_detached"}',
         );
 
         $canonical = $this->eventsTable->find()
@@ -470,7 +470,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_detached_stale',
             'checkout.session.completed',
             'cs_detached_stale',
-            '{"id":"evt_detached_stale"}'
+            '{"id":"evt_detached_stale"}',
         );
 
         $canonical = $this->eventsTable->find()
@@ -505,7 +505,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_status_guard',
             'checkout.session.completed',
             'cs_other_status_guard',
-            '{"id":"evt_status_guard"}'
+            '{"id":"evt_status_guard"}',
         );
 
         $event = $this->eventsTable->find()
@@ -543,7 +543,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_suspicious_status_update',
             'checkout.session.completed',
             'cs_suspicious_status_update',
-            '{"id":"evt_suspicious_status_update","replayed":true}'
+            '{"id":"evt_suspicious_status_update","replayed":true}',
         );
 
         $event = $this->eventsTable->find()
@@ -556,7 +556,7 @@ class StripeWebhookEventLedgerTest extends TestCase
         $this->assertSame('evt_suspicious_status_update', $event->last_suppressed_status_event_id);
         $this->assertSame(
             hash('sha256', '{"id":"evt_suspicious_status_update","replayed":true}'),
-            $event->last_suppressed_status_payload_hash
+            $event->last_suppressed_status_payload_hash,
         );
         $this->assertNotNull($event->last_suppressed_status_seen_at);
     }
@@ -580,7 +580,7 @@ class StripeWebhookEventLedgerTest extends TestCase
             'evt_missing_session',
             'checkout.session.completed',
             '',
-            '{"id":"evt_missing_session"}'
+            '{"id":"evt_missing_session"}',
         );
 
         $event = $this->eventsTable->find()

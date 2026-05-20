@@ -23,6 +23,11 @@ set -Eeuo pipefail
 #   STRIPE_SECRET_KEY='sk_live_xxx' \
 #   STRIPE_PUBLISHABLE_KEY='pk_live_xxx' \
 #   STRIPE_WEBHOOK_SECRET='whsec_xxx' \
+#   EMAIL_SMTP_HOST='ssl://mail.example.com' \
+#   EMAIL_SMTP_PORT=465 \
+#   EMAIL_SMTP_USERNAME='no-reply@example.com' \
+#   EMAIL_SMTP_PASSWORD='replace-me' \
+#   EMAIL_FROM_ADDRESS='no-reply@example.com' \
 #   RECAPTCHA_SITE_KEY='site-key' \
 #   RECAPTCHA_SECRET_KEY='secret-key' \
 #   RUN_DEMO_DATA_SEED=true \
@@ -57,6 +62,14 @@ STRIPE_ENVIRONMENT="${STRIPE_ENVIRONMENT:-}"
 STRIPE_SECRET_KEY="${STRIPE_SECRET_KEY:-}"
 STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY:-}"
 STRIPE_WEBHOOK_SECRET="${STRIPE_WEBHOOK_SECRET:-}"
+
+EMAIL_SMTP_HOST="${EMAIL_SMTP_HOST:-}"
+EMAIL_SMTP_PORT="${EMAIL_SMTP_PORT:-465}"
+EMAIL_SMTP_USERNAME="${EMAIL_SMTP_USERNAME:-}"
+EMAIL_SMTP_PASSWORD="${EMAIL_SMTP_PASSWORD:-}"
+EMAIL_SMTP_TLS="${EMAIL_SMTP_TLS:-false}"
+EMAIL_FROM_ADDRESS="${EMAIL_FROM_ADDRESS:-}"
+EMAIL_FROM_NAME="${EMAIL_FROM_NAME:-CandleCraft Academy}"
 
 RECAPTCHA_SITE_KEY="${RECAPTCHA_SITE_KEY:-}"
 RECAPTCHA_SECRET_KEY="${RECAPTCHA_SECRET_KEY:-}"
@@ -252,8 +265,24 @@ write_app_local() {
     local app_base_literal full_base_url_literal db_host_literal db_port_literal db_name_literal db_user_literal db_pass_literal
     local test_host_literal test_port_literal test_name_literal test_user_literal test_pass_literal
     local salt_literal stripe_env_literal stripe_sk_literal stripe_pk_literal stripe_wh_literal
+    local email_host_literal email_port_literal email_user_literal email_pass_literal email_tls_literal
+    local email_from_address_literal email_from_name_literal
     local recaptcha_site_literal recaptcha_secret_literal uploads_root_literal uploads_prefix_literal
     local debug_literal payments_demo_literal
+    local email_host_default email_from_default app_host
+
+    app_host="$("$PHP_BIN" -r '
+        $parts = parse_url($argv[1] ?? "");
+        echo ($parts["host"] ?? "");
+    ' "$APP_URL")"
+    email_host_default="${EMAIL_SMTP_HOST:-}"
+    if [ -z "$email_host_default" ] && [ -n "$app_host" ]; then
+        email_host_default="ssl://${app_host}"
+    fi
+    email_from_default="${EMAIL_FROM_ADDRESS:-$EMAIL_SMTP_USERNAME}"
+    if [ -z "$email_from_default" ] && [ -n "$app_host" ]; then
+        email_from_default="no-reply@${app_host}"
+    fi
 
     app_base_literal="$(php_app_base_literal "$APP_BASE" "$APP_URL")"
     full_base_url_literal="$(php_full_base_url_literal "$APP_URL")"
@@ -272,6 +301,13 @@ write_app_local() {
     stripe_sk_literal="$(php_nullable_literal "$STRIPE_SECRET_KEY")"
     stripe_pk_literal="$(php_nullable_literal "$STRIPE_PUBLISHABLE_KEY")"
     stripe_wh_literal="$(php_nullable_literal "$STRIPE_WEBHOOK_SECRET")"
+    email_host_literal="$(php_nullable_literal "$email_host_default")"
+    email_port_literal="$(php_literal "$EMAIL_SMTP_PORT")"
+    email_user_literal="$(php_nullable_literal "$EMAIL_SMTP_USERNAME")"
+    email_pass_literal="$(php_nullable_literal "$EMAIL_SMTP_PASSWORD")"
+    email_tls_literal="$(php_bool_literal "$EMAIL_SMTP_TLS")"
+    email_from_address_literal="$(php_literal "$email_from_default")"
+    email_from_name_literal="$(php_literal "$EMAIL_FROM_NAME")"
     recaptcha_site_literal="$(php_nullable_literal "$RECAPTCHA_SITE_KEY")"
     recaptcha_secret_literal="$(php_nullable_literal "$RECAPTCHA_SECRET_KEY")"
     uploads_root_literal="$(php_literal "$UPLOAD_RESOURCES_ROOT")"
@@ -282,6 +318,7 @@ write_app_local() {
     cat > "$file_path" <<PHP
 <?php
 
+use Cake\Mailer\Transport\SmtpTransport;
 use function Cake\Core\env;
 
 return [
@@ -317,12 +354,24 @@ return [
 
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
+            'className' => SmtpTransport::class,
+            'host' => env('EMAIL_SMTP_HOST', ${email_host_literal}),
+            'port' => (int)env('EMAIL_SMTP_PORT', ${email_port_literal}),
+            'timeout' => 30,
+            'username' => env('EMAIL_SMTP_USERNAME', ${email_user_literal}),
+            'password' => env('EMAIL_SMTP_PASSWORD', ${email_pass_literal}),
             'client' => null,
+            'tls' => filter_var(env('EMAIL_SMTP_TLS', ${email_tls_literal}), FILTER_VALIDATE_BOOLEAN),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+        ],
+    ],
+
+    'Email' => [
+        'default' => [
+            'transport' => 'default',
+            'from' => [
+                env('EMAIL_FROM_ADDRESS', ${email_from_address_literal}) => env('EMAIL_FROM_NAME', ${email_from_name_literal}),
+            ],
         ],
     ],
 

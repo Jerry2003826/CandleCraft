@@ -12,6 +12,8 @@ class TeacherAvailability extends Entity
         'day_of_week' => true,
         'start_time' => true,
         'end_time' => true,
+        'valid_from' => true,
+        'valid_until' => true,
         'is_available' => true,
         'teacher' => true,
     ];

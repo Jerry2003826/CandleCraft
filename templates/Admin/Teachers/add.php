@@ -6,8 +6,8 @@
 $this->assign('title', 'Add Teacher');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Teachers
+<a href="#" onclick="history.back(); return false;" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back
 </a>
 
 <div class="admin-form-card">

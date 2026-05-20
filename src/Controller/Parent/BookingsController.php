@@ -4,14 +4,22 @@ declare(strict_types=1);
 namespace App\Controller\Parent;
 
 use App\Service\BookingCancellationService;
+use App\Service\BookingConfirmationEmailService;
+use App\Service\BookingEnrollmentStateService;
 use App\Service\BookingService;
+use Cake\Http\Response;
 use Cake\I18n\DateTime;
 use Cake\Log\Log;
-use Cake\Http\Response;
 use RuntimeException;
+use Throwable;
 
 class BookingsController extends AppController
 {
+    /**
+     * Get parent entity.
+     *
+     * @return mixed
+     */
     private function getParentEntity()
     {
         $identity = $this->Authentication->getIdentity();
@@ -21,6 +29,11 @@ class BookingsController extends AppController
             ->firstOrFail();
     }
 
+    /**
+     * Get children for parent.
+     *
+     * @param mixed $parentId Parentid.
+     */
     private function getChildrenForParent(int $parentId): array
     {
         $links = $this->fetchTable('ParentStudents')->find()
@@ -38,6 +51,9 @@ class BookingsController extends AppController
         return $children;
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $parent = $this->getParentEntity();
@@ -110,6 +126,12 @@ class BookingsController extends AppController
         $this->set('title', 'My Schedule');
     }
 
+    /**
+     * Add.
+     *
+     * @param mixed $classId Classid.
+     * @param mixed $studentId Studentid.
+     */
     public function add(?int $classId = null, ?int $studentId = null): ?Response
     {
         $parent = $this->getParentEntity();
@@ -120,7 +142,9 @@ class BookingsController extends AppController
         }
 
         if (empty($studentOptions)) {
-            $this->Flash->error(__('No linked children found. Please contact admin.'));
+            $this->Flash->error(__(
+                'No linked children found. Please contact admin.',
+            ));
 
             return $this->redirect(['action' => 'index']);
         }
@@ -133,18 +157,14 @@ class BookingsController extends AppController
             ])
             ->firstOrFail();
 
-        $bookingsTable = $this->fetchTable('Bookings');
-        $bookingsCount = $bookingsTable->find()
-            ->where([
-                'Bookings.class_id' => $classId,
-                'Bookings.booking_status IN' => ['pending', 'confirmed'],
-            ])
-            ->count();
+        $bookingsCount = (new BookingEnrollmentStateService())->countBlockingBookingsForClass((int)$classId);
         $availableSlots = $class->capacity - $bookingsCount;
 
         // Best-effort display check only; BookingService applies the canonical capacity guard on POST.
         if (!$this->request->is('post') && $availableSlots <= 0) {
-            $this->Flash->error(__('This class is fully booked.'));
+            $this->Flash->error(__(
+                'This class is fully booked.',
+            ));
 
             return $this->redirect(['prefix' => false, 'controller' => 'Courses', 'action' => 'view', $classId]);
         }
@@ -154,7 +174,9 @@ class BookingsController extends AppController
             $selectedStudentId = (int)$this->request->getData('student_id');
 
             if (!array_key_exists($selectedStudentId, $children)) {
-                $this->Flash->error(__('Selected student is not linked to your account.'));
+                $this->Flash->error(__(
+                    'Selected student is not linked to your account.',
+                ));
             } else {
                 $result = $this->processParentBooking((int)$classId, $selectedStudentId, (int)$parent->parent_id);
                 if ($result !== null) {
@@ -169,6 +191,13 @@ class BookingsController extends AppController
         return null;
     }
 
+    /**
+     * Process parent booking.
+     *
+     * @param mixed $classId Classid.
+     * @param mixed $studentId Studentid.
+     * @param mixed $parentId Parentid.
+     */
     private function processParentBooking(int $classId, int $studentId, int $parentId): ?Response
     {
         try {
@@ -176,7 +205,7 @@ class BookingsController extends AppController
                 $classId,
                 $studentId,
                 $parentId,
-                ['allowedClassStatuses' => BookingService::PARENT_ALLOWED_CLASS_STATUSES]
+                ['allowedClassStatuses' => BookingService::PARENT_ALLOWED_CLASS_STATUSES],
             );
             $booking = $result['booking'];
             $class = $result['class'];
@@ -190,7 +219,7 @@ class BookingsController extends AppController
                     $className,
                     $schedule,
                 );
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 Log::warning('Booking confirmation notification failed.', [
                     'booking_id' => $booking->booking_id ?? null,
                     'student_id' => $studentId,
@@ -199,11 +228,16 @@ class BookingsController extends AppController
                     'error' => $exception->getMessage(),
                 ]);
             }
+            $this->sendBookingConfirmationEmail((int)$booking->booking_id, 'Parent');
 
             if (!empty($result['reactivated'])) {
-                $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+                $this->Flash->success(__(
+                    'Previous cancelled booking has been reactivated. Please proceed to payment.',
+                ));
             } else {
-                $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+                $this->Flash->success(__(
+                    'Booking created successfully. Please proceed to payment.',
+                ));
             }
 
             return $this->redirect([
@@ -213,12 +247,19 @@ class BookingsController extends AppController
                 $booking->booking_id,
             ]);
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
         }
 
         return null;
     }
 
+    /**
+     * Cancel.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function cancel(?int $bookingId = null): ?Response
     {
         $this->request->allowMethod(['post']);
@@ -237,14 +278,23 @@ class BookingsController extends AppController
             (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
                 'portal_source' => 'parent_portal',
             ]);
-            $this->Flash->success(__('Booking has been cancelled.'));
+            $this->Flash->success(__(
+                'Booking has been cancelled.',
+            ));
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Resolve week reference.
+     *
+     * @param mixed $weekStartParam Weekstartparam.
+     */
     private function resolveWeekReference(mixed $weekStartParam): DateTime
     {
         if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
@@ -253,8 +303,24 @@ class BookingsController extends AppController
 
         try {
             return new DateTime($weekStartParam);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return new DateTime('now');
         }
+    }
+
+    /**
+     * Send booking confirmation email.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $portalPrefix Portalprefix.
+     */
+    private function sendBookingConfirmationEmail(int $bookingId, string $portalPrefix): void
+    {
+        $identity = $this->Authentication->getIdentity();
+        (new BookingConfirmationEmailService())->sendForBooking($bookingId, [
+            'portal_prefix' => $portalPrefix,
+            'recipient_email' => (string)($identity?->get('email') ?? ''),
+            'recipient_name' => (string)($identity?->get('username') ?? ''),
+        ]);
     }
 }

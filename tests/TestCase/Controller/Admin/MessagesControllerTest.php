@@ -5,9 +5,12 @@ namespace App\Test\TestCase\Controller\Admin;
 
 use App\Test\TestCase\Controller\AppIntegrationTestCase;
 use Cake\Datasource\FactoryLocator;
+use Cake\TestSuite\EmailTrait;
 
 class MessagesControllerTest extends AppIntegrationTestCase
 {
+    use EmailTrait;
+
     public function testViewDisplaysCustomerAccessRequestMetadata(): void
     {
         $messageId = $this->createCustomerAccessMessage(false);
@@ -133,6 +136,44 @@ class MessagesControllerTest extends AppIntegrationTestCase
         $this->assertSame('read', $message->message_status);
     }
 
+    public function testReplyBackLinkDoesNotDoublePrefixProductionReturnUrl(): void
+    {
+        $this->loginAsAdmin();
+        $this->configRequest([
+            'environment' => [
+                'PHP_SELF' => '/production/index.php',
+                'SCRIPT_NAME' => '/production/index.php',
+            ],
+        ]);
+
+        $this->get('/admin/messages/reply/1?return_url=%2Fproduction%2Fadmin%2Fmessages%2Fview%2F1');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('href="/production/admin/messages/view/1"');
+        $this->assertResponseNotContains('/production/production/admin/messages/view/1');
+    }
+
+    public function testReplyRedirectPrefixesProductionBasePathForAppRelativeReturnUrl(): void
+    {
+        $this->loginAsAdmin();
+        $this->enableCsrfToken();
+        $this->enableSecurityToken();
+        $this->configRequest([
+            'environment' => [
+                'PHP_SELF' => '/production/index.php',
+                'SCRIPT_NAME' => '/production/index.php',
+            ],
+        ]);
+
+        $this->post('/admin/messages/reply/1', [
+            'message_text' => 'Thanks, we will follow up shortly.',
+            'return_url' => '/admin/messages/view/1',
+        ]);
+
+        $this->assertRedirect('/production/admin/messages/view/1');
+        $this->assertMailCount(1);
+    }
+
     private function createCustomerAccessMessage(bool $selfDeclaredAdult, string $email = 'customer-request@example.com'): int
     {
         $messages = FactoryLocator::get('Table')->get('Messages');
@@ -163,7 +204,7 @@ class MessagesControllerTest extends AppIntegrationTestCase
                 'accessibleFields' => [
                     'message_id' => true,
                 ],
-            ]
+            ],
         );
         $messages->saveOrFail($message);
 

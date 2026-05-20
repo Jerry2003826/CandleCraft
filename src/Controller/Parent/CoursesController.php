@@ -3,13 +3,27 @@ declare(strict_types=1);
 
 namespace App\Controller\Parent;
 
+use App\Service\BookingEnrollmentStateService;
+
 class CoursesController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
+        $identity = $this->Authentication->getIdentity();
         $coursesTable = $this->fetchTable('Courses');
         $classesTable = $this->fetchTable('Classes');
-        $bookingsTable = $this->fetchTable('Bookings');
+        $enrollmentState = new BookingEnrollmentStateService();
+        $parent = $this->fetchTable('Parents')->find()
+            ->where(['Parents.user_id' => $identity->get('user_id')])
+            ->firstOrFail();
+        $studentIds = $this->fetchTable('ParentStudents')->find()
+            ->where(['ParentStudents.parent_id' => $parent->parent_id])
+            ->all()
+            ->extract('student_id')
+            ->toList();
 
         $courses = $coursesTable->find()->all();
 
@@ -25,21 +39,23 @@ class CoursesController extends AppController
                 ->all();
 
             $classList = [];
+            $courseHasCurrentCustomerBooking = false;
             foreach ($classes as $class) {
-                $bookedCount = $bookingsTable->find()
-                    ->where([
-                        'Bookings.class_id' => $class->class_id,
-                        'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                    ])
-                    ->count();
+                $bookedCount = $enrollmentState->countBlockingBookingsForClass((int)$class->class_id);
                 $class->booked_count = $bookedCount;
                 $class->available_slots = $class->capacity - $bookedCount;
+                $class->booked_by_current_customer = $enrollmentState->hasBlockingBookingForStudents(
+                    (int)$class->class_id,
+                    $studentIds,
+                );
+                $courseHasCurrentCustomerBooking = $courseHasCurrentCustomerBooking || (bool)$class->booked_by_current_customer;
                 $classList[] = $class;
             }
 
             $courseData[] = [
                 'course' => $course,
                 'classes' => $classList,
+                'booked_by_current_customer' => $courseHasCurrentCustomerBooking,
             ];
         }
 

@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     window.CandleCraftA11y?.init(document);
     initialiseResponsiveSidebars();
+    initialiseMobileSidebarDismissals();
 
     /* ===== Schedule Page — View Toggle ===== */
     var viewBtns = document.querySelectorAll('.sp-view-btn');
@@ -151,6 +152,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
             window.addEventListener('resize', clearDesktopBackdropState);
             clearDesktopBackdropState();
+        });
+    }
+
+    function initialiseMobileSidebarDismissals() {
+        var mobileQuery = window.matchMedia('(max-width: 991.98px)');
+
+        function hideVisibleSidebar(sidebar) {
+            if (!sidebar || !mobileQuery.matches || !window.bootstrap?.Offcanvas) {
+                return;
+            }
+
+            bootstrap.Offcanvas.getOrCreateInstance(sidebar).hide();
+        }
+
+        document.addEventListener('click', function (event) {
+            var dismissButton = event.target.closest('[data-bs-dismiss="offcanvas"]');
+            if (dismissButton) {
+                setTimeout(function () {
+                    hideVisibleSidebar(dismissButton.closest('.offcanvas'));
+                }, 0);
+                return;
+            }
+
+            var themeToggle = event.target.closest('#themeToggle');
+            if (!themeToggle) {
+                return;
+            }
+
+            setTimeout(function () {
+                hideVisibleSidebar(themeToggle.closest('.offcanvas'));
+            }, 0);
         });
     }
 });

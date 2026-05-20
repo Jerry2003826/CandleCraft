@@ -9,6 +9,7 @@ use App\Test\Support\FakeStripeCheckoutGateway;
 use Cake\Core\Configure;
 use Cake\Datasource\FactoryLocator;
 use Cake\TestSuite\TestCase;
+use RuntimeException;
 
 class PaymentCheckoutServiceTest extends TestCase
 {
@@ -24,6 +25,8 @@ class PaymentCheckoutServiceTest extends TestCase
     protected function tearDown(): void
     {
         FakeStripeCheckoutGateway::reset();
+        Configure::delete('Payments.demo_mode');
+        Configure::delete('Stripe.environment');
         Configure::delete('Stripe.secret_key');
         Configure::delete('Stripe.webhook_secret');
 
@@ -51,7 +54,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(
             gateway: new FakeStripeCheckoutGateway(),
-            paymentConfirmationService: new PaymentConfirmationService()
+            paymentConfirmationService: new PaymentConfirmationService(),
         );
 
         $result = $service->startCheckout($booking, [
@@ -77,7 +80,7 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertStringContainsString('"confirmation_source":"checkout_recovery"', (string)$payment->notes);
         $this->assertStringContainsString(
             '"event_type":"checkout.session.recovered_from_checkout_scan"',
-            (string)$payment->notes
+            (string)$payment->notes,
         );
     }
 
@@ -122,7 +125,7 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertSame('redirect', $result['kind']);
         $this->assertMatchesRegularExpression(
             '/^booking:' . $bookingId . ':attempt:[a-f0-9]{16}$/',
-            $clientReferenceId
+            $clientReferenceId,
         );
         $this->assertSame([
             'booking_id' => (string)$bookingId,
@@ -133,8 +136,14 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]{16}$/', (string)($metadata['checkout_attempt_id'] ?? ''));
         $this->assertSame($metadata, $payload['payment_intent_data']['metadata'] ?? null);
         $this->assertSame('Booking #' . $bookingId, (string)($payload['payment_intent_data']['description'] ?? ''));
+        $this->assertArrayNotHasKey('payment_method_types', $payload);
+        $this->assertSame('required', $payload['billing_address_collection'] ?? null);
+        $this->assertSame('always', $payload['customer_creation'] ?? null);
+        $this->assertSame(['enabled' => true], $payload['invoice_creation'] ?? null);
+        $this->assertSame('student-one@candlecraft.com', $payload['customer_email'] ?? null);
         $this->assertSame($metadata['checkout_attempt_id'] ?? null, $paymentNotes['checkout_attempt_id'] ?? null);
         $this->assertSame($clientReferenceId, $paymentNotes['stripe_client_reference_id'] ?? null);
+        $this->assertSame($payment->transaction_reference, $payment->stripe_session_id);
         $this->assertNull($payment->payment_date);
     }
 
@@ -225,7 +234,7 @@ class PaymentCheckoutServiceTest extends TestCase
         Configure::write('Stripe.webhook_secret', 'whsec_test');
 
         FakeStripeCheckoutGateway::$retrieveHandler = static function (): object {
-            throw new \RuntimeException('stripe temporarily unavailable');
+            throw new RuntimeException('stripe temporarily unavailable');
         };
 
         $booking = FactoryLocator::get('Table')->get('Bookings')->find()
@@ -235,7 +244,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Unable to recover the current payment session. Please try again shortly.');
 
         try {
@@ -282,10 +291,10 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(
             gateway: new FakeStripeCheckoutGateway(),
-            paymentConfirmationService: new PaymentConfirmationService()
+            paymentConfirmationService: new PaymentConfirmationService(),
         );
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Your payment is still processing with Stripe. Please wait a moment and try again shortly.');
 
         try {
@@ -326,7 +335,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(
             gateway: new FakeStripeCheckoutGateway(),
-            paymentConfirmationService: new PaymentConfirmationService()
+            paymentConfirmationService: new PaymentConfirmationService(),
         );
 
         $result = $service->startCheckout($booking, [
@@ -367,10 +376,10 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(
             gateway: new FakeStripeCheckoutGateway(),
-            paymentConfirmationService: new PaymentConfirmationService()
+            paymentConfirmationService: new PaymentConfirmationService(),
         );
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Unable to recover the current payment session. Please try again shortly.');
 
         try {
@@ -405,7 +414,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Booking amount changed during checkout. Please retry.');
 
         try {
@@ -537,7 +546,7 @@ class PaymentCheckoutServiceTest extends TestCase
 
         $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('This booking already has a processed payment and requires manual review.');
 
         try {
@@ -603,7 +612,7 @@ class PaymentCheckoutServiceTest extends TestCase
             ->where(['Bookings.booking_id' => $bookingId])
             ->firstOrFail();
 
-        $service = new class(null, new FakeStripeCheckoutGateway()) extends PaymentCheckoutService {
+        $service = new class (null, new FakeStripeCheckoutGateway()) extends PaymentCheckoutService {
             public function isStripeConfigured(): bool
             {
                 return false;
@@ -636,6 +645,51 @@ class PaymentCheckoutServiceTest extends TestCase
         $this->assertCount(2, $payments);
         $this->assertSame('paid', $payments[1]->payment_status);
         $this->assertNotNull($payments[1]->payment_date);
+    }
+
+    public function testExplicitDemoModeWorksWhenDebugIsFalse(): void
+    {
+        $previousDebug = Configure::read('debug');
+        Configure::write('debug', false);
+        Configure::write('Stripe.secret_key', null);
+        Configure::write('Payments.demo_mode', true);
+
+        try {
+            $bookingId = $this->insertBooking([
+                'class_id' => 2,
+                'student_id' => 1,
+                'parent_id' => null,
+                'booking_status' => 'pending',
+                'price_at_booking' => 20.00,
+                'booking_date' => '2026-04-10 12:00:00',
+                'created_at' => '2026-04-10 12:00:00',
+                'updated_at' => '2026-04-10 12:00:00',
+            ]);
+
+            $booking = FactoryLocator::get('Table')->get('Bookings')->find()
+                ->contain(['Students', 'Classes' => ['Courses']])
+                ->where(['Bookings.booking_id' => $bookingId])
+                ->firstOrFail();
+
+            $service = new PaymentCheckoutService(gateway: new FakeStripeCheckoutGateway());
+            $result = $service->startCheckout($booking, [
+                'success_url' => 'http://localhost/success',
+                'cancel_url' => 'http://localhost/cancel',
+                'portal_source' => 'service_test',
+                'payer_id' => 4,
+            ]);
+
+            $payment = FactoryLocator::get('Table')->get('Payments')->find()
+                ->where(['Payments.booking_id' => $bookingId])
+                ->firstOrFail();
+
+            $this->assertSame('completed', $result['kind']);
+            $this->assertSame('demo', $result['completed_reason']);
+            $this->assertSame('paid', $payment->payment_status);
+            $this->assertCount(0, FakeStripeCheckoutGateway::$createdPayloads);
+        } finally {
+            Configure::write('debug', $previousDebug);
+        }
     }
 
     private function insertBooking(array $values): int

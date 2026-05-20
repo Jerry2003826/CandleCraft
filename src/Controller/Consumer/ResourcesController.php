@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Consumer;
 
 use App\Service\ResourceUploadService;
+use Cake\Collection\Collection;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 
@@ -11,6 +12,9 @@ class ResourcesController extends AppController
 {
     private const ACCESSIBLE_BOOKING_STATUSES = ['confirmed', 'completed'];
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -18,8 +22,10 @@ class ResourcesController extends AppController
         $resourcesTable = $this->fetchTable('LearningResources');
 
         $studentIds = $this->getStudentIds($identity);
+        $filterClassId = $this->request->getQuery('class_id');
 
-        $bookings = new \Cake\Collection\Collection([]);
+        $bookings = new Collection([]);
+        $enrolledClasses = [];
         $resources = [];
 
         if (!empty($studentIds)) {
@@ -33,10 +39,20 @@ class ResourcesController extends AppController
 
             $classIds = $bookings->map(fn($b) => $b->class_id)->toArray();
 
+            foreach ($bookings as $booking) {
+                if ($booking->class_entity && !isset($enrolledClasses[$booking->class_id])) {
+                    $enrolledClasses[$booking->class_id] = $booking->class_entity;
+                }
+            }
+
             if (!empty($classIds)) {
+                $queryClassIds = $filterClassId && in_array((int)$filterClassId, $classIds, true)
+                    ? [(int)$filterClassId]
+                    : $classIds;
+
                 $resources = $resourcesTable->find()
                     ->where([
-                        'LearningResources.class_id IN' => $classIds,
+                        'LearningResources.class_id IN' => $queryClassIds,
                         'LearningResources.resource_status' => 'active',
                     ])
                     ->contain(['Classes' => ['Courses']])
@@ -47,10 +63,15 @@ class ResourcesController extends AppController
             }
         }
 
-        $this->set(compact('bookings', 'resources'));
+        $this->set(compact('bookings', 'enrolledClasses', 'resources', 'filterClassId'));
         $this->set('title', 'Learning Resources');
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function view(?int $resourceId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -90,6 +111,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Download.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function download(?int $resourceId = null): Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -111,7 +137,12 @@ class ResourcesController extends AppController
         return $this->buildDownloadResponse($resource->file_path, $resource->resource_type === 'video');
     }
 
-    private function getStudentIds($identity): array
+    /**
+     * Get student ids.
+     *
+     * @param mixed $identity Identity.
+     */
+    private function getStudentIds(mixed $identity): array
     {
         $student = $this->fetchTable('Students')->find()
             ->where(['Students.user_id' => $identity->get('user_id')])
@@ -120,6 +151,12 @@ class ResourcesController extends AppController
         return $student ? [$student->student_id] : [];
     }
 
+    /**
+     * Has access to class resources.
+     *
+     * @param mixed $studentIds Studentids.
+     * @param mixed $classId Classid.
+     */
     private function hasAccessToClassResources(array $studentIds, int $classId): bool
     {
         if ($studentIds === []) {
@@ -133,6 +170,12 @@ class ResourcesController extends AppController
         ]);
     }
 
+    /**
+     * Build download response.
+     *
+     * @param mixed $relativePath Relativepath.
+     * @param mixed $allowInlineVideo Allowinlinevideo.
+     */
     private function buildDownloadResponse(?string $relativePath, bool $allowInlineVideo = false): Response
     {
         if (!$relativePath) {

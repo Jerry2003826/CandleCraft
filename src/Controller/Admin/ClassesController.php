@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Model\Table\ClassesTable;
+use DateTimeImmutable;
+use Throwable;
 
 class ClassesController extends AppController
 {
@@ -16,6 +18,9 @@ class ClassesController extends AppController
         'Room B' => 'Room B',
     ];
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $classesTable = $this->fetchTable('Classes');
@@ -45,6 +50,11 @@ class ClassesController extends AppController
         $this->set(compact('classes', 'status', 'search'));
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $id Id.
+     */
     public function view(?string $id = null): void
     {
         $classesTable = $this->fetchTable('Classes');
@@ -52,6 +62,11 @@ class ClassesController extends AppController
         $this->set('class', $class);
     }
 
+    /**
+     * Add.
+     *
+     * @return mixed
+     */
     public function add()
     {
         $classesTable = $this->fetchTable('Classes');
@@ -61,7 +76,9 @@ class ClassesController extends AppController
         if ($this->request->is('post')) {
             $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable));
             if ($classesTable->save($class)) {
-                $this->Flash->success(__('The class has been saved.'));
+                $this->Flash->success(__(
+                    'The class has been saved.',
+                ));
 
                 $referer = $this->request->referer(true);
                 if ($referer && str_contains($referer, 'availability')) {
@@ -70,7 +87,9 @@ class ClassesController extends AppController
 
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('The class could not be saved. Please try again.'));
+            $this->Flash->error(__(
+                'The class could not be saved. Please try again.',
+            ));
         }
 
         $courses = $this->buildCourseOptions($courseEntities);
@@ -85,6 +104,12 @@ class ClassesController extends AppController
         $this->set(compact('class', 'courses', 'teachers', 'locationOptions', 'courseDurations'));
     }
 
+    /**
+     * Edit.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function edit(?string $id = null)
     {
         $classesTable = $this->fetchTable('Classes');
@@ -94,11 +119,15 @@ class ClassesController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $class = $classesTable->patchEntity($class, $this->buildClassPayload((array)$this->request->getData(), $classesTable, $class));
             if ($classesTable->save($class)) {
-                $this->Flash->success(__('The class has been saved.'));
+                $this->Flash->success(__(
+                    'The class has been saved.',
+                ));
 
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('The class could not be saved. Please try again.'));
+            $this->Flash->error(__(
+                'The class could not be saved. Please try again.',
+            ));
         }
 
         $courses = $this->buildCourseOptions($courseEntities);
@@ -107,7 +136,7 @@ class ClassesController extends AppController
             $courseDurations[(int)$class->course_id] = $this->resolveCourseDurationMinutes(
                 $classesTable,
                 (int)$class->course_id,
-                $class
+                $class,
             );
         }
         $teachers = $classesTable->Teachers->find('list', keyField: 'teacher_id', valueField: 'teacher_name')
@@ -120,12 +149,17 @@ class ClassesController extends AppController
         $this->set(compact('class', 'courses', 'teachers', 'locationOptions', 'courseDurations'));
     }
 
+    /**
+     * Availability.
+     *
+     * @return mixed
+     */
     public function availability()
     {
         $classesTable = $this->fetchTable('Classes');
 
         $weekOffset = (int)($this->request->getQuery('week') ?? 0);
-        $monday = new \DateTimeImmutable('monday this week');
+        $monday = new DateTimeImmutable('monday this week');
         $monday = $monday->modify("{$weekOffset} weeks");
 
         $days = [];
@@ -180,10 +214,16 @@ class ClassesController extends AppController
             'allCourses',
             'scheduledCourseIds',
             'locationOptions',
-            'courseDurations'
+            'courseDurations',
         ));
     }
 
+    /**
+     * Delete.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
@@ -191,16 +231,28 @@ class ClassesController extends AppController
         $classesTable = $this->fetchTable('Classes');
         $class = $classesTable->get($id);
         if ($classesTable->delete($class)) {
-            $this->Flash->success(__('The class has been deleted.'));
+            $this->Flash->success(__(
+                'The class has been deleted.',
+            ));
         } else {
-            $this->Flash->error(__('The class could not be deleted. Please try again.'));
+            $this->Flash->error(__(
+                'The class could not be deleted. Please try again.',
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Build class payload.
+     *
+     * @param mixed $data Data.
+     * @param mixed $classesTable Classestable.
+     * @param mixed $existingClass Existingclass.
+     */
     private function buildClassPayload(array $data, ClassesTable $classesTable, ?object $existingClass = null): array
     {
+        $data['class_name'] = trim((string)($data['class_name'] ?? ''));
         $data['location'] = trim((string)($data['location'] ?? ''));
         $data['notes'] = trim((string)($data['notes'] ?? '')) ?: null;
         $selectedCourseId = isset($data['course_id']) ? (int)$data['course_id'] : null;
@@ -214,7 +266,7 @@ class ClassesController extends AppController
             $data['class_code'] = $this->generateClassCode(
                 $classesTable,
                 $selectedCourseId,
-                $existingClass?->class_id ? (int)$existingClass->class_id : null
+                $existingClass?->class_id ? (int)$existingClass->class_id : null,
             );
         }
 
@@ -268,17 +320,26 @@ class ClassesController extends AppController
         return $durations;
     }
 
+    /**
+     * Resolve course duration minutes.
+     *
+     * @param mixed $classesTable Classestable.
+     * @param mixed $courseId Courseid.
+     * @param mixed $existingClass Existingclass.
+     */
     private function resolveCourseDurationMinutes(
         ClassesTable $classesTable,
         int $courseId,
-        ?object $existingClass = null
+        ?object $existingClass = null,
     ): int {
-        if (
-            $existingClass !== null
-            && (int)$existingClass->course_id === $courseId
-            && ($existingDuration = $this->extractDurationMinutes($existingClass->start_datetime ?? null, $existingClass->end_datetime ?? null)) !== null
-        ) {
-            return $existingDuration;
+        if ($existingClass !== null && (int)$existingClass->course_id === $courseId) {
+            $existingDuration = $this->extractDurationMinutes(
+                $existingClass->start_datetime ?? null,
+                $existingClass->end_datetime ?? null,
+            );
+            if ($existingDuration !== null) {
+                return $existingDuration;
+            }
         }
 
         $latestClass = $classesTable->find()
@@ -302,6 +363,12 @@ class ClassesController extends AppController
         return $this->defaultDurationMinutesForCourse($course);
     }
 
+    /**
+     * Extract duration minutes.
+     *
+     * @param mixed $start Start.
+     * @param mixed $end End.
+     */
     private function extractDurationMinutes(mixed $start, mixed $end): ?int
     {
         if (!$start || !$end || !method_exists($start, 'getTimestamp') || !method_exists($end, 'getTimestamp')) {
@@ -316,17 +383,28 @@ class ClassesController extends AppController
         return min($duration, 480);
     }
 
+    /**
+     * Calculate end date time.
+     *
+     * @param mixed $startInput Startinput.
+     * @param mixed $durationMinutes Durationminutes.
+     */
     private function calculateEndDateTime(string $startInput, int $durationMinutes): ?string
     {
         try {
-            $start = new \DateTimeImmutable($startInput);
-        } catch (\Throwable) {
+            $start = new DateTimeImmutable($startInput);
+        } catch (Throwable) {
             return null;
         }
 
         return $start->modify(sprintf('+%d minutes', max(30, $durationMinutes)))->format('Y-m-d H:i:s');
     }
 
+    /**
+     * Default duration minutes for course.
+     *
+     * @param mixed $course Course.
+     */
     private function defaultDurationMinutesForCourse(?object $course): int
     {
         $courseType = strtolower((string)($course->course_type ?? ''));
@@ -337,6 +415,13 @@ class ClassesController extends AppController
         };
     }
 
+    /**
+     * Generate class code.
+     *
+     * @param mixed $classesTable Classestable.
+     * @param mixed $courseId Courseid.
+     * @param mixed $ignoreClassId Ignoreclassid.
+     */
     private function generateClassCode(ClassesTable $classesTable, int $courseId, ?int $ignoreClassId = null): string
     {
         $course = $classesTable->Courses->get($courseId);
@@ -366,6 +451,11 @@ class ClassesController extends AppController
         return sprintf('%s-%03d', $prefix, $maxSuffix + 1);
     }
 
+    /**
+     * Build class code prefix.
+     *
+     * @param mixed $course Course.
+     */
     private function buildClassCodePrefix(object $course): string
     {
         $typePrefix = match (strtolower((string)($course->course_type ?? ''))) {

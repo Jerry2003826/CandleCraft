@@ -13,6 +13,11 @@ final class StripeCheckoutSessionClassifier
     public const STATE_EXPIRED = 'expired';
     public const STATE_STALE = 'stale';
 
+    /**
+     * Classify.
+     *
+     * @param mixed $session Session.
+     */
     public function classify(object $session): array
     {
         $paymentStatus = strtolower(trim((string)($session->payment_status ?? '')));
@@ -41,6 +46,13 @@ final class StripeCheckoutSessionClassifier
         return $this->result(self::STATE_STALE, $sessionStatus, $paymentStatus);
     }
 
+    /**
+     * Result.
+     *
+     * @param mixed $state State.
+     * @param mixed $sessionStatus Sessionstatus.
+     * @param mixed $paymentStatus Paymentstatus.
+     */
     private function result(string $state, string $sessionStatus, string $paymentStatus): array
     {
         return [

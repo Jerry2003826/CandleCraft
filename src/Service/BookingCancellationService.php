@@ -15,6 +15,14 @@ class BookingCancellationService
     private object $paymentsTable;
     private PendingPaymentDispositionService $pendingPaymentDispositionService;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $tableLocator Tablelocator.
+     * @param mixed $gateway Gateway.
+     * @param mixed $pendingPaymentDispositionService Pendingpaymentdispositionservice.
+     * @return mixed
+     */
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
@@ -26,10 +34,16 @@ class BookingCancellationService
         $resolvedGateway = $gateway ?? $this->buildGateway();
         $this->pendingPaymentDispositionService = $pendingPaymentDispositionService ?? new PendingPaymentDispositionService(
             $locator,
-            $resolvedGateway
+            $resolvedGateway,
         );
     }
 
+    /**
+     * Cancel booking.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $context Context.
+     */
     public function cancelBooking(int $bookingId, array $context = []): void
     {
         $connection = $this->paymentsTable->getConnection();
@@ -42,8 +56,10 @@ class BookingCancellationService
 
             $payments = $this->findBookingPaymentsForUpdate($bookingId);
             foreach ($payments as $payment) {
-                if (in_array($payment->payment_status, ['paid', 'refund_required', 'partially_refunded', 'refunded'], true)) {
-                    throw new RuntimeException('Paid bookings require a refund or manual review before they can be cancelled.');
+                if (in_array($payment->payment_status, ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'], true)) {
+                    throw new RuntimeException(
+                        'Paid bookings require a refund or manual review before they can be cancelled.',
+                    );
                 }
             }
 
@@ -62,6 +78,12 @@ class BookingCancellationService
         });
     }
 
+    /**
+     * Void pending payments for booking.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $context Context.
+     */
     public function voidPendingPaymentsForBooking(int $bookingId, array $context = []): int
     {
         $connection = $this->paymentsTable->getConnection();
@@ -86,7 +108,13 @@ class BookingCancellationService
         });
     }
 
-    private function findBookingPaymentsForUpdate(int $bookingId)
+    /**
+     * Find booking payments for update.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @return mixed
+     */
+    private function findBookingPaymentsForUpdate(int $bookingId): mixed
     {
         $query = $this->paymentsTable->find()
             ->where(['Payments.booking_id' => $bookingId])
@@ -99,6 +127,11 @@ class BookingCancellationService
         return $query->all();
     }
 
+    /**
+     * Load booking for update.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     private function loadBookingForUpdate(int $bookingId): object
     {
         $query = $this->bookingsTable->find()
@@ -111,11 +144,17 @@ class BookingCancellationService
         return $query->firstOrFail();
     }
 
+    /**
+     * Supports row locking.
+     */
     private function supportsRowLocking(): bool
     {
         return $this->paymentsTable->getConnection()->getDriver() instanceof Mysql;
     }
 
+    /**
+     * Build gateway.
+     */
     private function buildGateway(): StripeCheckoutGatewayInterface
     {
         $gatewayClass = (string)Configure::read('Payments.gateway_class', StripeCheckoutGateway::class);

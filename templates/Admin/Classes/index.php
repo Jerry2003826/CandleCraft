@@ -8,20 +8,18 @@
 $this->assign('title', 'Classes');
 ?>
 
-<!-- Tab Navigation -->
-<div class="admin-page-header mb-4">
-    <div class="admin-tabs">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab active">Class List</a>
-        <a href="<?= $this->Url->build(['action' => 'availability']) ?>" class="admin-tab">Availability</a>
-        <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>" class="admin-tab">Attendance</a>
-    </div>
-</div>
-
-<!-- Toolbar: Search + Add -->
-<div class="admin-page-header justify-content-end">
+<div class="admin-page-header admin-list-toolbar">
     <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
         <i class="bi bi-plus-lg"></i> Add Class
     </a>
+    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" role="search" class="admin-list-toolbar__search">
+        <div class="admin-search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <label for="classSearch" class="visually-hidden">Search classes</label>
+            <input type="text" name="search" placeholder="Search classes..." id="classSearch"
+                   aria-label="Search classes" value="<?= h($search ?? '') ?>">
+        </div>
+    </form>
 </div>
 
 <div class="admin-table-card">
@@ -44,8 +42,9 @@ $this->assign('title', 'Classes');
                     $cap = (int)$class->capacity;
                     $pct = $cap > 0 ? round($booked / $cap * 100) : 0;
                     $barColor = $pct >= 90 ? 'bg-danger' : ($pct >= 70 ? 'bg-warning' : 'bg-success');
+                    $viewUrl = $this->Url->build(['action' => 'view', $class->class_id]);
                 ?>
-	                <tr>
+	                <tr class="admin-clickable-row" data-href="<?= h($viewUrl) ?>" tabindex="0" role="link" aria-label="View class <?= h($class->class_code) ?>">
 	                    <td>
 	                        <p class="admin-table-primary-text" style="color: var(--admin-brand-icon);"><?= h($class->class_code) ?></p>
 	                    </td>
@@ -107,3 +106,43 @@ $this->assign('title', 'Classes');
         <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>
+
+<style>
+    .admin-clickable-row {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('form[role="search"]');
+    var searchInput = document.getElementById('classSearch');
+    if (!form || !searchInput) return;
+    var timer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() { form.submit(); }, 400);
+    });
+
+    document.querySelectorAll('.admin-clickable-row[data-href]').forEach(function (row) {
+        function openRow(event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            window.location.href = row.dataset.href;
+        }
+
+        row.addEventListener('click', openRow);
+        row.addEventListener('keydown', function (event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+            event.preventDefault();
+            window.location.href = row.dataset.href;
+        });
+    });
+});
+</script>

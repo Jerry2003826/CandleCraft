@@ -4,13 +4,19 @@ declare(strict_types=1);
 namespace App\Controller\Student;
 
 use App\Service\BookingCancellationService;
+use App\Service\BookingConfirmationEmailService;
+use App\Service\BookingEnrollmentStateService;
+use Cake\Http\Response;
 use Cake\I18n\DateTime;
 use Cake\Log\Log;
-use Cake\Http\Response;
 use RuntimeException;
+use Throwable;
 
 class BookingsController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -81,13 +87,18 @@ class BookingsController extends AppController
         $this->set('title', 'My Schedule');
     }
 
+    /**
+     * Add.
+     *
+     * @param mixed $classId Classid.
+     */
     public function add(?int $classId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
         $studentsTable = $this->fetchTable('Students');
         $classesTable = $this->fetchTable('Classes');
         $bookingsTable = $this->fetchTable('Bookings');
-        $parentsTable = $this->fetchTable('Parents');
+        $enrollmentState = new BookingEnrollmentStateService();
 
         $student = $studentsTable->find()
             ->where(['Students.user_id' => $identity?->get('user_id')])
@@ -98,36 +109,34 @@ class BookingsController extends AppController
             ->where(['Classes.class_id' => $classId])
             ->firstOrFail();
 
-        $bookingsCount = $bookingsTable->find()
-            ->where([
-                'Bookings.class_id' => $classId,
-                'Bookings.booking_status IN' => ['pending', 'confirmed'],
-            ])
-            ->count();
+        $bookingsCount = $enrollmentState->countBlockingBookingsForClass((int)$classId);
 
         $availableSlots = $class->capacity - $bookingsCount;
 
         if ($availableSlots <= 0) {
-            $this->Flash->error(__('This class is fully booked.'));
+            $this->Flash->error(__(
+                'This class is fully booked.',
+            ));
 
             return $this->redirect(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']);
         }
 
-        $existingBooking = $bookingsTable->find()
-            ->where([
-                'Bookings.student_id' => $student->student_id,
-                'Bookings.class_id' => $classId,
-                'Bookings.booking_status IN' => ['pending', 'confirmed'],
-            ])
-            ->first();
+        $existingBooking = $enrollmentState->findBlockingBookingForStudent(
+            (int)$classId,
+            (int)$student->student_id,
+            ['pending', 'confirmed'],
+        );
 
         if ($existingBooking) {
-            $this->Flash->error(__('You have already booked this class.'));
+            $this->Flash->error(__(
+                'You have already booked this class.',
+            ));
 
             return $this->redirect(['action' => 'index']);
         }
 
         $existingAnyStatusBooking = $bookingsTable->find()
+            ->contain(['Payments'])
             ->where([
                 'Bookings.student_id' => $student->student_id,
                 'Bookings.class_id' => $classId,
@@ -145,14 +154,22 @@ class BookingsController extends AppController
 
         if ($this->request->is('post')) {
             if ($existingAnyStatusBooking) {
-                if ($existingAnyStatusBooking->booking_status === 'cancelled') {
+                if (
+                    $existingAnyStatusBooking->booking_status === 'cancelled'
+                    || $enrollmentState->bookingCanBeReused($existingAnyStatusBooking)
+                ) {
                     $existingAnyStatusBooking->booking_status = 'pending';
                     $existingAnyStatusBooking->parent_id = $parentId ?? $this->request->getData('parent_id');
                     $existingAnyStatusBooking->price_at_booking = $class->course?->course_price ?? 0;
-                    $existingAnyStatusBooking->booking_date = new \Cake\I18n\DateTime();
+                    $existingAnyStatusBooking->booking_date = new DateTime();
+                    $existingAnyStatusBooking->reminder_sent_at = null;
+                    $existingAnyStatusBooking->booking_confirmation_sent_at = null;
 
                     if ($bookingsTable->save($existingAnyStatusBooking)) {
-                        $this->Flash->success(__('Previous cancelled booking has been reactivated. Please proceed to payment.'));
+                        $this->sendBookingConfirmationEmail((int)$existingAnyStatusBooking->booking_id, 'Student');
+                        $this->Flash->success(__(
+                            'Previous cancelled booking has been reactivated. Please proceed to payment.',
+                        ));
 
                         return $this->redirect([
                             'prefix' => 'Student',
@@ -163,7 +180,9 @@ class BookingsController extends AppController
                     }
                 }
 
-                $this->Flash->error(__('A booking record for this class already exists and cannot be duplicated.'));
+                $this->Flash->error(__(
+                    'A booking record for this class already exists and cannot be duplicated.',
+                ));
 
                 return $this->redirect(['action' => 'index']);
             }
@@ -187,7 +206,7 @@ class BookingsController extends AppController
                         $className,
                         $schedule,
                     );
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     Log::warning('Booking confirmation notification failed.', [
                         'booking_id' => $booking->booking_id ?? null,
                         'student_id' => $student->student_id,
@@ -195,8 +214,11 @@ class BookingsController extends AppController
                         'error' => $exception->getMessage(),
                     ]);
                 }
+                $this->sendBookingConfirmationEmail((int)$booking->booking_id, 'Student');
 
-                $this->Flash->success(__('Booking created successfully. Please proceed to payment.'));
+                $this->Flash->success(__(
+                    'Booking created successfully. Please proceed to payment.',
+                ));
 
                 return $this->redirect([
                     'prefix' => 'Student',
@@ -205,7 +227,9 @@ class BookingsController extends AppController
                     $booking->booking_id,
                 ]);
             }
-            $this->Flash->error(__('Could not create booking. Please try again.'));
+            $this->Flash->error(__(
+                'Could not create booking. Please try again.',
+            ));
         }
 
         $this->set(compact('class', 'student', 'availableSlots'));
@@ -214,6 +238,11 @@ class BookingsController extends AppController
         return null;
     }
 
+    /**
+     * Cancel.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function cancel(?int $bookingId = null): ?Response
     {
         $this->request->allowMethod(['post']);
@@ -236,14 +265,23 @@ class BookingsController extends AppController
             (new BookingCancellationService())->cancelBooking((int)$booking->booking_id, [
                 'portal_source' => 'student_portal',
             ]);
-            $this->Flash->success(__('Booking has been cancelled.'));
+            $this->Flash->success(__(
+                'Booking has been cancelled.',
+            ));
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Resolve week reference.
+     *
+     * @param mixed $weekStartParam Weekstartparam.
+     */
     private function resolveWeekReference(mixed $weekStartParam): DateTime
     {
         if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
@@ -252,8 +290,24 @@ class BookingsController extends AppController
 
         try {
             return new DateTime($weekStartParam);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return new DateTime('now');
         }
+    }
+
+    /**
+     * Send booking confirmation email.
+     *
+     * @param mixed $bookingId Bookingid.
+     * @param mixed $portalPrefix Portalprefix.
+     */
+    private function sendBookingConfirmationEmail(int $bookingId, string $portalPrefix): void
+    {
+        $identity = $this->Authentication->getIdentity();
+        (new BookingConfirmationEmailService())->sendForBooking($bookingId, [
+            'portal_prefix' => $portalPrefix,
+            'recipient_email' => (string)($identity?->get('email') ?? ''),
+            'recipient_name' => (string)($identity?->get('username') ?? ''),
+        ]);
     }
 }

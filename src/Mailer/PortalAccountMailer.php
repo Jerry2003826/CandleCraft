@@ -7,6 +7,11 @@ use Cake\Mailer\Mailer;
 
 class PortalAccountMailer extends Mailer
 {
+    /**
+     * Portal credentials.
+     *
+     * @param mixed $payload Payload.
+     */
     public function portalCredentials(array $payload): static
     {
         $this

@@ -10,11 +10,20 @@ use RuntimeException;
 
 class ResourcesController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
+        $status = $this->request->getQuery('status', 'active');
+        if (!in_array($status, ['active', 'archived'], true)) {
+            $status = 'active';
+        }
+
         $resourcesTable = $this->fetchTable('LearningResources');
         $query = $resourcesTable->find()
             ->contain(['Classes' => ['Courses']])
+            ->where(['LearningResources.resource_status' => $status])
             ->orderBy(['LearningResources.uploaded_at' => 'DESC']);
 
         $filter = $this->request->getQuery('class_id');
@@ -30,10 +39,53 @@ class ResourcesController extends AppController
             ->orderBy(['Classes.class_code' => 'ASC'])
             ->all();
 
-        $this->set(compact('resources', 'classes', 'filter'));
+        $this->set(compact('resources', 'classes', 'filter', 'status'));
         $this->set('title', 'Learning Resources');
     }
 
+    /**
+     * Archive.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
+    public function archive(?int $resourceId = null): Response
+    {
+        $this->request->allowMethod(['post']);
+        $resource = $this->fetchTable('LearningResources')->get($resourceId);
+        $resource->resource_status = 'archived';
+
+        if ($this->fetchTable('LearningResources')->save($resource)) {
+            $this->Flash->success(__('Resource has been archived.'));
+        } else {
+            $this->Flash->error(__('Could not archive resource. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Restore.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
+    public function restore(?int $resourceId = null): Response
+    {
+        $this->request->allowMethod(['post']);
+        $resource = $this->fetchTable('LearningResources')->get($resourceId);
+        $resource->resource_status = 'active';
+
+        if ($this->fetchTable('LearningResources')->save($resource)) {
+            $this->Flash->success(__('Resource has been restored.'));
+        } else {
+            $this->Flash->error(__('Could not restore resource. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'index', '?' => ['status' => 'archived']]);
+    }
+
+    /**
+     * Add.
+     */
     public function add(): ?Response
     {
         $resourcesTable = $this->fetchTable('LearningResources');
@@ -61,6 +113,7 @@ class ResourcesController extends AppController
 
             if (!$resource->hasErrors() && $resourcesTable->save($resource)) {
                 $this->Flash->success(__('Resource has been added.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -91,6 +144,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Edit.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function edit(?int $resourceId = null): ?Response
     {
         $resourcesTable = $this->fetchTable('LearningResources');
@@ -122,6 +180,7 @@ class ResourcesController extends AppController
                     $uploadService->deleteStoredFile($oldFilePath);
                 }
                 $this->Flash->success(__('Resource has been updated.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -152,6 +211,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Download.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function download(?int $resourceId = null): Response
     {
         $resource = $this->fetchTable('LearningResources')->get($resourceId);
@@ -174,6 +238,11 @@ class ResourcesController extends AppController
             ]);
     }
 
+    /**
+     * Delete.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function delete(?int $resourceId = null): ?Response
     {
         $this->request->allowMethod(['post', 'delete']);
@@ -191,6 +260,11 @@ class ResourcesController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Build admin payload.
+     *
+     * @param mixed $data Data.
+     */
     private function buildAdminPayload(array $data): array
     {
         return [

@@ -3,15 +3,24 @@ declare(strict_types=1);
 
 namespace App\Controller\Consumer;
 
+use App\Service\BookingEnrollmentStateService;
 use Cake\I18n\DateTime;
+use Throwable;
 
 class CoursesController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
+        $identity = $this->Authentication->getIdentity();
         $coursesTable = $this->fetchTable('Courses');
         $classesTable = $this->fetchTable('Classes');
-        $bookingsTable = $this->fetchTable('Bookings');
+        $enrollmentState = new BookingEnrollmentStateService();
+        $student = $this->fetchTable('Students')->find()
+            ->where(['Students.user_id' => $identity->get('user_id')])
+            ->firstOrFail();
 
         $courses = $coursesTable->find()
             ->where(['Courses.is_active' => true])
@@ -30,21 +39,22 @@ class CoursesController extends AppController
                 ->all();
 
             $classList = [];
+            $courseHasCurrentCustomerBooking = false;
             foreach ($classes as $class) {
-                $bookedCount = $bookingsTable->find()
-                    ->where([
-                        'Bookings.class_id' => $class->class_id,
-                        'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                    ])
-                    ->count();
+                $bookedCount = $enrollmentState->countBlockingBookingsForClass((int)$class->class_id);
                 $class->booked_count = $bookedCount;
                 $class->available_slots = $class->capacity - $bookedCount;
+                $class->booked_by_current_customer = $enrollmentState->hasBlockingBookingForStudent(
+                    (int)$class->class_id,
+                    (int)$student->student_id,
+                );
+                $courseHasCurrentCustomerBooking = $courseHasCurrentCustomerBooking || (bool)$class->booked_by_current_customer;
                 $classList[] = $class;
 
                 if ($class->start_datetime && $class->end_datetime) {
                     $courseType = strtolower($course->course_type ?? 'default');
                     $color = $courseType === 'pottery' ? '#1D4ED8' : ($courseType === 'knitting' ? '#B45309' : '#374151');
-                    
+
                     $calendarEvents[] = [
                         'class_id' => $class->class_id,
                         'title' => $course->course_name . ' (' . $class->class_code . ')',
@@ -55,10 +65,12 @@ class CoursesController extends AppController
                         'day_index' => (int)$class->start_datetime->format('w'),
                         'full_date' => $class->start_datetime->format('Y-m-d'),
                         'color' => $color,
+                        'course_type' => $courseType,
                         'location' => $class->location,
                         'teacher' => $class->teacher?->teacher_name,
                         'available_slots' => $class->available_slots,
-                        'price' => $course->course_price
+                        'booked_by_current_customer' => $class->booked_by_current_customer,
+                        'price' => $course->course_price,
                     ];
                 }
             }
@@ -66,6 +78,7 @@ class CoursesController extends AppController
             $courseData[] = [
                 'course' => $course,
                 'classes' => $classList,
+                'booked_by_current_customer' => $courseHasCurrentCustomerBooking,
             ];
         }
 
@@ -81,6 +94,11 @@ class CoursesController extends AppController
         $this->set('title', 'Book a Class');
     }
 
+    /**
+     * Resolve week reference.
+     *
+     * @param mixed $weekStartParam Weekstartparam.
+     */
     private function resolveWeekReference(mixed $weekStartParam): DateTime
     {
         if (!is_string($weekStartParam) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $weekStartParam) !== 1) {
@@ -89,7 +107,7 @@ class CoursesController extends AppController
 
         try {
             return new DateTime($weekStartParam);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return new DateTime('now');
         }
     }

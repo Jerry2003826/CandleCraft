@@ -1,5 +1,6 @@
 <?php
 
+use Cake\Mailer\Transport\SmtpTransport;
 use function Cake\Core\env;
 
 /*
@@ -86,17 +87,30 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
+            'className' => SmtpTransport::class,
+            'host' => env('EMAIL_SMTP_HOST', 'ssl://u26s1185.iedev.org'),
+            'port' => (int)env('EMAIL_SMTP_PORT', 465),
+            'timeout' => 30,
+            'username' => env('EMAIL_SMTP_USERNAME', 'u26s1185@u26s1185.iedev.org'),
+            'password' => env('EMAIL_SMTP_PASSWORD', null),
             'client' => null,
+            'tls' => filter_var(env('EMAIL_SMTP_TLS', false), FILTER_VALIDATE_BOOLEAN),
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+        ],
+    ],
+
+    'Email' => [
+        'default' => [
+            'transport' => 'default',
+            'from' => [
+                env('EMAIL_FROM_ADDRESS', 'u26s1185@u26s1185.iedev.org') => env('EMAIL_FROM_NAME', 'CandleCraft Academy'),
+            ],
         ],
     ],
 
     'Stripe' => [
         'environment' => env('STRIPE_ENVIRONMENT', null),
+        'api_version' => env('STRIPE_API_VERSION', '2026-02-25.clover'),
         'secret_key' => env('STRIPE_SECRET_KEY', null),
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', null),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET', null),
@@ -104,6 +118,9 @@ return [
 
     'Payments' => [
         'demo_mode' => filter_var(env('PAYMENTS_DEMO_MODE', false), FILTER_VALIDATE_BOOLEAN),
+        'admin_alerts' => [
+            'email_enabled' => filter_var(env('PAYMENT_ALERT_EMAILS', true), FILTER_VALIDATE_BOOLEAN),
+        ],
     ],
 
     'Recaptcha' => [

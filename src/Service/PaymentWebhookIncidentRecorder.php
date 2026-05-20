@@ -12,20 +12,34 @@ class PaymentWebhookIncidentRecorder
 {
     private object $incidentsTable;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $tableLocator Tablelocator.
+     * @return mixed
+     */
     public function __construct(?LocatorInterface $tableLocator = null)
     {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->incidentsTable = $locator->get('PaymentWebhookIncidents');
     }
 
+    /**
+     * Record.
+     *
+     * @param mixed $exception Exception.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $session Session.
+     * @param mixed $payload Payload.
+     * @param mixed $eventId Eventid.
+     */
     public function record(
         PaymentWebhookException $exception,
         string $eventType,
         object $session,
         string $payload,
         string $eventId = '',
-    ): void
-    {
+    ): void {
         $context = $exception->getContext();
         $sessionId = (string)($context['session_id'] ?? $session->id ?? '');
         $reasonCode = (string)($context['reason_code'] ?? 'unknown_reason');
@@ -73,7 +87,8 @@ class PaymentWebhookIncidentRecorder
             'notes' => $exception->getMessage(),
         ]);
 
-        if ($incident->isNew()) {
+        $isNew = $incident->isNew();
+        if ($isNew) {
             $incident->set('status', 'open');
             $incident->set('resolved_at', null);
             $incident->set('resolved_by_admin_id', null);
@@ -81,5 +96,20 @@ class PaymentWebhookIncidentRecorder
         $incident->set('event_id', $eventId !== '' ? $eventId : null);
 
         $this->incidentsTable->saveOrFail($incident);
+
+        if ($isNew) {
+            (new PaymentAdminAlertService())->alert(
+                'Stripe webhook incident',
+                sprintf('Stripe webhook incident requires review: %s.', $reasonCode),
+                [
+                    'event_type' => $eventType,
+                    'event_id' => $eventId,
+                    'session_id' => $sessionId,
+                    'payment_id' => $context['payment_id'] ?? null,
+                    'booking_id' => $context['booking_id'] ?? null,
+                    'reason_code' => $reasonCode,
+                ],
+            );
+        }
     }
 }

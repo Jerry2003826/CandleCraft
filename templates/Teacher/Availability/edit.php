@@ -3,21 +3,18 @@
  * @var \App\View\AppView $this
  * @var array $daysMap
  * @var iterable $existingSlots
+ * @var string $calendarMinDate
+ * @var string $calendarMaxDate
  */
 $this->assign('title', 'Edit Schedule');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Schedule
-</a>
+<?= $this->element('admin_back_link', ['url' => $this->Url->build(['action' => 'index']), 'label' => 'Back to Availability']) ?>
 
 <div class="admin-form-card">
-    <div class="admin-form-header">
-        <h2 class="admin-form-title">Edit Weekly Availability</h2>
-    </div>
-    
     <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 24px;">
         Set your available time slots for each day of the week. Students will see this when browsing classes.
+        Set the date range this weekly availability applies to.
     </p>
 
     <?= $this->Form->create(null, ['url' => ['action' => 'edit']]) ?>
@@ -30,6 +27,7 @@ $this->assign('title', 'Edit Schedule');
                 $endId = "slot-{$slotIndex}-end";
             ?>
                 <div class="slot-row" style="background-color: var(--admin-search-bg); border-radius: 12px; padding: 20px; margin-bottom: 16px; display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;" role="group" aria-label="Availability slot <?= $slotIndex + 1 ?>">
+                    <?= $this->Form->hidden("slots.{$slotIndex}.id", ['value' => $slot->id]) ?>
                     <div class="flex-grow-1" style="min-width: 120px;">
                         <label class="admin-form-label" for="<?= h($dayId) ?>">Day</label>
                         <?= $this->Form->select("slots.{$slotIndex}.day_of_week", $daysMap, [
@@ -51,6 +49,24 @@ $this->assign('title', 'Edit Schedule');
                         <?= $this->Form->time("slots.{$slotIndex}.end_time", [
                             'id' => $endId,
                             'value' => $slot->end_time ? $slot->end_time->format('H:i') : '17:00',
+                            'class' => 'admin-form-input',
+                        ]) ?>
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 150px;">
+                        <label class="admin-form-label" for="slot-<?= h((string)$slotIndex) ?>-valid-from">Start date</label>
+                        <?= $this->Form->date("slots.{$slotIndex}.valid_from", [
+                            'id' => "slot-{$slotIndex}-valid-from",
+                            'value' => $slot->valid_from?->format('Y-m-d') ?? '',
+                            'max' => $calendarMaxDate,
+                            'class' => 'admin-form-input',
+                        ]) ?>
+                    </div>
+                    <div class="flex-grow-1" style="min-width: 150px;">
+                        <label class="admin-form-label" for="slot-<?= h((string)$slotIndex) ?>-valid-until">End date</label>
+                        <?= $this->Form->date("slots.{$slotIndex}.valid_until", [
+                            'id' => "slot-{$slotIndex}-valid-until",
+                            'value' => $slot->valid_until?->format('Y-m-d') ?? '',
+                            'max' => $calendarMaxDate,
                             'class' => 'admin-form-input',
                         ]) ?>
                     </div>
@@ -78,6 +94,8 @@ $this->assign('title', 'Edit Schedule');
 <script>
 let slotIndex = <?= $slotIndex ?>;
 const daysMap = <?= json_encode($daysMap) ?>;
+const calendarMinDate = '<?= h($calendarMinDate) ?>';
+const calendarMaxDate = '<?= h($calendarMaxDate) ?>';
 
 function addSlot() {
     const container = document.getElementById('slots-container');
@@ -106,6 +124,14 @@ function addSlot() {
         <div class="flex-grow-1" style="min-width: 120px;">
             <label class="admin-form-label" for="slot-${slotIndex}-end">To</label>
             <input id="slot-${slotIndex}-end" type="time" name="slots[${slotIndex}][end_time]" value="17:00" class="admin-form-input">
+        </div>
+        <div class="flex-grow-1" style="min-width: 150px;">
+            <label class="admin-form-label" for="slot-${slotIndex}-valid-from">Start date</label>
+            <input id="slot-${slotIndex}-valid-from" type="date" name="slots[${slotIndex}][valid_from]" value="${calendarMinDate}" max="${calendarMaxDate}" class="admin-form-input">
+        </div>
+        <div class="flex-grow-1" style="min-width: 150px;">
+            <label class="admin-form-label" for="slot-${slotIndex}-valid-until">End date</label>
+            <input id="slot-${slotIndex}-valid-until" type="date" name="slots[${slotIndex}][valid_until]" max="${calendarMaxDate}" class="admin-form-input">
         </div>
         <div style="padding-bottom: 2px;">
             <button type="button" onclick="this.closest('.slot-row').remove()" class="admin-action-link delete" style="padding: 10px 16px; height: auto; width: auto;" title="Remove Slot" aria-label="Remove availability slot ${slotIndex + 1}">

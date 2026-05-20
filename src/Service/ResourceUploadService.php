@@ -7,6 +7,7 @@ use Cake\Core\Configure;
 use finfo;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
+use Throwable;
 
 class ResourceUploadService
 {
@@ -59,36 +60,54 @@ class ResourceUploadService
         ],
     ];
 
+    /**
+     * Store uploaded file.
+     *
+     * @param mixed $file File.
+     * @param mixed $directory Directory.
+     */
     public function storeUploadedFile(UploadedFileInterface $file, string $directory = 'resources'): string
     {
         if ($file->getError() !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('The uploaded file could not be processed.');
+            throw new RuntimeException(
+                'The uploaded file could not be processed.',
+            );
         }
 
         $clientFilename = (string)($file->getClientFilename() ?? '');
         $extension = strtolower(pathinfo(basename($clientFilename), PATHINFO_EXTENSION));
         if ($extension === '' || !in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
-            throw new RuntimeException('Unsupported file type.');
+            throw new RuntimeException(
+                'Unsupported file type.',
+            );
         }
 
         $size = $file->getSize();
         if ($size === null || $size > self::MAX_FILE_SIZE) {
-            throw new RuntimeException('File is too large.');
+            throw new RuntimeException(
+                'File is too large.',
+            );
         }
 
         $detectedMediaType = $this->detectUploadedMediaType($file);
         if (!$this->isAllowedDetectedMediaType($extension, $detectedMediaType)) {
-            throw new RuntimeException('Unsupported file media type.');
+            throw new RuntimeException(
+                'Unsupported file media type.',
+            );
         }
 
         $cleanDirectory = trim($directory, '/\\');
         if ($cleanDirectory !== 'resources') {
-            throw new RuntimeException('Unsupported upload directory.');
+            throw new RuntimeException(
+                'Unsupported upload directory.',
+            );
         }
 
         $targetDir = $this->getStorageAbsoluteDirectory();
         if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
-            throw new RuntimeException('Upload directory could not be created.');
+            throw new RuntimeException(
+                'Upload directory could not be created.',
+            );
         }
 
         $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
@@ -97,6 +116,11 @@ class ResourceUploadService
         return $this->getStorageDirectory() . '/' . $storedName;
     }
 
+    /**
+     * Delete stored file.
+     *
+     * @param mixed $relativePath Relativepath.
+     */
     public function deleteStoredFile(?string $relativePath): void
     {
         $normalizedPath = $this->normalizeStoredPath($relativePath);
@@ -133,6 +157,9 @@ class ResourceUploadService
         unlink($absolutePath);
     }
 
+    /**
+     * Get max file size.
+     */
     public function getMaxFileSize(): int
     {
         return self::MAX_FILE_SIZE;
@@ -154,16 +181,27 @@ class ResourceUploadService
         return array_values(array_unique(array_merge(...array_values(self::ALLOWED_MEDIA_TYPES_BY_EXTENSION))));
     }
 
+    /**
+     * Get storage directory.
+     */
     public function getStorageDirectory(): string
     {
         return trim((string)Configure::read('Uploads.resources_url_prefix', '/resources'), '/');
     }
 
+    /**
+     * Get storage absolute directory.
+     */
     public function getStorageAbsoluteDirectory(): string
     {
         return rtrim((string)Configure::read('Uploads.resources_root', ROOT . DS . 'storage' . DS . 'resources'), DIRECTORY_SEPARATOR);
     }
 
+    /**
+     * Resolve stored file path.
+     *
+     * @param mixed $relativePath Relativepath.
+     */
     public function resolveStoredFilePath(?string $relativePath): ?string
     {
         $storageLocation = $this->resolveStorageLocation($relativePath);
@@ -174,6 +212,11 @@ class ResourceUploadService
         return $storageLocation['absolute_path'];
     }
 
+    /**
+     * Detect stored file media type.
+     *
+     * @param mixed $absolutePath Absolutepath.
+     */
     public function detectStoredFileMediaType(string $absolutePath): string
     {
         $mediaType = $this->detectFileMediaType($absolutePath);
@@ -186,6 +229,11 @@ class ResourceUploadService
         return $this->fallbackMediaTypeForExtension($extension);
     }
 
+    /**
+     * Normalize stored path.
+     *
+     * @param mixed $relativePath Relativepath.
+     */
     public function normalizeStoredPath(?string $relativePath): ?string
     {
         if (!$relativePath) {
@@ -254,23 +302,35 @@ class ResourceUploadService
         ];
     }
 
+    /**
+     * Detect uploaded media type.
+     *
+     * @param mixed $file File.
+     */
     private function detectUploadedMediaType(UploadedFileInterface $file): string
     {
         try {
             $stream = $file->getStream();
             $streamMetadata = $stream->getMetadata();
             $streamPath = is_array($streamMetadata) ? ($streamMetadata['uri'] ?? null) : null;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $streamPath = null;
         }
 
         if (!is_string($streamPath) || $streamPath === '' || !is_file($streamPath)) {
-            throw new RuntimeException('Unable to inspect uploaded file.');
+            throw new RuntimeException(
+                'Unable to inspect uploaded file.',
+            );
         }
 
         return strtolower((string)$this->detectStoredFileMediaType($streamPath));
     }
 
+    /**
+     * Detect file media type.
+     *
+     * @param mixed $absolutePath Absolutepath.
+     */
     private function detectFileMediaType(string $absolutePath): ?string
     {
         if (!is_file($absolutePath)) {
@@ -286,6 +346,12 @@ class ResourceUploadService
         return strtolower($mediaType);
     }
 
+    /**
+     * Is allowed detected media type.
+     *
+     * @param mixed $extension Extension.
+     * @param mixed $mediaType Mediatype.
+     */
     private function isAllowedDetectedMediaType(string $extension, string $mediaType): bool
     {
         $allowedMediaTypes = self::ALLOWED_MEDIA_TYPES_BY_EXTENSION[$extension] ?? [];
@@ -293,6 +359,11 @@ class ResourceUploadService
         return in_array($mediaType, $allowedMediaTypes, true);
     }
 
+    /**
+     * Fallback media type for extension.
+     *
+     * @param mixed $extension Extension.
+     */
     private function fallbackMediaTypeForExtension(string $extension): string
     {
         return match ($extension) {

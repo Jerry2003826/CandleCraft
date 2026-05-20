@@ -5,6 +5,9 @@ namespace App\Controller\Student;
 
 class DashboardController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -27,10 +30,10 @@ class DashboardController extends AppController
 
         $bookingCount = $bookings->count();
         $upcomingClasses = $bookings->filter(
-            fn ($booking) => $booking->class?->start_datetime && $booking->class->start_datetime->isFuture(),
+            fn($booking) => $booking->class?->start_datetime && $booking->class->start_datetime->isFuture(),
         )->count();
         $presentCount = $bookings->filter(
-            fn ($booking) => $booking->attendance_record?->attendance_status === 'present',
+            fn($booking) => $booking->attendance_record?->attendance_status === 'present',
         )->count();
 
         $this->set(compact('student', 'bookings', 'bookingCount', 'upcomingClasses', 'presentCount'));

@@ -60,6 +60,9 @@ Change seeded credentials outside local development. Production deployments must
 For full production and shared-hosting deployment instructions, see:
 
 - [`docs/DEPLOYMENT_GUIDE_EN.md`](docs/DEPLOYMENT_GUIDE_EN.md)
+- [`docs/CLASS_REMINDERS.md`](docs/CLASS_REMINDERS.md) — automated 24-hour class
+  reminder pipeline (CLI command, cron / launchd / Task Scheduler wiring,
+  email transport setup, dry-run testing).
 
 This guide covers:
 

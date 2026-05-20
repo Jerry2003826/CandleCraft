@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 namespace App\Controller\Student;
 
+use App\Service\BookingEnrollmentStateService;
+
 class CoursesController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $coursesTable = $this->fetchTable('Courses');
         $classesTable = $this->fetchTable('Classes');
-        $bookingsTable = $this->fetchTable('Bookings');
+        $enrollmentState = new BookingEnrollmentStateService();
 
         $courses = $coursesTable->find()
             ->where(['Courses.is_active' => true])
@@ -28,12 +33,7 @@ class CoursesController extends AppController
 
             $classList = [];
             foreach ($classes as $class) {
-                $bookedCount = $bookingsTable->find()
-                    ->where([
-                        'Bookings.class_id' => $class->class_id,
-                        'Bookings.booking_status IN' => ['pending', 'confirmed'],
-                    ])
-                    ->count();
+                $bookedCount = $enrollmentState->countBlockingBookingsForClass((int)$class->class_id);
                 $class->booked_count = $bookedCount;
                 $class->available_slots = $class->capacity - $bookedCount;
                 $classList[] = $class;

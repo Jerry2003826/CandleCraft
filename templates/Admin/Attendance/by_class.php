@@ -8,8 +8,8 @@ $this->assign('title', 'Attendance - ' . h($class->class_code));
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-0">
-        <i class="bi bi-arrow-left"></i> All Records
+    <a href="#" onclick="history.back(); return false;" class="admin-back-link mb-0">
+        <i class="bi bi-arrow-left"></i> Back
     </a>
 </div>
 

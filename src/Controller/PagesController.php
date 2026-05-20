@@ -19,11 +19,12 @@ namespace App\Controller;
 use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Http\Client;
-use Cake\I18n\DateTime;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
+use Cake\I18n\DateTime;
 use Cake\View\Exception\MissingTemplateException;
+use Throwable;
 
 /**
  * Static content controller
@@ -37,17 +38,28 @@ class PagesController extends AppController
     private const RECAPTCHA_TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
     private const RECAPTCHA_TEST_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe';
 
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
         $this->Authentication->addUnauthenticatedActions(['home', 'contact', 'requestAccess', 'display']);
     }
 
+    /**
+     * Home.
+     */
     public function home(): ?Response
     {
         return null;
     }
 
+    /**
+     * Contact.
+     */
     public function contact(): ?Response
     {
         $messagesTable = $this->fetchTable('Messages');
@@ -55,10 +67,9 @@ class PagesController extends AppController
         $sourcePage = $this->resolveSourcePage();
         $recaptcha = $this->buildRecaptchaViewState();
         $enquirySubjects = [
-            'General enquiry' => 'General',
-            'Pottery enquiry' => 'Pottery',
-            'Knitting enquiry' => 'Knitting',
-            'Feedback/Suggestions' => 'Feedback/Suggestions',
+        'general' => 'General',
+        'book-a-class' => 'Book a Class',
+        'feedback' => 'Feedback/Suggestion',
         ];
         $enquiry = $messagesTable->newEmptyEntity();
         $requestAccount = false;
@@ -66,9 +77,29 @@ class PagesController extends AppController
         if ($this->request->is('post')) {
             $requestAccount = !empty($this->request->getData('request_account'));
             $messageText = trim((string)$this->request->getData('message_text'));
+            $studentName = trim((string)$this->request->getData('student_name'));
+            $studentDob = trim((string)$this->request->getData('student_dob'));
+            $classType = trim((string)$this->request->getData('class_type'));
+
+            if ($studentName !== '' || $studentDob !== '') {
+                $studentInfo = '';
+                if ($studentName !== '') {
+                    $studentInfo .= '[STUDENT_NAME: ' . $studentName . "]\n";
+                }
+                if ($studentDob !== '') {
+                    $studentInfo .= '[STUDENT_DOB: ' . $studentDob . "]\n";
+                }
+                if ($classType !== '') {
+                    $studentInfo .= '[CLASS_TYPE: ' . $classType . "]\n";
+                }
+                $messageText = $studentInfo . "\n" . $messageText;
+            }
             $subject = trim((string)$this->request->getData('subject'));
+            if ($subject === 'book-a-class' && $classType !== '') {
+                $subject = 'Book a Class - ' . ucfirst($classType);
+            }
             $messageSourcePage = $sourcePage;
-            $submittedAt = DateTime::now();
+            $submittedAt = DateTime::now('Australia/Melbourne');
             $declaredAge = $this->normaliseDeclaredAge($this->request->getData('declared_age'));
             $selfDeclaredAdult = $requestAccount && !empty($this->request->getData('self_declared_adult'));
 
@@ -108,13 +139,17 @@ class PagesController extends AppController
                 $enquiry->setError('self_declared_adult', ['Please confirm whether you are 18 or older.']);
             }
 
+            if ($studentDob !== '' && strtotime($studentDob) > strtotime(date('Y-m-d'))) {
+                $enquiry->setError('student_dob', ['Student date of birth cannot be in the future.']);
+            }
+
             $honeypot = trim((string)$this->request->getData('website'));
             if ($honeypot !== '') {
                 $this->Flash->success(
                     $requestAccount
                         ? __('Thanks. Your account request has been sent to our admin team.')
                         : __('Thank you. Your enquiry has been received.'),
-                    ['key' => 'enquiry']
+                    ['key' => 'enquiry'],
                 );
 
                 return $this->redirect([
@@ -134,7 +169,7 @@ class PagesController extends AppController
                     $requestAccount
                         ? __('Thanks. Your account request has been sent to our admin team.')
                         : __('Thank you. Your enquiry has been received.'),
-                    ['key' => 'enquiry']
+                    ['key' => 'enquiry'],
                 );
 
                 return $this->redirect([
@@ -143,8 +178,6 @@ class PagesController extends AppController
                     '#' => 'enquiry',
                 ]);
             }
-
-            $this->Flash->error(__('Please review the form and try again.'), ['key' => 'enquiry']);
         }
 
         $this->set(compact('enquiry', 'enquirySubjects', 'sourcePage', 'requestAccount', 'recaptcha'));
@@ -152,6 +185,9 @@ class PagesController extends AppController
         return null;
     }
 
+    /**
+     * Request access.
+     */
     public function requestAccess(): ?Response
     {
         return $this->redirect([
@@ -160,6 +196,9 @@ class PagesController extends AppController
         ]);
     }
 
+    /**
+     * Resolve source page.
+     */
     private function resolveSourcePage(): string
     {
         $submittedSource = trim((string)$this->request->getData('source_page'));
@@ -192,6 +231,11 @@ class PagesController extends AppController
         return 'contact-page';
     }
 
+    /**
+     * Normalise source page.
+     *
+     * @param mixed $sourcePage Sourcepage.
+     */
     private function normaliseSourcePage(string $sourcePage): string
     {
         $normalised = strtolower(trim($sourcePage));
@@ -210,6 +254,11 @@ class PagesController extends AppController
         return substr(str_replace('/', '-', $normalised), 0, 255);
     }
 
+    /**
+     * Verify recaptcha.
+     *
+     * @param mixed $recaptchaResponse Recaptcharesponse.
+     */
     private function verifyRecaptcha(string $recaptchaResponse): bool
     {
         if (!$this->isRecaptchaChallengeEnabled()) {
@@ -229,7 +278,7 @@ class PagesController extends AppController
                 'response' => $recaptchaResponse,
                 'remoteip' => $this->request->clientIp(),
             ]);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             return false;
         }
 
@@ -273,6 +322,9 @@ class PagesController extends AppController
         ];
     }
 
+    /**
+     * Is recaptcha challenge enabled.
+     */
     private function isRecaptchaChallengeEnabled(): bool
     {
         return $this->getRecaptchaSiteKey() !== ''
@@ -280,6 +332,9 @@ class PagesController extends AppController
             && !$this->isRecaptchaTestMode();
     }
 
+    /**
+     * Is recaptcha test mode.
+     */
     private function isRecaptchaTestMode(): bool
     {
         $siteKey = $this->getRecaptchaSiteKey();
@@ -289,16 +344,27 @@ class PagesController extends AppController
             || ($secretKey !== '' && hash_equals(self::RECAPTCHA_TEST_SECRET_KEY, $secretKey));
     }
 
+    /**
+     * Get recaptcha site key.
+     */
     private function getRecaptchaSiteKey(): string
     {
         return trim((string)Configure::read('Recaptcha.site_key'));
     }
 
+    /**
+     * Get recaptcha secret key.
+     */
     private function getRecaptchaSecretKey(): string
     {
         return trim((string)Configure::read('Recaptcha.secret_key'));
     }
 
+    /**
+     * Normalise declared age.
+     *
+     * @param mixed $declaredAge Declaredage.
+     */
     private function normaliseDeclaredAge(mixed $declaredAge): ?int
     {
         if ($declaredAge === null || $declaredAge === '') {
@@ -316,6 +382,13 @@ class PagesController extends AppController
         return null;
     }
 
+    /**
+     * Build account request message text.
+     *
+     * @param mixed $declaredAge Declaredage.
+     * @param mixed $selfDeclaredAdult Selfdeclaredadult.
+     * @param mixed $messageText Messagetext.
+     */
     private function buildAccountRequestMessageText(?int $declaredAge, bool $selfDeclaredAdult, string $messageText): string
     {
         $parts = [

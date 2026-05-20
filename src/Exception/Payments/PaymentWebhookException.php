@@ -10,6 +10,15 @@ abstract class PaymentWebhookException extends RuntimeException
 {
     protected array $context;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $message Message.
+     * @param mixed $context Context.
+     * @param mixed $code Code.
+     * @param mixed $previous Previous.
+     * @return mixed
+     */
     public function __construct(
         string $message,
         array $context = [],
@@ -20,6 +29,9 @@ abstract class PaymentWebhookException extends RuntimeException
         $this->context = $context;
     }
 
+    /**
+     * Get context.
+     */
     public function getContext(): array
     {
         return $this->context;

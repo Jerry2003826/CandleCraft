@@ -2,13 +2,33 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable $bookings
+ * @var array $enrolledClasses
  * @var array $resources
+ * @var string|null $filterClassId
  */
 $this->assign('title', 'Learning Center');
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <h2 class="admin-form-title m-0" style="font-size: 18px;">My Learning Resources</h2>
+    <?php if (!empty($enrolledClasses)): ?>
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border);">
+                <i class="bi bi-filter"></i>
+                <label for="resource-class-filter" class="visually-hidden">Filter by class</label>
+                <select id="resource-class-filter" name="class_id" onchange="this.form.submit()">
+                    <option value="">All Classes</option>
+                    <?php foreach ($enrolledClasses as $classId => $class): ?>
+                        <option value="<?= h($classId) ?>" <?= $filterClassId == $classId ? 'selected' : '' ?>>
+                            <?= h($class->class_code) ?><?= $class->course ? ' - ' . h($class->course->course_name) : '' ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php if ($filterClassId): ?>
+                <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab">Clear</a>
+            <?php endif; ?>
+        </form>
+    <?php endif; ?>
 </div>
 
 <?php if ($bookings->isEmpty()): ?>

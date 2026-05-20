@@ -11,6 +11,11 @@ use Throwable;
 
 class StripeWebhookEventsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -31,6 +36,11 @@ class StripeWebhookEventsTable extends Table
         }
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -168,6 +178,11 @@ class StripeWebhookEventsTable extends Table
         return $validator;
     }
 
+    /**
+     * Find operational processing.
+     *
+     * @param mixed $query Query.
+     */
     public function findOperationalProcessing(SelectQuery $query): SelectQuery
     {
         return $query->where([
@@ -176,6 +191,11 @@ class StripeWebhookEventsTable extends Table
         ]);
     }
 
+    /**
+     * Find suspicious audit.
+     *
+     * @param mixed $query Query.
+     */
     public function findSuspiciousAudit(SelectQuery $query): SelectQuery
     {
         return $query
@@ -189,6 +209,11 @@ class StripeWebhookEventsTable extends Table
             ->orderByDesc('StripeWebhookEvents.last_seen_at');
     }
 
+    /**
+     * Resolve primary key.
+     *
+     * @param mixed $schema Schema.
+     */
     private function resolvePrimaryKey(TableSchemaInterface $schema): string
     {
         if ($schema->hasColumn('webhook_event_id')) {

@@ -18,13 +18,21 @@ $enquiryUrl = $this->Url->build(['controller' => 'Pages', 'action' => 'contact',
 </div>
 
 <div style="max-width: 800px; margin: 40px auto 80px; padding: 0 20px;">
+    <div style="margin-bottom: 20px;">
+        <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>"
+           onclick="history.back(); return false;"
+           style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-grown); color: var(--home-accent); font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; text-decoration: none; padding: 10px 20px; border: 1px solid rgba(210, 154, 88, 0.45); border-radius: 999px; background: rgba(210, 154, 88, 0.08); transition: background 0.2s, border-color 0.2s;"
+           onmouseover="this.style.background='rgba(210,154,88,0.18)'; this.style.borderColor='rgba(210,154,88,0.7)'"
+           onmouseout="this.style.background='rgba(210,154,88,0.08)'; this.style.borderColor='rgba(210,154,88,0.45)'">
+            &#8592; All Courses
+        </a>
+    </div>
     <div style="background: rgba(47, 34, 25, 0.85); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid rgba(210, 154, 88, 0.3); padding: 40px; box-shadow: var(--home-shadow);">
 
         <div style="display: flex; gap: 32px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap;">
             <div style="text-align: center;">
                 <p style="font-family: var(--font-grown); font-size: 0.75rem; color: var(--home-accent); letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 6px;">Type</p>
-                <p style="font-family: var(--font-grown); font-size: 1.1rem; color: #f5ecdf; font-weight: 700; margin: 0;"><?= h($course->course_type) ?></p>
-            </div>
+                <p style="font-family: var(--font-grown); font-size: 1.1rem; color: #f5ecdf; font-weight: 700; margin: 0;"><?= h(ucfirst($course->course_type)) ?></p>            </div>
             <div style="width: 1px; background: rgba(210, 154, 88, 0.3);"></div>
             <div style="text-align: center;">
                 <p style="font-family: var(--font-grown); font-size: 0.75rem; color: var(--home-accent); letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 6px;">Level</p>
@@ -33,8 +41,7 @@ $enquiryUrl = $this->Url->build(['controller' => 'Pages', 'action' => 'contact',
             <div style="width: 1px; background: rgba(210, 154, 88, 0.3);"></div>
             <div style="text-align: center;">
                 <p style="font-family: var(--font-grown); font-size: 0.75rem; color: var(--home-accent); letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 6px;">Price</p>
-                <p style="font-family: var(--font-grown); font-size: 1.1rem; color: #f5ecdf; font-weight: 700; margin: 0;">$<?= number_format((float)$course->course_price, 2) ?></p>
-            </div>
+                <p style="font-family: var(--font-grown); font-size: 1.1rem; color: #f5ecdf; font-weight: 700; margin: 0;"><span style="font-family: sans-serif;">$</span><?= number_format((float)$course->course_price, 2) ?></p>            </div>
         </div>
 
         <?php if ($course->course_description): ?>
@@ -54,10 +61,4 @@ $enquiryUrl = $this->Url->build(['controller' => 'Pages', 'action' => 'contact',
 
     </div>
 
-    <div style="text-align: center; margin-top: 24px;">
-        <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>"
-           style="font-family: var(--font-grown); color: var(--home-accent); font-size: 0.9rem; letter-spacing: 0.1em; text-decoration: none;">
-            &larr; Back to All Courses
-        </a>
-    </div>
 </div>

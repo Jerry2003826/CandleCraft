@@ -77,6 +77,11 @@ return function (RouteBuilder $routes): void {
     $routes->prefix('Admin', function (RouteBuilder $routes): void {
         $routes->connect('/', ['controller' => 'Dashboard', 'action' => 'index']);
         $routes->connect('/payment-webhook-incidents', ['controller' => 'PaymentWebhookIncidents', 'action' => 'index']);
+        $routes->connect('/payment-disputes', ['controller' => 'PaymentDisputes', 'action' => 'index']);
+        $routes
+            ->connect('/bookings/{bookingId}/payments/{paymentId}/refund', ['controller' => 'Bookings', 'action' => 'refundPayment'])
+            ->setPass(['bookingId', 'paymentId'])
+            ->setMethods(['POST']);
         $routes
             ->connect('/payment-webhook-incidents/resolve/{id}', ['controller' => 'PaymentWebhookIncidents', 'action' => 'resolve'])
             ->setPass(['id'])
@@ -85,6 +90,42 @@ return function (RouteBuilder $routes): void {
             ->connect('/payment-webhook-incidents/ignore/{id}', ['controller' => 'PaymentWebhookIncidents', 'action' => 'ignore'])
             ->setPass(['id'])
             ->setMethods(['POST']);
+
+        // -- CMS (Site Content) -------------------------------------------------
+        $routes->connect('/cms', ['controller' => 'CmsPages', 'action' => 'index']);
+        $routes
+            ->connect('/cms/pages/{slug}', ['controller' => 'CmsPages', 'action' => 'view'])
+            ->setPass(['slug']);
+        $routes
+            ->connect('/cms/sections/{id}/edit', ['controller' => 'CmsPages', 'action' => 'editSection'])
+            ->setPass(['id'])
+            ->setMethods(['GET', 'POST']);
+        $routes
+            ->connect('/cms/sections/{id}/history', ['controller' => 'CmsPages', 'action' => 'history'])
+            ->setPass(['id']);
+        $routes
+            ->connect('/cms/sections/{id}/restore/{revisionId}', ['controller' => 'CmsPages', 'action' => 'restore'])
+            ->setPass(['id', 'revisionId'])
+            ->setMethods(['POST']);
+        $routes
+            ->connect('/cms/sections/{id}/heartbeat', ['controller' => 'CmsPages', 'action' => 'heartbeat'])
+            ->setPass(['id'])
+            ->setMethods(['POST']);
+        $routes
+            ->connect('/cms/sections/{id}/lock-force', ['controller' => 'CmsPages', 'action' => 'forceLock'])
+            ->setPass(['id'])
+            ->setMethods(['POST']);
+        $routes
+            ->connect('/cms/media', ['controller' => 'CmsMedia', 'action' => 'index'])
+            ->setMethods(['GET']);
+        $routes
+            ->connect('/cms/media', ['controller' => 'CmsMedia', 'action' => 'upload'])
+            ->setMethods(['POST']);
+        $routes
+            ->connect('/cms/media/{id}/delete', ['controller' => 'CmsMedia', 'action' => 'delete'])
+            ->setPass(['id'])
+            ->setMethods(['POST']);
+
         $routes->fallbacks(DashedRoute::class);
     });
 

@@ -7,6 +7,11 @@ use Cake\Mailer\Mailer;
 
 class EnquiryReplyMailer extends Mailer
 {
+    /**
+     * Enquiry reply.
+     *
+     * @param mixed $payload Payload.
+     */
     public function enquiryReply(array $payload): static
     {
         $this

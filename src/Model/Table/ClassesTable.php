@@ -16,6 +16,11 @@ class ClassesTable extends Table
         'Room B',
     ];
 
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -48,8 +53,20 @@ class ClassesTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
+        // class_code is the canonical identifier; class_name is an optional
+        // human label so the public/admin forms can omit it without blocking save.
+        $validator
+            ->scalar('class_name')
+            ->maxLength('class_name', 100)
+            ->allowEmptyString('class_name');
+
         $validator
             ->scalar('class_code')
             ->maxLength('class_code', 30)
@@ -121,6 +138,11 @@ class ClassesTable extends Table
         return $validator;
     }
 
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['class_code']), ['errorField' => 'class_code']);
@@ -132,7 +154,7 @@ class ClassesTable extends Table
             [
                 'errorField' => 'start_datetime',
                 'message' => 'Another class for this course already uses that time slot.',
-            ]
+            ],
         );
         $rules->add(
             fn(object $entity): bool => !$this->hasOverlappingClass($entity, ['Classes.teacher_id' => $entity->teacher_id]),
@@ -140,7 +162,7 @@ class ClassesTable extends Table
             [
                 'errorField' => 'teacher_id',
                 'message' => 'This teacher already has another class during the selected time.',
-            ]
+            ],
         );
         $rules->add(
             fn(object $entity): bool => !$this->hasOverlappingClass($entity, ['Classes.location' => $entity->location]),
@@ -148,12 +170,18 @@ class ClassesTable extends Table
             [
                 'errorField' => 'location',
                 'message' => 'This location is already booked during the selected time.',
-            ]
+            ],
         );
 
         return $rules;
     }
 
+    /**
+     * Has overlapping class.
+     *
+     * @param mixed $entity Entity.
+     * @param mixed $conditions Conditions.
+     */
     private function hasOverlappingClass(object $entity, array $conditions): bool
     {
         $start = $entity->start_datetime ?? null;

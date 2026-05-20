@@ -11,6 +11,11 @@ use RuntimeException;
 
 class ResourcesController extends AppController
 {
+    /**
+     * Get teacher.
+     *
+     * @return mixed
+     */
     private function getTeacher()
     {
         $identity = $this->Authentication->getIdentity();
@@ -20,6 +25,11 @@ class ResourcesController extends AppController
             ->firstOrFail();
     }
 
+    /**
+     * Get teacher class options.
+     *
+     * @param mixed $teacherId Teacherid.
+     */
     private function getTeacherClassOptions(int $teacherId): array
     {
         $classes = $this->fetchTable('Classes')->find()
@@ -36,10 +46,18 @@ class ResourcesController extends AppController
         return $options;
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $teacher = $this->getTeacher();
         $resourcesTable = $this->fetchTable('LearningResources');
+
+        $status = $this->request->getQuery('status', 'active');
+        if (!in_array($status, ['active', 'archived'], true)) {
+            $status = 'active';
+        }
 
         $teacherClassIds = $this->fetchTable('Classes')->find()
             ->where(['Classes.teacher_id' => $teacher->teacher_id])
@@ -51,15 +69,73 @@ class ResourcesController extends AppController
         if (!empty($teacherClassIds)) {
             $resources = $resourcesTable->find()
                 ->contain(['Classes' => ['Courses']])
-                ->where(['LearningResources.class_id IN' => $teacherClassIds])
+                ->where([
+                    'LearningResources.class_id IN' => $teacherClassIds,
+                    'LearningResources.resource_status' => $status,
+                ])
                 ->orderBy(['LearningResources.uploaded_at' => 'DESC'])
                 ->all();
         }
 
-        $this->set(compact('resources', 'teacher'));
+        $this->set(compact('resources', 'teacher', 'status'));
         $this->set('title', 'Manage Learning Resources');
     }
 
+    /**
+     * Archive.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
+    public function archive(?int $resourceId = null): Response
+    {
+        $this->request->allowMethod(['post']);
+        $teacher = $this->getTeacher();
+        $resource = $this->fetchTable('LearningResources')->find()
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.uploaded_by_teacher_id' => $teacher->teacher_id,
+            ])
+            ->firstOrFail();
+
+        $resource->resource_status = 'archived';
+        if ($this->fetchTable('LearningResources')->save($resource)) {
+            $this->Flash->success(__('Resource has been archived.'));
+        } else {
+            $this->Flash->error(__('Could not archive resource. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Restore.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
+    public function restore(?int $resourceId = null): Response
+    {
+        $this->request->allowMethod(['post']);
+        $teacher = $this->getTeacher();
+        $resource = $this->fetchTable('LearningResources')->find()
+            ->where([
+                'LearningResources.resource_id' => $resourceId,
+                'LearningResources.uploaded_by_teacher_id' => $teacher->teacher_id,
+            ])
+            ->firstOrFail();
+
+        $resource->resource_status = 'active';
+        if ($this->fetchTable('LearningResources')->save($resource)) {
+            $this->Flash->success(__('Resource has been restored.'));
+        } else {
+            $this->Flash->error(__('Could not restore resource. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'index', '?' => ['status' => 'archived']]);
+    }
+
+    /**
+     * Add.
+     */
     public function add(): ?Response
     {
         $teacher = $this->getTeacher();
@@ -93,7 +169,9 @@ class ResourcesController extends AppController
             if ($uploadedFilePath) {
                 $uploadService->deleteStoredFile($uploadedFilePath);
             }
-            $this->Flash->error(__('Could not add resource. Please try again.'));
+            if (!$resource->hasErrors()) {
+                $this->Flash->error(__('Could not add resource. Please try again.'));
+            }
         }
 
         $classOptions = $this->getTeacherClassOptions($teacher->teacher_id);
@@ -112,6 +190,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Edit.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function edit(?int $resourceId = null): ?Response
     {
         $teacher = $this->getTeacher();
@@ -174,6 +257,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Download.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function download(?int $resourceId = null): Response
     {
         $teacher = $this->getTeacher();
@@ -198,6 +286,11 @@ class ResourcesController extends AppController
             ]);
     }
 
+    /**
+     * Delete.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function delete(?int $resourceId = null): ?Response
     {
         $this->request->allowMethod(['post', 'delete']);
@@ -222,6 +315,12 @@ class ResourcesController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Assert teacher owns class.
+     *
+     * @param mixed $teacherId Teacherid.
+     * @param mixed $classId Classid.
+     */
     private function assertTeacherOwnsClass(int $teacherId, int $classId): void
     {
         $ownsClass = $this->fetchTable('Classes')->exists([
@@ -234,6 +333,13 @@ class ResourcesController extends AppController
         }
     }
 
+    /**
+     * Get teacher owned class resource.
+     *
+     * @param mixed $resourceId Resourceid.
+     * @param mixed $teacherId Teacherid.
+     * @return mixed
+     */
     private function getTeacherOwnedClassResource(int $resourceId, int $teacherId)
     {
         return $this->fetchTable('LearningResources')->find()
@@ -245,6 +351,11 @@ class ResourcesController extends AppController
             ->firstOrFail();
     }
 
+    /**
+     * Build teacher payload.
+     *
+     * @param mixed $data Data.
+     */
     private function buildTeacherPayload(array $data): array
     {
         return [
@@ -253,6 +364,7 @@ class ResourcesController extends AppController
             'resource_type' => (string)($data['resource_type'] ?? ''),
             'resource_url' => trim((string)($data['resource_url'] ?? '')),
             'resource_description' => trim((string)($data['resource_description'] ?? '')),
+            'resource_status' => 'active',
         ];
     }
 }

@@ -7,6 +7,24 @@ use Cake\Core\Configure;
 
 final class StripeConfiguration
 {
+    public const DEFAULT_API_VERSION = '2026-02-25.clover';
+
+    /**
+     * Api version.
+     */
+    public static function apiVersion(): string
+    {
+        $configured = Configure::read('Stripe.api_version');
+        if (is_string($configured) && trim($configured) !== '') {
+            return trim($configured);
+        }
+
+        return self::DEFAULT_API_VERSION;
+    }
+
+    /**
+     * Is checkout ready.
+     */
     public static function isCheckoutReady(): bool
     {
         return self::configuredStripeMode() !== null
@@ -14,11 +32,43 @@ final class StripeConfiguration
             && self::hasUsableWebhookSecret();
     }
 
+    /**
+     * Is hosted checkout ready.
+     */
+    public static function isHostedCheckoutReady(): bool
+    {
+        if (self::configuredStripeMode() === null || !self::hasUsableSecretKey()) {
+            return false;
+        }
+
+        if (self::isLiveMode()) {
+            return self::hasUsableWebhookSecret();
+        }
+
+        return true;
+    }
+
+    /**
+     * Is live mode.
+     */
+    public static function isLiveMode(): bool
+    {
+        return self::configuredStripeMode() === 'live';
+    }
+
+    /**
+     * Can manage checkout sessions.
+     */
     public static function canManageCheckoutSessions(): bool
     {
         return self::hasUsableSecretKey();
     }
 
+    /**
+     * Has usable secret key.
+     *
+     * @param mixed $value Value.
+     */
     public static function hasUsableSecretKey(?string $value = null): bool
     {
         $key = trim($value ?? (string)Configure::read('Stripe.secret_key'));
@@ -38,11 +88,22 @@ final class StripeConfiguration
         return false;
     }
 
+    /**
+     * Has usable webhook secret.
+     *
+     * @param mixed $value Value.
+     */
     public static function hasUsableWebhookSecret(?string $value = null): bool
     {
         return self::isUsableValue($value ?? (string)Configure::read('Stripe.webhook_secret'), 'whsec_');
     }
 
+    /**
+     * Is usable value.
+     *
+     * @param mixed $value Value.
+     * @param mixed $requiredPrefixes Requiredprefixes.
+     */
     private static function isUsableValue(string $value, array|string $requiredPrefixes): bool
     {
         $normalized = trim($value);
@@ -63,6 +124,9 @@ final class StripeConfiguration
         return false;
     }
 
+    /**
+     * Configured stripe mode.
+     */
     private static function configuredStripeMode(): ?string
     {
         $configuredEnvironment = Configure::read('Stripe.environment');
@@ -82,6 +146,11 @@ final class StripeConfiguration
         return 'test';
     }
 
+    /**
+     * Normalize stripe mode.
+     *
+     * @param mixed $value Value.
+     */
     private static function normalizeStripeMode(string $value): ?string
     {
         $normalized = strtolower(trim($value));

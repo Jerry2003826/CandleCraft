@@ -3,11 +3,15 @@ declare(strict_types=1);
 
 namespace App\Controller\Teacher;
 
-use Cake\Http\Exception\BadRequestException;
+use Cake\Collection\Collection;
 use Cake\Http\Response;
+use Cake\I18n\DateTime;
 
 class AttendanceController extends AppController
 {
+    /**
+     * Display the teacher's class roster for attendance marking.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -52,6 +56,9 @@ class AttendanceController extends AppController
         $this->set('title', 'Manage Attendance');
     }
 
+    /**
+     * Save one attendance status for a booking.
+     */
     public function mark(): ?Response
     {
         $this->request->allowMethod(['post']);
@@ -65,12 +72,16 @@ class AttendanceController extends AppController
             ->firstOrFail();
 
         $bookingId = (int)$this->request->getData('booking_id');
-        $status = (string)$this->request->getData('attendance_status');
+        $status = strtolower(trim((string)$this->request->getData('attendance_status')));
         $notes = $this->request->getData('attendance_notes', '');
 
         $allowedStatuses = ['present', 'absent', 'late', 'excused'];
         if (!in_array($status, $allowedStatuses, true)) {
-            throw new BadRequestException('Invalid attendance status.');
+            $this->Flash->error(__(
+                'Choose one attendance status for this student, then save attendance again.',
+            ));
+
+            return $this->redirectAfterAttendance((int)$this->request->getData('class_id'));
         }
 
         $booking = $this->fetchTable('Bookings')->find()
@@ -95,19 +106,25 @@ class AttendanceController extends AppController
                 'marked_by_teacher_id' => $teacher->teacher_id,
                 'attendance_status' => $status,
                 'attendance_notes' => $notes,
-                'attendance_date' => new \Cake\I18n\DateTime(),
+                'attendance_date' => new DateTime(),
             ]);
         }
 
         if ($attendanceRecordsTable->save($record)) {
             $this->Flash->success(__('Attendance saved.'));
         } else {
-            $this->Flash->error(__('Could not save attendance.'));
+            $this->Flash->error(__(
+                'Could not save attendance: {0}',
+                $this->firstValidationMessage($record->getErrors()) ?: 'check the highlighted fields and try again.',
+            ));
         }
 
-        return $this->redirect(['action' => 'index', '?' => ['class_id' => $booking->class_id]]);
+        return $this->redirectAfterAttendance((int)$booking->class_id);
     }
 
+    /**
+     * Display attendance history for the current teacher's classes.
+     */
     public function history(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -126,7 +143,7 @@ class AttendanceController extends AppController
             ->toArray();
 
         $statusFilter = $this->request->getQuery('status');
-        $records = new \Cake\Collection\Collection([]);
+        $records = new Collection([]);
 
         if ($teacherClassIds !== []) {
             $bookingsTable = $this->fetchTable('Bookings');
@@ -152,5 +169,38 @@ class AttendanceController extends AppController
 
         $this->set(compact('records', 'statusFilter'));
         $this->set('title', 'Attendance History');
+    }
+
+    /**
+     * Redirect back to the originating teacher attendance context.
+     */
+    private function redirectAfterAttendance(?int $classId = null): Response
+    {
+        $returnTo = trim((string)$this->request->getData('return_to'));
+        if ($returnTo !== '' && str_starts_with($returnTo, '/teacher/') && !str_contains($returnTo, '//')) {
+            return $this->redirect($returnTo);
+        }
+
+        $query = $classId !== null && $classId > 0 ? ['class_id' => $classId] : [];
+
+        return $this->redirect(['action' => 'index', '?' => $query]);
+    }
+
+    /**
+     * @param array<string,mixed> $errors
+     */
+    private function firstValidationMessage(array $errors): string
+    {
+        foreach ($errors as $messages) {
+            if (is_array($messages)) {
+                foreach ($messages as $message) {
+                    if (is_string($message) && $message !== '') {
+                        return $message;
+                    }
+                }
+            }
+        }
+
+        return '';
     }
 }

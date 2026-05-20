@@ -32,8 +32,7 @@ class FakePaymentConfirmationService implements PaymentConfirmationServiceInterf
         object $session,
         string $eventType = 'checkout.session.completed',
         string $confirmationSource = 'stripe_webhook',
-    ): string
-    {
+    ): string {
         self::$receivedSessions[] = $session;
         self::$receivedEventTypes[] = $eventType;
         self::$receivedConfirmationSources[] = $confirmationSource;

@@ -8,8 +8,8 @@
 $this->assign('title', 'Payment');
 ?>
 
-<a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> My Schedule
+<a href="#" onclick="history.back(); return false;" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back
 </a>
 
 <div class="admin-form-card">

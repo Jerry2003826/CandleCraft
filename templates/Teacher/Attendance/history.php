@@ -7,12 +7,9 @@
 $this->assign('title', 'Attendance History');
 ?>
 
+<?= $this->element('admin_back_link', ['url' => $this->Url->build(['action' => 'index']), 'label' => 'Back to Attendance']) ?>
+
 <div class="admin-page-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div class="d-flex align-items-center gap-3">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-action-link view"><i class="bi bi-arrow-left"></i></a>
-        <h2 class="admin-form-title m-0">Attendance History</h2>
-    </div>
-    
     <div class="admin-tabs flex-wrap">
         <a href="<?= $this->Url->build(['action' => 'history']) ?>" class="admin-tab <?= !$statusFilter ? 'active' : '' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'history', '?' => ['status' => 'present']]) ?>" class="admin-tab <?= $statusFilter === 'present' ? 'active' : '' ?>">Present</a>

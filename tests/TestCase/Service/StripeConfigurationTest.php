@@ -24,6 +24,8 @@ class StripeConfigurationTest extends TestCase
     protected function tearDown(): void
     {
         Configure::delete('Stripe.environment');
+        Configure::delete('Stripe.secret_key');
+        Configure::delete('Stripe.webhook_secret');
 
         if ($this->originalAppEnv !== null) {
             putenv('APP_ENV=' . $this->originalAppEnv);
@@ -69,6 +71,29 @@ class StripeConfigurationTest extends TestCase
         $this->assertTrue(StripeConfiguration::hasUsableWebhookSecret('whsec_123'));
         $this->assertFalse(StripeConfiguration::hasUsableWebhookSecret('sk_test_123'));
         $this->assertFalse(StripeConfiguration::hasUsableWebhookSecret('whsec_placeholder'));
+    }
+
+    public function testStripeTestModeCanUseHostedCheckoutWithoutWebhookSecret(): void
+    {
+        Configure::write('Stripe.environment', 'test');
+        Configure::write('Stripe.secret_key', 'sk_test_123');
+        Configure::write('Stripe.webhook_secret', null);
+
+        $this->assertFalse(StripeConfiguration::isCheckoutReady());
+        $this->assertTrue(StripeConfiguration::isHostedCheckoutReady());
+    }
+
+    public function testLiveHostedCheckoutStillRequiresWebhookSecret(): void
+    {
+        Configure::write('Stripe.environment', 'live');
+        Configure::write('Stripe.secret_key', 'sk_live_123');
+        Configure::write('Stripe.webhook_secret', null);
+
+        $this->assertFalse(StripeConfiguration::isCheckoutReady());
+        $this->assertFalse(StripeConfiguration::isHostedCheckoutReady());
+
+        Configure::write('Stripe.webhook_secret', 'whsec_123');
+        $this->assertTrue(StripeConfiguration::isHostedCheckoutReady());
     }
 
     public function testProductionReadinessRejectsTestKeys(): void

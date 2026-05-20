@@ -6,8 +6,8 @@
 $this->assign('title', 'Payment Receipt');
 ?>
 
-<a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> My Schedule
+<a href="#" onclick="history.back(); return false;" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back
 </a>
 
 <div class="admin-form-card" style="max-width: 600px;">
@@ -48,6 +48,16 @@ $this->assign('title', 'Payment Receipt');
                 <?= ucfirst(h($payment->payment_status)) ?>
             </span>
         </div>
+        <?php if (!empty($payment->stripe_invoice_pdf_url) || !empty($payment->stripe_receipt_url)): ?>
+            <div class="d-flex gap-2 justify-content-end mb-4">
+                <?php if (!empty($payment->stripe_invoice_pdf_url)): ?>
+                    <a href="<?= h($payment->stripe_invoice_pdf_url) ?>" target="_blank" rel="noopener" class="admin-action-link view" style="text-decoration: none; font-size: 13px;">Download Invoice</a>
+                <?php endif; ?>
+                <?php if (!empty($payment->stripe_receipt_url)): ?>
+                    <a href="<?= h($payment->stripe_receipt_url) ?>" target="_blank" rel="noopener" class="admin-action-link view" style="text-decoration: none; font-size: 13px;">Stripe Receipt</a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         
         <div class="d-flex justify-content-between align-items-center pt-4" style="border-top: 1px solid var(--admin-card-border);">
             <span style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; color: var(--admin-text-primary);">Total Paid</span>

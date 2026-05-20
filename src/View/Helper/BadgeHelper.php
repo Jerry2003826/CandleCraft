@@ -29,6 +29,11 @@ class BadgeHelper extends Helper
         'paid' => 'bg-success',
     ];
 
+    /**
+     * Status.
+     *
+     * @param mixed $status Status.
+     */
     public function status(string $status): string
     {
         $class = $this->statusMap[$status] ?? 'bg-secondary';

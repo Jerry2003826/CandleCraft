@@ -17,6 +17,14 @@ class PendingPaymentDispositionService
     private StripeCheckoutGatewayInterface $gateway;
     private StripeCheckoutSessionClassifier $sessionClassifier;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $tableLocator Tablelocator.
+     * @param mixed $gateway Gateway.
+     * @param mixed $sessionClassifier Sessionclassifier.
+     * @return mixed
+     */
     public function __construct(
         ?LocatorInterface $tableLocator = null,
         ?StripeCheckoutGatewayInterface $gateway = null,
@@ -28,6 +36,13 @@ class PendingPaymentDispositionService
         $this->sessionClassifier = $sessionClassifier ?? new StripeCheckoutSessionClassifier();
     }
 
+    /**
+     * Void pending payment.
+     *
+     * @param mixed $payment Payment.
+     * @param mixed $reasonCode Reasoncode.
+     * @param mixed $context Context.
+     */
     public function voidPendingPayment(object $payment, string $reasonCode, array $context = []): void
     {
         if ((string)($payment->payment_status ?? '') !== 'pending') {
@@ -51,10 +66,16 @@ class PendingPaymentDispositionService
             'checkout_session_expired' => $expirationResult['expired'],
             'checkout_session_expiration_skipped' => $expirationResult['skipped'],
             'disposition_context' => $this->buildDispositionContext($context),
-        ], static fn ($value) => $value !== null));
+        ], static fn($value) => $value !== null));
         $this->paymentsTable->saveOrFail($payment);
     }
 
+    /**
+     * Expire stripe checkout session.
+     *
+     * @param mixed $payment Payment.
+     * @param mixed $context Context.
+     */
     private function expireStripeCheckoutSession(object $payment, array $context): array
     {
         $transactionReference = (string)($payment->transaction_reference ?? '');
@@ -65,13 +86,13 @@ class PendingPaymentDispositionService
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_PAID) {
                 throw new PaymentDispositionBlockedException(
-                    'This booking already has a processed payment and requires manual review.'
+                    'This booking already has a processed payment and requires manual review.',
                 );
             }
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_AWAITING_PAYMENT) {
                 throw new PaymentDispositionBlockedException(
-                    'Your payment is still processing with Stripe. Please wait a moment and try again shortly.'
+                    'Your payment is still processing with Stripe. Please wait a moment and try again shortly.',
                 );
             }
 
@@ -87,7 +108,7 @@ class PendingPaymentDispositionService
 
             if (($classification['state'] ?? null) === StripeCheckoutSessionClassifier::STATE_OPEN_UNKNOWN_PAYMENT_STATUS) {
                 throw new PaymentDispositionBlockedException(
-                    'The current payment session is still open with an unknown payment status. Please try again shortly.'
+                    'The current payment session is still open with an unknown payment status. Please try again shortly.',
                 );
             }
 
@@ -103,25 +124,43 @@ class PendingPaymentDispositionService
                 'error' => $exception->getMessage(),
             ]));
 
-            throw new RuntimeException('The checkout session could not be cancelled right now. Please try again.');
+            throw new RuntimeException(
+                'The checkout session could not be cancelled right now. Please try again.',
+            );
         }
     }
 
+    /**
+     * Looks like stripe checkout session.
+     *
+     * @param mixed $transactionReference Transactionreference.
+     */
     private function looksLikeStripeCheckoutSession(string $transactionReference): bool
     {
         return str_starts_with($transactionReference, 'cs_');
     }
 
+    /**
+     * Is stripe configured.
+     */
     private function isStripeConfigured(): bool
     {
         return StripeConfiguration::canManageCheckoutSessions();
     }
 
+    /**
+     * Build disposition context.
+     *
+     * @param mixed $context Context.
+     */
     private function buildDispositionContext(array $context): ?array
     {
         return $context === [] ? null : $context;
     }
 
+    /**
+     * Build gateway.
+     */
     private function buildGateway(): StripeCheckoutGatewayInterface
     {
         $gatewayClass = (string)Configure::read('Payments.gateway_class', StripeCheckoutGateway::class);
@@ -131,7 +170,7 @@ class PendingPaymentDispositionService
             throw new RuntimeException(sprintf(
                 'Configured payment gateway "%s" must implement %s.',
                 $gatewayClass,
-                StripeCheckoutGatewayInterface::class
+                StripeCheckoutGatewayInterface::class,
             ));
         }
 

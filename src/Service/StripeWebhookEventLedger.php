@@ -19,12 +19,26 @@ class StripeWebhookEventLedger
 
     private object $eventsTable;
 
+    /**
+     * Construct.
+     *
+     * @param mixed $tableLocator Tablelocator.
+     * @return mixed
+     */
     public function __construct(?LocatorInterface $tableLocator = null)
     {
         $locator = $tableLocator ?? FactoryLocator::get('Table');
         $this->eventsTable = $locator->get('StripeWebhookEvents');
     }
 
+    /**
+     * Begin processing.
+     *
+     * @param mixed $eventId Eventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $payload Payload.
+     */
     public function beginProcessing(string $eventId, string $eventType, string $sessionId, string $payload): string
     {
         if ($eventId === '') {
@@ -46,7 +60,7 @@ class StripeWebhookEventLedger
                     $sessionId,
                     $businessEventKey,
                     $payloadHash,
-                    $now
+                    $now,
                 );
             }
 
@@ -63,7 +77,7 @@ class StripeWebhookEventLedger
                     $sessionId,
                     $businessEventKey,
                     $payloadHash,
-                    $now
+                    $now,
                 );
             }
         }
@@ -106,25 +120,58 @@ class StripeWebhookEventLedger
             $sessionId,
             $businessEventKey,
             $payloadHash,
-            $now
+            $now,
         );
     }
 
+    /**
+     * Mark processed.
+     *
+     * @param mixed $eventId Eventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $payload Payload.
+     */
     public function markProcessed(string $eventId, string $eventType, string $sessionId, string $payload): void
     {
         $this->updateStatus($eventId, $eventType, $sessionId, $payload, 'processed');
     }
 
+    /**
+     * Mark ignored.
+     *
+     * @param mixed $eventId Eventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $payload Payload.
+     */
     public function markIgnored(string $eventId, string $eventType, string $sessionId, string $payload): void
     {
         $this->updateStatus($eventId, $eventType, $sessionId, $payload, 'ignored');
     }
 
+    /**
+     * Mark failed.
+     *
+     * @param mixed $eventId Eventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $payload Payload.
+     */
     public function markFailed(string $eventId, string $eventType, string $sessionId, string $payload): void
     {
         $this->updateStatus($eventId, $eventType, $sessionId, $payload, 'failed');
     }
 
+    /**
+     * Update status.
+     *
+     * @param mixed $eventId Eventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $payload Payload.
+     * @param mixed $status Status.
+     */
     private function updateStatus(
         string $eventId,
         string $eventType,
@@ -167,8 +214,9 @@ class StripeWebhookEventLedger
                 $payloadHash,
                 'status_update_business_key_mismatch',
                 $businessEventKey,
-                $status
+                $status,
             );
+
             return;
         }
 
@@ -182,7 +230,7 @@ class StripeWebhookEventLedger
                     $eventId,
                     $now,
                     $payloadHash,
-                    'suspicious_status_update'
+                    'suspicious_status_update',
                 );
             }
 
@@ -206,6 +254,11 @@ class StripeWebhookEventLedger
         $this->eventsTable->saveOrFail($event);
     }
 
+    /**
+     * Find by event id.
+     *
+     * @param mixed $eventId Eventid.
+     */
     private function findByEventId(string $eventId): ?object
     {
         return $this->eventsTable->find()
@@ -213,6 +266,12 @@ class StripeWebhookEventLedger
             ->first();
     }
 
+    /**
+     * Find processed business duplicate.
+     *
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     */
     private function findProcessedBusinessDuplicate(string $eventType, string $sessionId): ?object
     {
         $businessEventKey = $this->buildBusinessEventKey($eventType, $sessionId);
@@ -229,6 +288,16 @@ class StripeWebhookEventLedger
             ->first();
     }
 
+    /**
+     * Handle existing event.
+     *
+     * @param mixed $event Event.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $businessEventKey Businesseventkey.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $now Now.
+     */
     private function handleExistingEvent(
         object $event,
         string $eventType,
@@ -247,7 +316,7 @@ class StripeWebhookEventLedger
                 $now,
                 $payloadHash,
                 'event_id_business_key_mismatch',
-                $businessEventKey
+                $businessEventKey,
             );
 
             return self::RESULT_SUSPICIOUS;
@@ -299,6 +368,14 @@ class StripeWebhookEventLedger
         return self::RESULT_DUPLICATE;
     }
 
+    /**
+     * Claim existing event.
+     *
+     * @param mixed $event Event.
+     * @param mixed $now Now.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $onlyIfStaleProcessing Onlyifstaleprocessing.
+     */
     private function claimExistingEvent(
         object $event,
         DateTime $now,
@@ -340,11 +417,27 @@ class StripeWebhookEventLedger
         return self::RESULT_IN_PROGRESS;
     }
 
+    /**
+     * Touch existing event.
+     *
+     * @param mixed $event Event.
+     * @param mixed $now Now.
+     * @param mixed $payloadHash Payloadhash.
+     */
     private function touchExistingEvent(object $event, DateTime $now, string $payloadHash): void
     {
         $this->touchExistingEventInternal($event, $now, $payloadHash, 'duplicate', true);
     }
 
+    /**
+     * Touch business duplicate event.
+     *
+     * @param mixed $event Event.
+     * @param mixed $incomingEventId Incomingeventid.
+     * @param mixed $now Now.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $context Context.
+     */
     private function touchBusinessDuplicateEvent(
         object $event,
         string $incomingEventId,
@@ -357,6 +450,15 @@ class StripeWebhookEventLedger
         $this->touchExistingEventInternal($event, $now, $payloadHash, $context, false);
     }
 
+    /**
+     * Touch existing event internal.
+     *
+     * @param mixed $event Event.
+     * @param mixed $now Now.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $context Context.
+     * @param mixed $logPayloadMismatch Logpayloadmismatch.
+     */
     private function touchExistingEventInternal(
         object $event,
         DateTime $now,
@@ -372,6 +474,17 @@ class StripeWebhookEventLedger
         $this->eventsTable->saveOrFail($event);
     }
 
+    /**
+     * Handle business event collision.
+     *
+     * @param mixed $event Event.
+     * @param mixed $incomingEventId Incomingeventid.
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     * @param mixed $businessEventKey Businesseventkey.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $now Now.
+     */
     private function handleBusinessEventCollision(
         object $event,
         string $incomingEventId,
@@ -409,6 +522,14 @@ class StripeWebhookEventLedger
         return self::RESULT_DUPLICATE;
     }
 
+    /**
+     * Claim business event.
+     *
+     * @param mixed $event Event.
+     * @param mixed $incomingEventId Incomingeventid.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $now Now.
+     */
     private function claimBusinessEvent(
         object $event,
         string $incomingEventId,
@@ -455,6 +576,11 @@ class StripeWebhookEventLedger
         return self::RESULT_IN_PROGRESS;
     }
 
+    /**
+     * Find by business event key.
+     *
+     * @param mixed $businessEventKey Businesseventkey.
+     */
     private function findByBusinessEventKey(string $businessEventKey): ?object
     {
         return $this->eventsTable->find()
@@ -462,6 +588,12 @@ class StripeWebhookEventLedger
             ->first();
     }
 
+    /**
+     * Find existing business collision.
+     *
+     * @param mixed $event Event.
+     * @param mixed $businessEventKey Businesseventkey.
+     */
     private function findExistingBusinessCollision(object $event, ?string $businessEventKey): ?object
     {
         if ($businessEventKey === null) {
@@ -484,11 +616,22 @@ class StripeWebhookEventLedger
         return $businessEvent;
     }
 
+    /**
+     * Is detached legacy event.
+     *
+     * @param mixed $event Event.
+     */
     private function isDetachedLegacyEvent(object $event): bool
     {
         return (string)($event->business_event_key ?? '') === '';
     }
 
+    /**
+     * Has mismatched business key.
+     *
+     * @param mixed $event Event.
+     * @param mixed $businessEventKey Businesseventkey.
+     */
     private function hasMismatchedBusinessKey(object $event, ?string $businessEventKey): bool
     {
         $existingBusinessKey = (string)($event->business_event_key ?? '');
@@ -500,11 +643,26 @@ class StripeWebhookEventLedger
         return $businessEventKey === null || $existingBusinessKey !== $businessEventKey;
     }
 
+    /**
+     * Is suspicious event.
+     *
+     * @param mixed $event Event.
+     */
     private function isSuspiciousEvent(object $event): bool
     {
         return (string)($event->suspicious_state ?? 'clean') === 'suspicious';
     }
 
+    /**
+     * Mark event suspicious.
+     *
+     * @param mixed $event Event.
+     * @param mixed $now Now.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $reasonCode Reasoncode.
+     * @param mixed $incomingBusinessEventKey Incomingbusinesseventkey.
+     * @param mixed $targetStatus Targetstatus.
+     */
     private function markEventSuspicious(
         object $event,
         DateTime $now,
@@ -534,6 +692,15 @@ class StripeWebhookEventLedger
         $this->eventsTable->saveOrFail($event);
     }
 
+    /**
+     * Record suppressed status update.
+     *
+     * @param mixed $event Event.
+     * @param mixed $eventId Eventid.
+     * @param mixed $targetStatus Targetstatus.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $now Now.
+     */
     private function recordSuppressedStatusUpdate(
         object $event,
         string $eventId,
@@ -547,6 +714,14 @@ class StripeWebhookEventLedger
         $event->last_suppressed_status_seen_at = $now;
     }
 
+    /**
+     * Apply business replay audit.
+     *
+     * @param mixed $event Event.
+     * @param mixed $incomingEventId Incomingeventid.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $now Now.
+     */
     private function applyBusinessReplayAudit(
         object $event,
         string $incomingEventId,
@@ -563,6 +738,12 @@ class StripeWebhookEventLedger
         $event->last_replay_seen_at = $now;
     }
 
+    /**
+     * Build business event key.
+     *
+     * @param mixed $eventType Eventtype.
+     * @param mixed $sessionId Sessionid.
+     */
     private function buildBusinessEventKey(string $eventType, string $sessionId): ?string
     {
         if ($sessionId === '') {
@@ -572,6 +753,12 @@ class StripeWebhookEventLedger
         return $eventType . ':' . $sessionId;
     }
 
+    /**
+     * Preserve payload hash.
+     *
+     * @param mixed $event Event.
+     * @param mixed $payloadHash Payloadhash.
+     */
     private function preservePayloadHash(object $event, string $payloadHash): void
     {
         $existingHash = (string)($event->payload_hash ?? '');
@@ -584,6 +771,13 @@ class StripeWebhookEventLedger
         $this->logPayloadHashMismatch($event, $payloadHash, 'status_update');
     }
 
+    /**
+     * Log payload hash mismatch.
+     *
+     * @param mixed $event Event.
+     * @param mixed $payloadHash Payloadhash.
+     * @param mixed $context Context.
+     */
     private function logPayloadHashMismatch(object $event, string $payloadHash, string $context): void
     {
         if ((string)($event->payload_hash ?? '') === '' || (string)$event->payload_hash === $payloadHash) {
@@ -596,6 +790,13 @@ class StripeWebhookEventLedger
         ]);
     }
 
+    /**
+     * Log business event replay.
+     *
+     * @param mixed $event Event.
+     * @param mixed $incomingEventId Incomingeventid.
+     * @param mixed $context Context.
+     */
     private function logBusinessEventReplay(object $event, string $incomingEventId, string $context): void
     {
         if ($incomingEventId === '' || (string)$event->event_id === $incomingEventId) {

@@ -4,14 +4,20 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\Core\Configure;
-use Cake\Event\EventInterface;
 use Cake\Datasource\EntityInterface;
+use Cake\Event\EventInterface;
 use Cake\I18n\DateTime;
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class LearningResourcesTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -32,6 +38,11 @@ class LearningResourcesTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -89,7 +100,7 @@ class LearningResourcesTable extends Table
                     ]));
                     $patterns = array_map(
                         fn(string $prefix) => '#^' . preg_quote($prefix, '#') . '/[A-Za-z0-9._-]+$#',
-                        $prefixes
+                        $prefixes,
                     );
 
                     $normalizedValue = ltrim((string)$value, '/');
@@ -112,7 +123,12 @@ class LearningResourcesTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('class_id', 'Classes'), ['errorField' => 'class_id']);
         $rules->add($rules->existsIn('uploaded_by_teacher_id', 'Teachers'), ['errorField' => 'uploaded_by_teacher_id']);
@@ -120,6 +136,12 @@ class LearningResourcesTable extends Table
         return $rules;
     }
 
+    /**
+     * Before save.
+     *
+     * @param mixed $event Event.
+     * @param mixed $entity Entity.
+     */
     public function beforeSave(EventInterface $event, EntityInterface $entity): void
     {
         if (!$entity->get('uploaded_at')) {

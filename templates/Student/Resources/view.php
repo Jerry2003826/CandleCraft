@@ -7,7 +7,7 @@ $this->assign('title', h($resource->resource_name));
 ?>
 
 <div class="mb-3">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Resources</a>
+    <a href="#" onclick="history.back(); return false;" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
 <div class="card">

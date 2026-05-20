@@ -11,12 +11,9 @@ $verificationClass = $user && $user->age_verified_by_admin ? 'admin-badge-succes
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="admin-form-title mb-2">My Account</h2>
-        <p style="margin: 0; color: var(--admin-text-secondary); font-size: 14px;">
-            Review your login details, recorded age information, and personal profile notes.
-        </p>
-    </div>
+    <p style="margin: 0; color: var(--admin-text-secondary); font-size: 14px;">
+        Review your login details, recorded age information, and personal profile notes.
+    </p>
     <a href="<?= $this->Url->build(['action' => 'edit']) ?>" class="admin-btn-primary">
         <i class="bi bi-pencil-square me-2"></i>Edit Personal Details
     </a>

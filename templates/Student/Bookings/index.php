@@ -2,205 +2,71 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Booking> $bookings
- * @var array $calendarEvents
- * @var \Cake\I18n\DateTime $weekStart
- * @var \Cake\I18n\DateTime $weekEnd
  */
 $this->assign('title', 'My Schedule');
-
-$prevWeek = $weekStart->modify('-7 days')->format('Y-m-d');
-$nextWeek = $weekStart->modify('+7 days')->format('Y-m-d');
-$todayWeek = (new \Cake\I18n\DateTime('now'))->modify('-' . date('w') . ' days')->format('Y-m-d');
 $todayStr = date('Y-m-d');
-$nowHour = (int)date('G');
-$nowMinute = (int)date('i');
-
-$dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-$weekDays = [];
-for ($i = 0; $i < 7; $i++) {
-    $d = $weekStart->modify("+{$i} days");
-    $weekDays[$i] = [
-        'name' => $dayNames[(int)$d->format('w')],
-        'date' => (int)$d->format('j'),
-        'full' => $d->format('Y-m-d'),
-        'dow' => (int)$d->format('w'),
-        'month' => $d->format('M'),
-    ];
-}
-
-$calHourStart = 8;
-$calHourEnd = 22;
-$isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
 ?>
 
 <div class="schedule-page">
-    <!-- Toolbar -->
     <div class="sp-toolbar">
         <div class="sp-toolbar__left">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm btn-outline-secondary sp-view-btn active" data-view="calendar" aria-pressed="true" aria-controls="calendarView"><i class="bi bi-calendar-week"></i> Calendar</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary sp-view-btn" data-view="list" aria-pressed="false" aria-controls="listView"><i class="bi bi-list-ul"></i> List</button>
-            </div>
-        </div>
-        <div class="sp-toolbar__center">
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $prevWeek]]) ?>" class="btn btn-sm btn-outline-secondary" aria-label="Show previous week"><i class="bi bi-chevron-left"></i></a>
-            <?php if (!$isCurrentWeek): ?>
-                <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-sm btn-outline-primary">Today</a>
-            <?php endif; ?>
-            <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="btn btn-sm btn-outline-secondary" aria-label="Show next week"><i class="bi bi-chevron-right"></i></a>
-            <span class="sp-toolbar__title"><?= h($weekStart->format('M j')) ?> — <?= h($weekEnd->format('M j, Y')) ?></span>
+            <h1 class="page-title">My Schedule</h1>
         </div>
         <div class="sp-toolbar__right">
-            <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle me-1"></i> Book Class</a>
+            <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Book a Class
+            </a>
         </div>
     </div>
 
-    <!-- ============ CALENDAR VIEW ============ -->
-    <div class="sp-view sp-view--calendar" id="calendarView">
-        <div class="wc-wrapper">
-            <!-- Day Headers -->
-            <div class="wc-header">
-                <div class="wc-gutter-header"></div>
-                <?php foreach ($weekDays as $idx => $wd): ?>
-                    <div class="wc-col-header <?= $wd['full'] === $todayStr ? 'wc-col-header--today' : '' ?>">
-                        <span class="wc-col-header__name"><?= $wd['name'] ?></span>
-                        <span class="wc-col-header__num <?= $wd['full'] === $todayStr ? 'wc-col-header__num--today' : '' ?>"><?= $wd['date'] ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- Scrollable Body -->
-            <div class="wc-scroll" id="wcScroll">
-                <div class="wc-body-grid" style="--wc-rows: <?= $calHourEnd - $calHourStart ?>;">
-                    <!-- Time labels -->
-                    <div class="wc-gutter">
-                        <?php for ($h = $calHourStart; $h < $calHourEnd; $h++): ?>
-                            <div class="wc-gutter__label"><?= sprintf('%d:00', $h) ?></div>
-                        <?php endfor; ?>
-                    </div>
-
-                    <!-- 7 Day Columns -->
-                    <?php for ($d = 0; $d < 7; $d++): ?>
-                        <div class="wc-day <?= $weekDays[$d]['full'] === $todayStr ? 'wc-day--today' : '' ?>">
-                            <!-- Hour lines -->
-                            <?php for ($h = $calHourStart; $h < $calHourEnd; $h++): ?>
-                                <div class="wc-hour-line" style="top: calc(<?= ($h - $calHourStart) ?> * var(--wc-hour-h));"></div>
-                            <?php endfor; ?>
-
-                            <!-- Events -->
-                            <?php foreach ($calendarEvents as $ev):
-                                if ($ev['day_index'] !== $weekDays[$d]['dow']) continue;
-                                $topMin = ($ev['start_hour'] - $calHourStart) * 60 + $ev['start_minute'];
-                                $durMin = ($ev['end_hour'] - $ev['start_hour']) * 60 + ($ev['end_minute'] - $ev['start_minute']);
-                                if ($durMin < 30) $durMin = 30;
-                                $startFmt = sprintf('%d:%02d', $ev['start_hour'], $ev['start_minute']);
-                                $endFmt = sprintf('%d:%02d', $ev['end_hour'], $ev['end_minute']);
-                            ?>
-                                <a class="wc-evt"
-                                   style="top: calc(<?= $topMin ?> * var(--wc-min-h)); height: calc(<?= $durMin ?> * var(--wc-min-h)); --evt-color: <?= h($ev['color']) ?>;"
-                                   href="#booking-<?= $ev['booking_id'] ?>"
-                                   title="<?= h($ev['title']) ?>">
-                                    <strong class="wc-evt__title"><?= h($ev['title']) ?></strong>
-                                    <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
-                                    <span class="wc-evt__loc"><?= h($ev['class_code']) ?><?= $ev['location'] ? ' · ' . h($ev['location']) : '' ?></span>
-                                </a>
-                            <?php endforeach; ?>
-
-                            <?php if ($isCurrentWeek && $weekDays[$d]['full'] === $todayStr && $nowHour >= $calHourStart && $nowHour < $calHourEnd): ?>
-                                <div class="wc-now-line" id="wcNowLine" style="top: calc(<?= ($nowHour - $calHourStart) * 60 + $nowMinute ?> * var(--wc-min-h));">
-                                    <span class="wc-now-dot"></span>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endfor; ?>
-                </div>
-            </div>
-        </div>
-
-        <?php if (empty($calendarEvents)): ?>
-            <div class="text-center py-4 text-muted">
-                <p class="mb-0">No classes scheduled this week.</p>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- ============ LIST VIEW ============ -->
-    <div class="sp-view sp-view--list d-none" id="listView">
+    <div class="sp-view sp-view--list">
         <?php if ($bookings->isEmpty()): ?>
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-calendar-event" style="font-size: 48px;"></i>
-                <p class="mt-3">You have no bookings yet.</p>
-                <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-primary btn-sm mt-2">Browse Courses</a>
+            <div class="text-center py-5 text-muted card shadow-sm">
+                <i class="bi bi-calendar-x" style="font-size: 48px;"></i>
+                <p class="mt-3">You don't have any bookings scheduled yet.</p>
             </div>
         <?php else: ?>
             <?php
+            // Group by date
             $grouped = [];
             foreach ($bookings as $booking) {
-                $key = $booking->class_entity?->start_datetime ? $booking->class_entity->start_datetime->format('Y-m-d') : '0000-00-00';
-                $grouped[$key][] = $booking;
+                $dateKey = $booking->class_entity?->start_datetime ? $booking->class_entity->start_datetime->format('Y-m-d') : 'Unscheduled';
+                $grouped[$dateKey][] = $booking;
             }
-            ksort($grouped);
             ?>
+            
             <?php foreach ($grouped as $dateKey => $dateBookings): ?>
-                <div class="sp-list-date">
-                    <div class="sp-list-date__label">
-                        <?php if ($dateKey === $todayStr): ?>
-                            <span class="sp-list-date__badge">Today</span>
-                        <?php endif; ?>
-                        <?= $dateKey !== '0000-00-00' ? date('l, M j, Y', strtotime($dateKey)) : 'Unscheduled' ?>
+                <div class="sp-list-date mb-4">
+                    <div class="sp-list-date__label mb-2">
+                        <strong><?= $dateKey !== 'Unscheduled' ? date('l, j M Y', strtotime($dateKey)) : 'Date TBA' ?></strong>
+                        <?php if ($dateKey === $todayStr): ?><span class="badge bg-primary ms-2">Today</span><?php endif; ?>
                     </div>
+
                     <?php foreach ($dateBookings as $booking): ?>
-                        <div class="sp-list-card" id="booking-<?= $booking->booking_id ?>">
-                            <div class="sp-list-card__time">
-                                <?php if ($booking->class_entity?->start_datetime): ?>
-                                    <strong><?= $booking->class_entity->start_datetime->format('g:ia') ?></strong>
-                                    <span><?= $booking->class_entity?->end_datetime ? $booking->class_entity->end_datetime->format('g:ia') : '' ?></span>
-                                <?php else: ?>
-                                    <strong>TBA</strong>
-                                <?php endif; ?>
-                            </div>
-                            <div class="sp-list-card__body">
-                                <h6 class="mb-1"><?= h($booking->class_entity?->course?->course_name ?? 'Class') ?></h6>
-                                <div class="sp-list-card__meta">
-                                    <span><i class="bi bi-tag"></i> <?= h($booking->class_entity?->class_code ?? '-') ?></span>
-                                    <span><i class="bi bi-geo-alt"></i> <?= h($booking->class_entity?->location ?? '-') ?></span>
-                                    <span><i class="bi bi-person"></i> <?= h($booking->class_entity?->teacher?->teacher_name ?? '-') ?></span>
+                        <div class="sp-list-card card mb-2 p-3 shadow-sm flex-row align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-4">
+                                <div class="text-center" style="min-width: 80px;">
+                                    <h5 class="mb-0"><?= $booking->class_entity?->start_datetime?->format('g:ia') ?? 'TBA' ?></h5>
+                                    <small class="text-muted"><?= $booking->class_entity?->end_datetime?->format('g:ia') ?? '' ?></small>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1"><?= h($booking->class_entity?->course?->course_name ?? 'Class') ?></h6>
+                                    <div class="small text-muted">
+                                        <span class="me-2"><i class="bi bi-geo-alt"></i> <?= h($booking->class_entity?->location ?? 'TBA') ?></span>
+                                        <span><i class="bi bi-person"></i> <?= h($booking->class_entity?->teacher?->teacher_name ?? 'TBA') ?></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="sp-list-card__actions">
-                                <span class="badge badge-<?= h($booking->booking_status) ?>"><?= ucfirst(h($booking->booking_status)) ?></span>
-                                <?php
-                                $hasPaidRecord = false;
-                                if (!empty($booking->payments)) {
-                                    foreach ($booking->payments as $p) {
-                                        if ($p->payment_status === 'paid') { $hasPaidRecord = true; break; }
-                                    }
-                                }
-                                $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
-                                $paymentLabel = $isPaid ? 'Payment Paid' : (!empty($booking->parent_id) ? 'Managed by Parent' : 'Payment Pending');
-                                $paymentClass = $isPaid ? 'badge-confirmed' : (!empty($booking->parent_id) ? 'badge-read' : 'badge-pending');
-                                ?>
-                                <span class="badge <?= h($paymentClass) ?>"><?= h($paymentLabel) ?></span>
-                                <div class="d-flex gap-1 mt-2 flex-wrap">
-                                    <?php if ($booking->booking_status === 'pending' && !$isPaid && empty($booking->parent_id)): ?>
-                                        <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'process', $booking->booking_id]) ?>" class="btn btn-sm btn-primary">Pay</a>
-                                    <?php elseif ($booking->booking_status === 'pending' && !$isPaid && !empty($booking->parent_id)): ?>
-                                        <span class="badge badge-read">Parent</span>
-                                    <?php endif; ?>
-                                    <?php if (in_array($booking->booking_status, ['pending', 'confirmed'])): ?>
-                                        <?= $this->Form->create(null, [
-                                            'url' => ['action' => 'cancel', $booking->booking_id],
-                                            'class' => 'd-inline m-0',
+                            <div class="text-end">
+                                <span class="badge rounded-pill bg-<?= $booking->booking_status === 'confirmed' ? 'success' : 'secondary' ?>">
+                                    <?= ucfirst(h($booking->booking_status)) ?>
+                                </span>
+                                <div class="mt-2">
+                                    <?php if ($booking->booking_status !== 'cancelled'): ?>
+                                        <?= $this->Form->postLink('Cancel', ['action' => 'cancel', $booking->booking_id], [
+                                            'confirm' => 'Are you sure you want to cancel?',
+                                            'class' => 'btn btn-sm btn-outline-danger'
                                         ]) ?>
-                                            <?= $this->Form->button('Cancel', [
-                                                'class' => 'btn btn-sm btn-outline-danger',
-                                                'type' => 'submit',
-                                                'onclick' => "return confirm('Cancel this booking?');",
-                                            ]) ?>
-                                        <?= $this->Form->end() ?>
-                                    <?php endif; ?>
-                                    <?php if ($isPaid): ?>
-                                        <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'receipt', collection($booking->payments)->last()->payment_id]) ?>" class="btn btn-sm btn-outline-secondary">Receipt</a>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -211,3 +77,10 @@ $isCurrentWeek = $weekStart->format('Y-m-d') === $todayWeek;
         <?php endif; ?>
     </div>
 </div>
+
+<style>
+    /* Remove any leftover calendar CSS effects */
+    .sp-view--calendar { display: none !important; }
+    .sp-view--list { display: block !important; }
+    .sp-list-card { border-left: 4px solid #bfa487; } /* A nice accent for the list cards */
+</style>

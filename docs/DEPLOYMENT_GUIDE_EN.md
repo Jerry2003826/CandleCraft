@@ -67,6 +67,25 @@ If Stripe payments will be used in production, also prepare:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_API_VERSION` (default: `2026-02-25.clover`)
+
+For a demo environment, prefer Stripe test mode:
+
+- `STRIPE_ENVIRONMENT=test`
+- `STRIPE_SECRET_KEY=sk_test_...`
+- `STRIPE_PUBLISHABLE_KEY=pk_test_...`
+
+The demo can create Stripe-hosted Checkout Sessions in test mode without a webhook secret. If Stripe test keys are not available, set `PAYMENTS_DEMO_MODE=true` to use the local no-money demo payment flow.
+
+If password reset emails, enquiry replies, account emails, or reminders will be used in production, also prepare:
+
+- `EMAIL_SMTP_HOST`
+- `EMAIL_SMTP_PORT`
+- `EMAIL_SMTP_USERNAME`
+- `EMAIL_SMTP_PASSWORD`
+- `EMAIL_SMTP_TLS`
+- `EMAIL_FROM_ADDRESS`
+- `EMAIL_FROM_NAME`
 
 If the public contact form will use reCAPTCHA in production, also prepare:
 
@@ -161,9 +180,16 @@ DB_USER=academy_user \
 DB_PASS='replace-me' \
 SECURITY_SALT='replace-with-a-long-random-string' \
 STRIPE_ENVIRONMENT=live \
+STRIPE_API_VERSION='2026-02-25.clover' \
 STRIPE_SECRET_KEY='sk_live_xxx' \
 STRIPE_PUBLISHABLE_KEY='pk_live_xxx' \
 STRIPE_WEBHOOK_SECRET='whsec_xxx' \
+EMAIL_SMTP_HOST='ssl://mail.example.com' \
+EMAIL_SMTP_PORT=465 \
+EMAIL_SMTP_USERNAME='no-reply@example.com' \
+EMAIL_SMTP_PASSWORD='replace-me' \
+EMAIL_FROM_ADDRESS='no-reply@example.com' \
+PAYMENT_ALERT_EMAILS=true \
 RECAPTCHA_SITE_KEY='site-key' \
 RECAPTCHA_SECRET_KEY='secret-key' \
 bash scripts/server-deploy.sh
@@ -404,9 +430,18 @@ The server-side deployment script accepts these important variables:
 - `DB_PASS`: database password
 - `SECURITY_SALT`: production security salt
 - `STRIPE_ENVIRONMENT`: usually `test` or `live`
+- `STRIPE_API_VERSION`: pinned Stripe API version, default `2026-02-25.clover`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `EMAIL_SMTP_HOST`
+- `EMAIL_SMTP_PORT`
+- `EMAIL_SMTP_USERNAME`
+- `EMAIL_SMTP_PASSWORD`
+- `EMAIL_SMTP_TLS`
+- `EMAIL_FROM_ADDRESS`
+- `EMAIL_FROM_NAME`
+- `PAYMENT_ALERT_EMAILS`: email admins about payment incidents, refunds, and disputes
 - `RECAPTCHA_SITE_KEY`
 - `RECAPTCHA_SECRET_KEY`
 - `UPLOAD_RESOURCES_ROOT`: storage path for uploaded learning resources
@@ -468,6 +503,25 @@ If Stripe is enabled, confirm that the webhook endpoint is reachable at:
 ```
 
 Then update the Stripe dashboard to use the correct production URL.
+
+Subscribe the live endpoint to:
+
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
+- `refund.created`
+- `refund.updated`
+- `refund.failed`
+- `charge.refund.updated`
+- `charge.refunded`
+- `charge.dispute.created`
+- `charge.dispute.updated`
+- `charge.dispute.closed`
+- `charge.dispute.funds_withdrawn`
+- `charge.dispute.funds_reinstated`
+
+Before switching customers to live payments, smoke test successful Checkout payment, cancellation, expiration, duplicate webhook delivery, full refund, partial refund, Dashboard-created refund sync, and a dispute test event. Production must use HTTPS, `DEBUG=false`, `PAYMENTS_DEMO_MODE=false`, and live-mode Stripe keys.
 
 ### 7.5 Accessibility and Portal Smoke Test
 
@@ -566,12 +620,13 @@ bash scripts/server-deploy.sh
 Cause:
 
 - Stripe keys are missing
-- `Payments.demo_mode` is enabled in debug mode
+- `PAYMENTS_DEMO_MODE=true`
+- the app is intentionally using the local no-money demo payment flow
 
 Fix:
 
-- set the Stripe environment variables
-- make sure production uses `debug = false`
+- for Stripe-hosted demo payments, set `STRIPE_ENVIRONMENT=test` and test-mode Stripe keys
+- for production, set `PAYMENTS_DEMO_MODE=false`, `STRIPE_ENVIRONMENT=live`, live-mode Stripe keys, and `STRIPE_WEBHOOK_SECRET`
 
 ### Problem: Uploaded resources fail to save
 

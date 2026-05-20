@@ -10,7 +10,6 @@ $notificationList = is_object($notifications) && method_exists($notifications, '
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <h2 class="admin-form-title m-0" style="font-size: 18px;">My Notifications</h2>
     <?= $this->Form->create(null, ['url' => ['action' => 'markAllRead'], 'class' => 'm-0']) ?>
         <?= $this->Form->button(
             '<i class="bi bi-check2-all me-1"></i> Mark All Read',

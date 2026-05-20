@@ -11,9 +11,11 @@ $this->assign('title', 'Edit Class');
 $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Classes
-</a>
+<div class="mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link" onclick="history.back(); return false;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
 <div class="admin-form-card">
     <div class="admin-form-header">
@@ -21,18 +23,27 @@ $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APO
     </div>
     
     <?= $this->Form->create($class) ?>
-        <div class="admin-form-group">
-            <label for="class-code" class="admin-form-label">Class Code</label>
-            <?= $this->Form->text('class_code', [
-                'id' => 'class-code', 
-                'readonly' => true,
-                'class' => 'admin-form-input'
-            ]) ?>
-            <p style="margin: 8px 0 0; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
-                This code is generated automatically. If you change the course and save, the code will be regenerated to match.
+        <div class="admin-form-group" style="padding: 16px 18px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border);">
+            <div class="admin-form-label" style="margin-bottom: 6px;">Class Code</div>
+            <p style="margin: 0 0 4px; font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; color: var(--admin-brand-icon);">
+                <?= h($class->class_code) ?>
+            </p>
+            <p style="margin: 0; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary);">
+                This code is fixed and cannot be changed. If you change the course, the code will be regenerated to match when you save.
             </p>
         </div>
         
+        <div class="admin-form-group">
+            <label for="class-name" class="admin-form-label">Class Name <span aria-hidden="true" style="color:#c0392b;">*</span></label>
+            <?= $this->Form->text('class_name', [
+                'id' => 'class-name',
+                'required' => true,
+                'placeholder' => 'e.g. Monday Morning Knitting',
+                'maxlength' => 100,
+                'class' => 'admin-form-input'
+            ]) ?>
+        </div>
+
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">

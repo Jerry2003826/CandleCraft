@@ -9,7 +9,7 @@ $this->assign('title', 'Book Class');
 ?>
 
 <div class="mb-3">
-    <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Courses</a>
+    <a href="#" onclick="history.back(); return false;" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
 <div class="card">

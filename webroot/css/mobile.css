@@ -1,0 +1,578 @@
+/* ==========================================================================
+   CandleCraft Academy — Mobile Responsive Stylesheet
+   --------------------------------------------------------------------------
+   This file is loaded LAST after admin-bootstrap, admin, redesign and home
+   stylesheets, so it owns the responsive behaviour for screens narrower
+   than the tablet breakpoint (<= 992px) and especially for phones (<= 640px).
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Global hardening — kill any horizontal scrollbar that absolute-positioned
+   decoration elements may introduce, and make sure CakePHP / Bootstrap
+   containers respect the viewport width.
+   -------------------------------------------------------------------------- */
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+img,
+video,
+iframe,
+embed,
+object {
+    max-width: 100%;
+    height: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Tablet (<= 992px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+
+    /* Sidebar should NOT push content on tablet/mobile (offcanvas takes over)
+       — also force the wrapper / nav / main to take the full viewport width
+       so nothing remains left-aligned with phantom right-side whitespace. */
+    .sidebar-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        min-width: 0 !important;
+    }
+
+    .sidebar-navbar {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Content padding scales down + force the container to fill available width */
+    body.redesign main#main-content.container-fluid,
+    body.admin-portal main#main-content.container-fluid {
+        padding: 18px 20px 56px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Top navbar gets a touch-friendly footprint */
+    .sidebar-navbar {
+        padding: 10px 16px !important;
+        gap: 8px;
+    }
+
+    /* Page title shrinks gracefully. body.redesign / body.admin-portal
+       prefixes are required to outrank the desktop overrides in
+       redesign.css (which use !important). Truncation prevents long
+       headings like "Learning Resources" from pushing the avatar down. */
+    .sidebar-navbar .page-title,
+    body.redesign .sidebar-navbar .page-title,
+    body.admin-portal .sidebar-navbar .page-title {
+        font-size: 1.4rem !important;
+        line-height: 1.2;
+        margin: 0;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* The left half of the navbar (hamburger + title) must be allowed to
+       shrink so the title can ellipsize instead of forcing the right-side
+       actions onto a second row. */
+    .sidebar-navbar > .d-flex {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    /* Right-side actions (notification + avatar) never wrap or shrink, and
+       always stick to the right edge of the navbar regardless of how narrow
+       the title group becomes. */
+    .sidebar-navbar .admin-header-actions {
+        flex: 0 0 auto !important;
+        margin-left: auto !important;
+        gap: 10px !important;
+    }
+
+    /* Hamburger toggle should be visually balanced with the page title — a
+       small outline button looks lost next to a 1.4rem heading. */
+    .sidebar-navbar .sidebar-toggle-btn,
+    body.redesign .sidebar-navbar .sidebar-toggle-btn,
+    body.admin-portal .sidebar-navbar .sidebar-toggle-btn {
+        width: 44px;
+        height: 44px;
+        padding: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.55rem;
+        line-height: 1;
+        border-color: rgba(47, 34, 25, 0.18) !important;
+        color: #2f2219 !important;
+        background: transparent;
+    }
+    .sidebar-navbar .sidebar-toggle-btn i {
+        font-size: inherit;
+        line-height: 1;
+    }
+    .sidebar-navbar .sidebar-toggle-btn:hover,
+    .sidebar-navbar .sidebar-toggle-btn:focus-visible {
+        background: rgba(210, 154, 88, 0.12);
+        border-color: rgba(47, 34, 25, 0.28) !important;
+    }
+
+    /* Avatar / dropdown buttons keep min 44x44 touch target */
+    .admin-header-actions .admin-avatar,
+    .admin-header-actions .admin-notification-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Username next to avatar can wrap or hide on narrow screens */
+    .admin-header-actions .admin-user-label {
+        max-width: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Page header (toolbars) becomes a vertical stack with comfortable
+       breathing room between tabs / search / action buttons. */
+    .admin-page-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 18px !important;
+        padding: 8px 0 12px !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* The desktop spacing under .admin-tabs (24px) doubles up with the
+       column gap on mobile, leaving a huge empty band. Let the page-header
+       gap own the vertical rhythm instead. */
+    .admin-page-header .admin-tabs,
+    .admin-page-header .admin-pill-tabs {
+        margin-bottom: 0 !important;
+        padding-bottom: 6px !important;
+    }
+
+    /* When a page header only contains tabs (e.g. Enquiries), tighten the
+       border + bottom margin so the table sits closer to the navigation. */
+    .admin-page-header > .admin-tabs:only-child {
+        padding-bottom: 0 !important;
+    }
+
+    /* Inside the page header, action buttons + search forms span the row */
+    .admin-page-header > .admin-btn-primary,
+    .admin-page-header > .admin-btn-secondary,
+    .admin-page-header form,
+    .admin-page-header .admin-search,
+    .admin-page-header [class*="__actions"] > .admin-btn-primary,
+    .admin-page-header [class*="__actions"] > .admin-btn-secondary,
+    .admin-page-header [class*="__actions"] > a.admin-btn-primary,
+    .admin-page-header [class*="__actions"] > a.admin-btn-secondary,
+    .admin-page-header [class*="__actions"] > form {
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: center;
+    }
+
+    /* The wrapper that holds the actions (e.g. customers-page-toolbar__actions) */
+    .admin-page-header [class*="-toolbar__actions"],
+    .admin-page-header [class$="__actions"] {
+        width: 100% !important;
+        align-items: stretch !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-left: 0 !important;
+    }
+
+    /* Some templates (e.g. Admin/Courses) wrap their button + tabs in a
+       generic Bootstrap d-flex group. Force those nested groups to occupy
+       the full row and stack vertically so children get full width. */
+    .admin-page-header > .d-flex,
+    .admin-page-header > .d-flex.flex-wrap {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        margin: 0 !important;
+    }
+
+    /* Buttons placed anywhere inside the page header (including inside the
+       nested d-flex wrapper above) span the full row width on mobile. */
+    .admin-page-header .admin-btn-primary,
+    .admin-page-header .admin-btn-secondary {
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: center;
+    }
+
+    /* Tabs / pill-tabs scroll horizontally instead of overflowing.
+       !important needed because some templates apply Bootstrap's
+       .flex-wrap utility (which itself uses !important). */
+    .admin-tabs,
+    .admin-pill-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 4px;
+        width: 100%;
+    }
+
+    .admin-tabs::-webkit-scrollbar,
+    .admin-pill-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Distribute tabs evenly across the row so 3-4 short labels don't
+       crowd the left edge. flex-basis 0 + grow 1 == "nav-fill" behaviour;
+       min-width: max-content guarantees the label is never truncated, so
+       extra-long labels overflow into the horizontal scroller above. */
+    .admin-tabs > .admin-tab,
+    .admin-pill-tabs > .admin-pill-tab {
+        flex: 1 1 0;
+        min-width: max-content;
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* Forms become single column */
+    .admin-form-card .row [class*="col-"],
+    .admin-form-card form .row [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Generic two-column / multi-column inline grids shrink to one column */
+    [style*="grid-template-columns: repeat(2"],
+    [style*="grid-template-columns: repeat(3"],
+    [style*="grid-template-columns: repeat(4"],
+    [style*="grid-template-columns: 1fr 1fr"],
+    [style*="grid-template-columns: 2fr 1fr"],
+    [style*="grid-template-columns: 1fr 2fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tables keep horizontal scroll but get a soft visual cue */
+    .table-responsive {
+        position: relative;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-table {
+        min-width: 640px;
+    }
+
+    /* Keep customer / class names on a single line so columns don't shift
+       around and the label stays readable instead of wrapping at the comma. */
+    .admin-table .admin-table-primary-text,
+    .admin-table .admin-table-secondary-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 220px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Phone (<= 640px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+
+    body.redesign main#main-content.container-fluid,
+    body.admin-portal main#main-content.container-fluid {
+        padding: 14px 14px 48px !important;
+    }
+
+    .sidebar-navbar {
+        padding: 8px 12px !important;
+    }
+
+    .sidebar-navbar .page-title,
+    body.redesign .sidebar-navbar .page-title,
+    body.admin-portal .sidebar-navbar .page-title {
+        font-size: 1.2rem !important;
+    }
+
+    /* Hide username on very narrow screens, the avatar dropdown is enough */
+    .admin-header-actions .admin-user-label {
+        display: none !important;
+    }
+
+    /* Bootstrap row gutter trim */
+    .row {
+        --bs-gutter-x: 0.75rem;
+    }
+
+    /* All Bootstrap col-sm-6 stat cards become full width */
+    .row > [class*="col-sm-6"],
+    .row > [class*="col-sm-4"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Stat / dashboard cards: trim padding & font-size */
+    .admin-dashboard-wrapper [style*="padding: 22px 24px"],
+    .admin-dashboard-wrapper [style*="padding: 20px 24px"] {
+        padding: 16px 18px !important;
+    }
+
+    .admin-dashboard-wrapper [style*="font-size: 2.4rem"] {
+        font-size: 1.9rem !important;
+    }
+
+    /* Dashboard quick-action chips become a wrapping single column flow */
+    .admin-dashboard-wrapper [style*="display: flex"][style*="flex-wrap: wrap"] {
+        gap: 8px !important;
+    }
+
+    .admin-dashboard-wrapper [style*="display: flex"] a[style*="padding: 9px 16px"] {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+        justify-content: center;
+        font-size: 12px !important;
+    }
+
+    /* Recent bookings / enquiries items: stack badge under text on phones */
+    .admin-dashboard-wrapper [style*="justify-content: space-between"][style*="border: 1.5px solid"] {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    /* Tables get a tighter min-width on phone (still enough room to fit
+       "11 May 2026" inside the Created column without truncation). */
+    .admin-table {
+        min-width: 600px;
+        font-size: 13px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 10px 10px !important;
+    }
+
+    .admin-table .admin-table-primary-text,
+    .admin-table .admin-table-secondary-text {
+        max-width: 170px;
+    }
+
+    /* Forms: full-width inputs, comfortable touch targets */
+    .form-control,
+    .form-select {
+        font-size: 16px; /* 16px stops iOS auto-zoom */
+        min-height: 44px;
+    }
+
+    .form-label {
+        font-size: 0.95rem;
+    }
+
+    /* Buttons: comfortable touch targets, never wider than the viewport */
+    .admin-btn-primary,
+    .admin-btn-secondary,
+    .btn {
+        min-height: 44px;
+        max-width: 100%;
+    }
+
+    /* Action button rows on detail pages stack vertically */
+    .admin-actions-row,
+    .admin-form-actions,
+    .d-flex.gap-2:not(.flex-nowrap):not(.admin-tabs):not(.admin-pill-tabs),
+    .d-flex.gap-3:not(.flex-nowrap):not(.admin-tabs):not(.admin-pill-tabs) {
+        flex-wrap: wrap;
+    }
+
+    /* Modal / dialog: full-width on phone */
+    .modal-dialog {
+        margin: 12px;
+        max-width: calc(100vw - 24px);
+    }
+
+    /* Pagination wraps */
+    .pagination,
+    .admin-pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    /* Login card never overflows the viewport */
+    .login-card,
+    .admin-form-card {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Payment portal: keep the mobile balance card from overlapping itself. */
+    body.redesign .z-billing-page {
+        gap: 18px;
+    }
+
+    body.redesign .z-billing-header {
+        align-items: stretch !important;
+        gap: 14px !important;
+    }
+
+    body.redesign .z-billing-title {
+        font-size: clamp(2.65rem, 14vw, 3.4rem) !important;
+        line-height: 1.05 !important;
+    }
+
+    body.redesign .z-billing-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        padding: 4px !important;
+    }
+
+    body.redesign .z-billing-tab {
+        min-height: 44px;
+        padding: 10px 8px !important;
+        white-space: normal;
+    }
+
+    body.redesign .z-billing-tab[aria-controls="details"] {
+        grid-column: 1 / -1;
+    }
+
+    body.redesign .z-billing-balance-card {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 18px !important;
+        padding: 22px 18px !important;
+        overflow: hidden !important;
+    }
+
+    body.redesign .z-billing-balance-card::after {
+        top: -90px;
+        right: -120px;
+        width: 230px;
+        height: 230px;
+    }
+
+    body.redesign .z-billing-balance-main {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 16px !important;
+        align-items: start !important;
+        min-width: 0 !important;
+    }
+
+    body.redesign .z-billing-amount {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        font-size: clamp(3.1rem, 18vw, 4.6rem) !important;
+        line-height: 0.95 !important;
+        overflow-wrap: anywhere;
+    }
+
+    body.redesign .z-billing-balance-divider {
+        width: 100% !important;
+        min-height: 1px !important;
+        height: 1px !important;
+    }
+
+    body.redesign .z-billing-balance-details {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    body.redesign .z-billing-balance-item {
+        min-width: 0;
+    }
+
+    body.redesign .z-billing-balance-label,
+    body.redesign .z-billing-balance-value {
+        overflow-wrap: anywhere;
+    }
+
+    body.redesign .z-billing-balance-label {
+        font-size: 11px !important;
+        letter-spacing: 0.08em;
+    }
+
+    body.redesign .z-billing-balance-value {
+        font-size: 18px !important;
+    }
+
+    body.redesign .z-billing-balance-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 10px !important;
+        width: 100% !important;
+        justify-content: stretch !important;
+        align-items: stretch !important;
+    }
+
+    body.redesign .z-billing-balance-actions > * {
+        width: 100% !important;
+        margin-left: 0 !important;
+        justify-content: center !important;
+        position: relative;
+        z-index: 2;
+    }
+
+    body.redesign .z-billing-btn-primary {
+        min-height: 48px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Very small phones (<= 380px) — last-mile micro adjustments
+   -------------------------------------------------------------------------- */
+@media (max-width: 380px) {
+
+    body.redesign main#main-content.container-fluid,
+    body.admin-portal main#main-content.container-fluid {
+        padding: 12px 10px 40px !important;
+    }
+
+    .sidebar-navbar .page-title,
+    body.redesign .sidebar-navbar .page-title,
+    body.admin-portal .sidebar-navbar .page-title {
+        font-size: 1.05rem !important;
+    }
+
+    /* Notification + avatar group keeps from overflowing */
+    .admin-header-actions {
+        gap: 4px !important;
+    }
+
+    /* Quick action chips become single column */
+    .admin-dashboard-wrapper [style*="display: flex"] a[style*="padding: 9px 16px"] {
+        flex: 1 1 100%;
+    }
+
+    /* Stat-card icon is hidden so the value can breathe */
+    .admin-dashboard-wrapper [style*="width: 38px"][style*="height: 38px"] {
+        display: none !important;
+    }
+
+    body.redesign .z-billing-amount {
+        font-size: clamp(2.75rem, 17vw, 3.7rem) !important;
+    }
+
+    body.redesign .z-billing-balance-details {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Print / accessibility safety — keep horizontal scroll only on data tables
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    body.redesign,
+    body.admin-portal,
+    body.site-home {
+        overflow-x: hidden;
+    }
+}

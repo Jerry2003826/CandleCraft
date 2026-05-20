@@ -53,7 +53,18 @@ class PagesControllerTest extends TestCase
         $this->get('/pages/not_existing');
 
         $this->assertResponseError();
-        $this->assertResponseContains('Error');
+        $this->assertResponseContains('Page Not Found');
+        $this->assertResponseContains('The page you are looking for does not exist.');
+    }
+
+    public function testUnknownUrlRendersCustomNotFoundPage()
+    {
+        Configure::write('debug', false);
+        $this->get('/this-page-does-not-exist');
+
+        $this->assertResponseCode(404);
+        $this->assertResponseContains('Page Not Found');
+        $this->assertResponseContains('Return Home');
     }
 
     /**

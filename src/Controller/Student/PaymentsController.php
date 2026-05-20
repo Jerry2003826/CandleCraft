@@ -5,6 +5,7 @@ namespace App\Controller\Student;
 
 use App\Service\BookingCancellationService;
 use App\Service\PaymentCheckoutService;
+use App\Service\PaymentReceiptEmailService;
 use App\Service\StripeConfiguration;
 use Cake\Core\Configure;
 use Cake\Http\Response;
@@ -13,16 +14,25 @@ use RuntimeException;
 
 class PaymentsController extends AppController
 {
+    /**
+     * Is stripe configured.
+     */
     private function isStripeConfigured(): bool
     {
-        return StripeConfiguration::isCheckoutReady();
+        return StripeConfiguration::isHostedCheckoutReady();
     }
 
+    /**
+     * Is demo mode enabled.
+     */
     private function isDemoModeEnabled(): bool
     {
-        return (bool)Configure::read('debug') && (bool)Configure::read('Payments.demo_mode');
+        return (bool)Configure::read('Payments.demo_mode');
     }
 
+    /**
+     * Get request base url.
+     */
     private function getRequestBaseUrl(): string
     {
         $uri = $this->request->getUri();
@@ -30,6 +40,9 @@ class PaymentsController extends AppController
         return $uri->getScheme() . '://' . $uri->getAuthority();
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -53,6 +66,11 @@ class PaymentsController extends AppController
         $this->set('title', 'Payments');
     }
 
+    /**
+     * Process.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function process(?int $bookingId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -74,7 +92,10 @@ class PaymentsController extends AppController
 
         // If this booking is linked to a parent account, payment must be authorized by parent.
         if (!empty($booking->parent_id)) {
-            $this->Flash->warning(__('Payment for this booking requires parent authorization. Please ask your parent to complete payment in the Parent Portal.'));
+            $this->Flash->warning(__(
+                'Payment for this booking requires parent authorization. Please ask your parent to' .
+                'complete payment in the Parent Portal.',
+            ));
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
@@ -91,7 +112,9 @@ class PaymentsController extends AppController
             $existingPayment->payment_status === 'paid' &&
             in_array($booking->booking_status, ['confirmed', 'completed'], true)
         ) {
-            $this->Flash->info(__('Payment already completed for this booking.'));
+            $this->Flash->info(__(
+                'Payment already completed for this booking.',
+            ));
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
@@ -99,17 +122,23 @@ class PaymentsController extends AppController
         if ($this->request->is('post')) {
             try {
                 $result = (new PaymentCheckoutService())->startCheckout($booking, [
+                    // See PaymentsController (Consumer prefix) for why this
+                    // uses a path segment instead of `?session_id=...`.
                     'success_url' => $this->getRequestBaseUrl()
-                        . Router::url(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'success', '?' => ['session_id' => '{CHECKOUT_SESSION_ID}']]),
+                        . Router::url(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'success'])
+                        . '/{CHECKOUT_SESSION_ID}',
                     'cancel_url' => $this->getRequestBaseUrl()
                         . Router::url(['prefix' => 'Student', 'controller' => 'Payments', 'action' => 'cancel', $bookingId]),
                     'portal_source' => 'student_portal',
                     'payer_id' => $identity?->get('user_id'),
+                    'payer_email' => $identity?->get('email'),
                 ]);
 
                 return $this->handleCheckoutResult($result, $identity?->get('user_id'));
             } catch (RuntimeException $exception) {
-                $this->Flash->error(__($exception->getMessage()));
+                $this->Flash->error(__(
+                    $exception->getMessage(),
+                ));
             }
         }
 
@@ -121,6 +150,12 @@ class PaymentsController extends AppController
         return null;
     }
 
+    /**
+     * Handle checkout result.
+     *
+     * @param mixed $result Result.
+     * @param mixed $notifyUserId Notifyuserid.
+     */
     private function handleCheckoutResult(array $result, ?int $notifyUserId): ?Response
     {
         if (($result['kind'] ?? null) === 'redirect') {
@@ -140,6 +175,7 @@ class PaymentsController extends AppController
                     (float)$payment->amount,
                 );
             }
+            $this->sendPaymentReceiptEmail((int)$payment->payment_id, 'Student');
 
             $message = ($result['completed_reason'] ?? null) === 'zero_amount'
                 ? __('Free booking confirmed successfully.')
@@ -149,14 +185,23 @@ class PaymentsController extends AppController
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->info(__('Payment already completed for this booking.'));
+        $this->Flash->info(__(
+            'Payment already completed for this booking.',
+        ));
 
         return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
     }
 
-    public function success(): ?Response
+    /**
+     * Success.
+     *
+     * @param mixed $sessionToken Sessiontoken.
+     */
+    public function success(?string $sessionToken = null): ?Response
     {
-        $sessionId = $this->request->getQuery('session_id');
+        $sessionId = $sessionToken !== null && $sessionToken !== ''
+            ? $sessionToken
+            : $this->request->getQuery('session_id');
         $paymentsTable = $this->fetchTable('Payments');
         $identity = $this->Authentication->getIdentity();
         $student = $this->fetchTable('Students')->find()
@@ -164,7 +209,9 @@ class PaymentsController extends AppController
             ->firstOrFail();
 
         if (!is_string($sessionId) || $sessionId === '') {
-            $this->Flash->error(__('Payment session could not be found.'));
+            $this->Flash->error(__(
+                'Payment session could not be found.',
+            ));
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
@@ -178,21 +225,38 @@ class PaymentsController extends AppController
             ->first();
 
         if (!$payment) {
-            $this->Flash->error(__('Payment session not found for your account.'));
+            $this->Flash->error(__(
+                'Payment session not found for your account.',
+            ));
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
 
+        if ($payment->payment_status !== 'paid') {
+            (new PaymentCheckoutService())->syncCheckoutSession($sessionId);
+            $payment = $paymentsTable->get((int)$payment->payment_id);
+        }
+
         if ($payment->payment_status === 'paid') {
-            $this->Flash->success(__('Payment completed successfully!'));
+            $this->sendPaymentReceiptEmail((int)$payment->payment_id, 'Student');
+            $this->Flash->success(__(
+                'Payment completed successfully!',
+            ));
         } else {
-            $this->Flash->info(__('Payment received. Confirmation will appear shortly once Stripe finishes processing the webhook.'));
+            $this->Flash->info(__(
+                'Payment received. Confirmation will appear shortly once Stripe finishes processing the webhook.',
+            ));
         }
         $this->set('title', 'Payment Successful');
 
         return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
     }
 
+    /**
+     * Cancel.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function cancel(?int $bookingId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -212,16 +276,25 @@ class PaymentsController extends AppController
                 'portal_source' => 'student_portal',
             ]);
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
 
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->warning(__('Payment was cancelled. Your booking is still pending.'));
+        $this->Flash->warning(__(
+            'Payment was cancelled. Your booking is still pending.',
+        ));
 
         return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
     }
 
+    /**
+     * Receipt.
+     *
+     * @param mixed $paymentId Paymentid.
+     */
     public function receipt(?int $paymentId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -248,7 +321,10 @@ class PaymentsController extends AppController
             ->first();
 
         if (!$booking) {
-            $this->Flash->error(__('Access denied.'));
+            $this->Flash->error(__(
+                'Access denied.',
+            ));
+
             return $this->redirect(['controller' => 'Bookings', 'action' => 'index']);
         }
 
@@ -256,5 +332,21 @@ class PaymentsController extends AppController
         $this->set('title', 'Payment Receipt');
 
         return null;
+    }
+
+    /**
+     * Send payment receipt email.
+     *
+     * @param mixed $paymentId Paymentid.
+     * @param mixed $portalPrefix Portalprefix.
+     */
+    private function sendPaymentReceiptEmail(int $paymentId, string $portalPrefix): void
+    {
+        $identity = $this->Authentication->getIdentity();
+        (new PaymentReceiptEmailService())->sendForPayment($paymentId, [
+            'portal_prefix' => $portalPrefix,
+            'recipient_email' => (string)($identity?->get('email') ?? ''),
+            'recipient_name' => (string)($identity?->get('username') ?? ''),
+        ]);
     }
 }

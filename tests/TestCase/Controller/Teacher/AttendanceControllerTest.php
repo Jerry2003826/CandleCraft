@@ -46,7 +46,7 @@ class AttendanceControllerTest extends AppIntegrationTestCase
             'attendance_notes' => '',
         ]);
 
-        $this->assertResponseCode(400);
+        $this->assertRedirectContains('/teacher/attendance?class_id=1');
     }
 
     public function testMarkRejectsOverlongAttendanceNotes(): void
@@ -69,5 +69,18 @@ class AttendanceControllerTest extends AppIntegrationTestCase
 
         $this->assertResponseCode(302);
         $this->assertSame($before, $after);
+    }
+
+    public function testIndexUsesSingleAttendanceStatusControlPerStudent(): void
+    {
+        $this->loginAsTeacher();
+
+        $this->get('/teacher/attendance?class_id=1');
+
+        $this->assertResponseOk();
+        $this->assertResponseContains('attendance-status-options');
+        $this->assertResponseContains('aria-label="Attendance status for');
+        $this->assertResponseNotContains('<th>Status</th>');
+        $this->assertResponseNotContains('class="admin-badge admin-badge-neutral">Pending</span>');
     }
 }

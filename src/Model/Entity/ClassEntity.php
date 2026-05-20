@@ -8,6 +8,7 @@ use Cake\ORM\Entity;
 class ClassEntity extends Entity
 {
     protected array $_accessible = [
+        'class_name' => true,
         'class_code' => true,
         'course_id' => true,
         'teacher_id' => true,

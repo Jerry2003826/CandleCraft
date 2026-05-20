@@ -8,12 +8,13 @@
  * @var array<string, mixed> $account
  * @var array<string, string> $accountStatusOptions
  * @var array<string, string> $profileStatusOptions
+ * @var string $defaultPortalPassword
  */
 $this->assign('title', 'Create Account');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'view', $message->message_id]) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Request
+<a href="#" onclick="history.back(); return false;" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back
 </a>
 
 <?php if ($existingUser): ?>
@@ -66,11 +67,12 @@ $this->assign('title', 'Create Account');
         <h2 class="admin-form-title">Create Portal Account</h2>
     </div>
     <p style="margin: 0 0 24px; color: var(--admin-text-secondary);">
-        Saving this form will create customer portal access using the legacy student profile flow, then email the requester their login address and temporary password.
+        Saving this form will create customer portal access using the legacy student profile flow, then email the requester their login address, default temporary password, and password change link.
     </p>
 
     <?= $this->Form->create(null) ?>
         <?= $this->Form->hidden('user_role', ['value' => 'student']) ?>
+        <?= $this->Form->hidden('password', ['value' => $defaultPortalPassword]) ?>
         <h3 class="admin-form-title" style="font-size: 16px; margin-bottom: 24px; color: var(--admin-brand-icon);">Account Information</h3>
 
         <div class="row g-4">
@@ -113,15 +115,13 @@ $this->assign('title', 'Create Account');
             </div>
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="password" class="admin-form-label">Temporary Password</label>
-                    <?= $this->Form->password('password', [
-                        'id' => 'password',
-                        'required' => true,
-                        'minlength' => 8,
-                        'value' => $account['password'],
-                        'class' => 'admin-form-input',
-                        'disabled' => (bool)$existingUser,
-                    ]) ?>
+                    <div class="admin-form-label">Temporary Password</div>
+                    <div style="padding: 13px 16px; border-radius: 12px; background-color: var(--admin-search-bg); border: 1px solid var(--admin-card-border); color: var(--admin-text-primary); font-weight: 600;">
+                        <?= h($defaultPortalPassword) ?>
+                    </div>
+                    <p style="margin: 8px 0 0; font-size: 13px; color: var(--admin-text-secondary);">
+                        Admin does not need to set this manually. The welcome email asks the requester to change it from the secure reset link.
+                    </p>
                 </div>
             </div>
         </div>

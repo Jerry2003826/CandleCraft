@@ -6,9 +6,11 @@
 $this->assign('title', 'Edit Course');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Courses
-</a>
+<div class="mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link" onclick="history.back(); return false;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
 <div class="admin-form-card">
     <div class="admin-form-header">

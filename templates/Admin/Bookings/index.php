@@ -61,6 +61,7 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
         <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab <?= !$status ? 'active' : '' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'confirmed']]) ?>" class="admin-tab <?= $status === 'confirmed' ? 'active' : '' ?>">Confirmed</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'pending']]) ?>" class="admin-tab <?= $status === 'pending' ? 'active' : '' ?>">Pending</a>
+        <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'refund_required']]) ?>" class="admin-tab <?= $status === 'refund_required' ? 'active' : '' ?>">Refund Required</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'cancelled']]) ?>" class="admin-tab <?= $status === 'cancelled' ? 'active' : '' ?>">Cancelled</a>
     </div>
 </div>
@@ -81,19 +82,43 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($bookings) || (is_object($bookings) && $bookings->isEmpty())): ?>
+                <?php if (count($bookings) === 0): ?>
                     <tr><td colspan="7" class="text-center text-muted py-4">No bookings found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($bookings as $booking): ?>
                         <?php
-                        $hasPaidRecord = false;
+                        $paymentBadge = ['class' => 'admin-badge-warning', 'label' => 'Payment Pending'];
+                        $paymentPriority = [
+                            'refund_required' => ['class' => 'admin-badge-warning', 'label' => 'Refund Required', 'rank' => 100],
+                            'disputed' => ['class' => 'admin-badge-danger', 'label' => 'Disputed', 'rank' => 95],
+                            'paid' => ['class' => 'admin-badge-success', 'label' => 'Payment Paid', 'rank' => 80],
+                            'partially_refunded' => ['class' => 'admin-badge-info', 'label' => 'Partially Refunded', 'rank' => 75],
+                            'refunded' => ['class' => 'admin-badge-neutral', 'label' => 'Refunded', 'rank' => 70],
+                            'failed' => ['class' => 'admin-badge-danger', 'label' => 'Payment Failed', 'rank' => 60],
+                            'expired' => ['class' => 'admin-badge-neutral', 'label' => 'Payment Expired', 'rank' => 50],
+                            'voided' => ['class' => 'admin-badge-neutral', 'label' => 'Payment Voided', 'rank' => 45],
+                        ];
+                        $currentRank = 0;
                         foreach ($booking->payments ?? [] as $payment) {
-                            if ($payment->payment_status === 'paid') { $hasPaidRecord = true; break; }
+                            $paymentStatus = (string)$payment->payment_status;
+                            if (
+                                $booking->booking_status === 'cancelled'
+                                && in_array($paymentStatus, ['paid', 'partially_refunded', 'disputed'], true)
+                                && round((float)$payment->refunded_amount, 2) < round((float)$payment->amount, 2)
+                            ) {
+                                $paymentStatus = 'refund_required';
+                            }
+                            $candidate = $paymentPriority[$paymentStatus] ?? null;
+                            if ($candidate !== null && $candidate['rank'] > $currentRank) {
+                                $paymentBadge = $candidate;
+                                $currentRank = $candidate['rank'];
+                            }
                         }
+                        $viewUrl = $this->Url->build(['action' => 'view', $booking->booking_id]);
                         ?>
-                    <tr>
+                    <tr class="admin-clickable-row" data-href="<?= h($viewUrl) ?>" tabindex="0" role="link" aria-label="View booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
                         <td>
-                            <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-table-primary-text text-decoration-none" style="color: var(--admin-brand-icon);">
+                            <a href="<?= h($viewUrl) ?>" class="admin-table-primary-text text-decoration-none" style="color: var(--admin-brand-icon);">
                                 BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>
                             </a>
                         </td>
@@ -122,15 +147,11 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
                             <span class="admin-badge <?= $statusClass ?>"><?= h(ucfirst((string)$booking->booking_status)) ?></span>
                         </td>
                         <td>
-                            <?php if ($hasPaidRecord): ?>
-                                <span class="admin-badge admin-badge-success">Payment Paid</span>
-                            <?php else: ?>
-                                <span class="admin-badge admin-badge-warning">Payment Pending</span>
-                            <?php endif; ?>
+                            <span class="admin-badge <?= h($paymentBadge['class']) ?>"><?= h($paymentBadge['label']) ?></span>
                         </td>
                         <td>
                             <div class="admin-action-links justify-content-end">
-                                <a href="<?= $this->Url->build(['action' => 'view', $booking->booking_id]) ?>" class="admin-action-link view" title="View" aria-label="View booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
+                                <a href="<?= h($viewUrl) ?>" class="admin-action-link view" title="View" aria-label="View booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                 <a href="<?= $this->Url->build(['action' => 'edit', $booking->booking_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?>">
@@ -151,3 +172,34 @@ $totalPct = $stats['total'] > 0 ? $stats['total'] : 1;
         <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>
+
+<style>
+    .admin-clickable-row {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.admin-clickable-row[data-href]').forEach(function (row) {
+        function openRow(event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            window.location.href = row.dataset.href;
+        }
+
+        row.addEventListener('click', openRow);
+        row.addEventListener('keydown', function (event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+            event.preventDefault();
+            window.location.href = row.dataset.href;
+        });
+    });
+});
+</script>

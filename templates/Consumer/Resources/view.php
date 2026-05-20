@@ -8,8 +8,8 @@ $this->assign('title', h($resource->resource_name));
 
 <div class="z-billing-page">
     <div class="z-billing-header">
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-3 d-inline-flex" style="font-size: 13px;">
-            <i class="bi bi-arrow-left"></i> Back to Resources
+        <a href="#" onclick="history.back(); return false;" class="admin-back-link mb-3 d-inline-flex" style="font-size: 13px;">
+            <i class="bi bi-arrow-left"></i> Back
         </a>
         <h1 class="z-billing-title" style="margin-bottom: 0;"><?= h($resource->resource_name) ?></h1>
     </div>

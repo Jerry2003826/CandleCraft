@@ -5,9 +5,13 @@ namespace App\Controller\Admin;
 
 use Cake\Chronos\ChronosDate;
 use RuntimeException;
+use Throwable;
 
 class StudentsController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $studentsTable = $this->fetchTable('Students');
@@ -30,6 +34,11 @@ class StudentsController extends AppController
         $this->set(compact('students', 'status', 'search'));
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $id Id.
+     */
     public function view(?string $id = null): void
     {
         $studentsTable = $this->fetchTable('Students');
@@ -37,6 +46,11 @@ class StudentsController extends AppController
         $this->set(compact('student'));
     }
 
+    /**
+     * Add.
+     *
+     * @return mixed
+     */
     public function add()
     {
         $studentsTable = $this->fetchTable('Students');
@@ -53,6 +67,10 @@ class StudentsController extends AppController
 
         if ($this->request->is('post')) {
             $data = $this->request->getData();
+            $calculatedAge = $this->calculateAgeFromDateString((string)($data['date_of_birth'] ?? ''));
+            if ($calculatedAge !== null) {
+                $data['declared_age'] = $calculatedAge;
+            }
             $createPortalAccount = (bool)$this->request->getData('create_portal_account');
             $portalAccount = [
                 'username' => trim((string)($data['username'] ?? '')),
@@ -69,6 +87,8 @@ class StudentsController extends AppController
                 'medical_notes' => $data['medical_notes'] ?? null,
             ]);
 
+            $isAdult = $calculatedAge !== null && $calculatedAge >= 18;
+
             if ($createPortalAccount) {
                 $user = $usersTable->newEntity(
                     [
@@ -77,7 +97,7 @@ class StudentsController extends AppController
                         'password_hash' => $portalAccount['password'],
                         'user_role' => 'student',
                         'account_status' => $portalAccount['account_status'],
-                        'age_verified_by_admin' => false,
+                        'age_verified_by_admin' => $isAdult,
                         'self_declared_adult' => false,
                     ],
                     [
@@ -91,17 +111,7 @@ class StudentsController extends AppController
                 );
 
                 $portalAccountErrors = $user->getErrors();
-                if ($user->hasErrors()) {
-                    $this->Flash->error($this->extractFirstValidationError($portalAccountErrors, 'The portal account information is invalid.'));
-
-                    $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
-
-                    return;
-                }
-
-                if ($student->hasErrors()) {
-                    $this->Flash->error($this->extractFirstValidationError($student->getErrors(), 'The student profile could not be saved.'));
-
+                if ($user->hasErrors() || $student->hasErrors()) {
                     $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
 
                     return;
@@ -112,42 +122,80 @@ class StudentsController extends AppController
                 try {
                     $savedUser = $usersTable->save($user);
                     if (!$savedUser) {
-                        throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'Could not create the student login.'));
+                        throw new RuntimeException($this->extractFirstValidationError(
+                            $user->getErrors(),
+                            'Could not create the student login.',
+                        ));
                     }
 
                     $student->user_id = $savedUser->user_id;
                     $savedStudent = $studentsTable->save($student);
                     if (!$savedStudent) {
-                        throw new RuntimeException($this->extractFirstValidationError($student->getErrors(), 'Could not save the student profile.'));
+                        throw new RuntimeException($this->extractFirstValidationError(
+                            $student->getErrors(),
+                            'Could not save the student profile.',
+                        ));
                     }
 
                     $connection->commit();
-                    $this->Flash->success(__('The student and portal account have been created. Adult verification is still required before booking and payment unlock.'));
+                    if ($isAdult) {
+                        $this->Flash->success(__(
+                            'The student and portal account have been created. Adult verification was granted' .
+                            'automatically.',
+                        ));
+                    } else {
+                        $this->Flash->success(__(
+                            'The student and portal account have been created. Adult verification is required before' .
+                            'booking and payment features unlock.',
+                        ));
+                    }
 
                     return $this->redirect(['action' => 'view', $savedStudent->student_id]);
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $connection->rollback();
                     $this->Flash->error($exception->getMessage());
                 }
             } elseif ($studentsTable->save($student)) {
-                $this->Flash->success(__('The student profile has been saved without a portal login.'));
+                $this->Flash->success(__(
+                    'The student profile has been saved without a portal login.',
+                ));
 
                 return $this->redirect(['action' => 'view', $student->student_id]);
             }
 
-            $this->Flash->error(__('The student could not be saved. Please try again.'));
+            $this->Flash->error(__(
+                'The student could not be saved. Please try again.',
+            ));
         }
 
         $this->set(compact('student', 'createPortalAccount', 'portalAccount', 'portalAccountErrors'));
     }
 
+    /**
+     * Edit.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function edit(?string $id = null)
     {
         $studentsTable = $this->fetchTable('Students');
         $student = $studentsTable->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $student = $studentsTable->patchEntity($student, $this->request->getData(), [
+            $data = $this->request->getData();
+            $dobInput = trim((string)($data['date_of_birth'] ?? ''));
+            $calculatedAge = $this->calculateAgeFromDateString($dobInput);
+            if ($calculatedAge !== null) {
+                // DOB takes precedence: derive declared_age from it.
+                $data['declared_age'] = $calculatedAge;
+            } elseif ($dobInput === '' && (!isset($data['declared_age']) || $data['declared_age'] === '')) {
+                // No DOB and no declared_age provided: keep existing record value
+                // so the form does not blank out an age previously set by admin.
+                unset($data['declared_age']);
+            }
+
+            $student = $studentsTable->patchEntity($student, $data, [
                 'fields' => [
                     'student_name',
                     'declared_age',
@@ -165,20 +213,33 @@ class StudentsController extends AppController
                     if ($user->age_verified_by_admin && !$ageCheck['eligible']) {
                         $user->age_verified_by_admin = false;
                         $usersTable->save($user);
-                        $this->Flash->warning(__('Adult verification was removed automatically because the updated age details show this customer is under 18.'));
+                        $this->Flash->warning(__(
+                            'Adult verification was removed automatically because the updated age details show this' .
+                            'customer is under 18.',
+                        ));
                     }
                 }
 
-                $this->Flash->success(__('The student has been saved.'));
+                $this->Flash->success(__(
+                    'The customer has been saved.',
+                ));
 
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('The student could not be saved. Please try again.'));
+            $this->Flash->error(__(
+                'The student could not be saved. Please try again.',
+            ));
         }
 
         $this->set(compact('student'));
     }
 
+    /**
+     * Verify age.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function verifyAge(?string $id = null)
     {
         $this->request->allowMethod(['post']);
@@ -189,7 +250,9 @@ class StudentsController extends AppController
         $student = $studentsTable->get($id, contain: ['Users']);
 
         if (!$student->user) {
-            $this->Flash->error(__('This student has no linked user account.'));
+            $this->Flash->error(__(
+                'This student has no linked user account.',
+            ));
 
             return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
@@ -205,14 +268,25 @@ class StudentsController extends AppController
         $user->age_verified_by_admin = true;
 
         if ($usersTable->save($user)) {
-            $this->Flash->success(__('Adult verification recorded for {0}. Booking and payment features are now enabled.', $student->student_name));
+            $this->Flash->success(__(
+                'Adult verification recorded for {0}. Booking and payment features are now enabled.',
+                $student->student_name,
+            ));
         } else {
-            $this->Flash->error(__('Could not verify age. Please try again.'));
+            $this->Flash->error(__(
+                'Could not verify age. Please try again.',
+            ));
         }
 
         return $this->redirect($this->referer(['action' => 'view', $id], true));
     }
 
+    /**
+     * Unverify age.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function unverifyAge(?string $id = null)
     {
         $this->request->allowMethod(['post']);
@@ -223,7 +297,9 @@ class StudentsController extends AppController
         $student = $studentsTable->get($id, contain: ['Users']);
 
         if (!$student->user) {
-            $this->Flash->error(__('This student has no linked user account.'));
+            $this->Flash->error(__(
+                'This student has no linked user account.',
+            ));
 
             return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
@@ -231,7 +307,10 @@ class StudentsController extends AppController
         $user = $usersTable->get($student->user->user_id);
 
         if (!$user->age_verified_by_admin) {
-            $this->Flash->warning(__('Adult verification is already cleared for {0}.', $student->student_name));
+            $this->Flash->warning(__(
+                'Adult verification is already cleared for {0}.',
+                $student->student_name,
+            ));
 
             return $this->redirect($this->referer(['action' => 'view', $id], true));
         }
@@ -239,14 +318,25 @@ class StudentsController extends AppController
         $user->age_verified_by_admin = false;
 
         if ($usersTable->save($user)) {
-            $this->Flash->success(__('Adult verification has been removed for {0}. Booking and payment access are locked again.', $student->student_name));
+            $this->Flash->success(__(
+                'Adult verification has been removed for {0}. Booking and payment access are locked again.',
+                $student->student_name,
+            ));
         } else {
-            $this->Flash->error(__('Could not remove adult verification. Please try again.'));
+            $this->Flash->error(__(
+                'Could not remove adult verification. Please try again.',
+            ));
         }
 
         return $this->redirect($this->referer(['action' => 'view', $id], true));
     }
 
+    /**
+     * Delete.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
@@ -254,14 +344,24 @@ class StudentsController extends AppController
         $studentsTable = $this->fetchTable('Students');
         $student = $studentsTable->get($id);
         if ($studentsTable->delete($student)) {
-            $this->Flash->success(__('The student has been deleted.'));
+            $this->Flash->success(__(
+                'The student has been deleted.',
+            ));
         } else {
-            $this->Flash->error(__('The student could not be deleted. Please try again.'));
+            $this->Flash->error(__(
+                'The student could not be deleted. Please try again.',
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Extract first validation error.
+     *
+     * @param mixed $errors Errors.
+     * @param mixed $fallback Fallback.
+     */
     private function extractFirstValidationError(array $errors, string $fallback): string
     {
         foreach ($errors as $fieldErrors) {
@@ -317,5 +417,31 @@ class StudentsController extends AppController
             'source' => null,
             'message' => __('This customer cannot be verified as an adult until a date of birth or declared age is recorded.'),
         ];
+    }
+
+    /**
+     * Calculate age from date string.
+     *
+     * @param mixed $dateOfBirth Dateofbirth.
+     */
+    private function calculateAgeFromDateString(string $dateOfBirth): ?int
+    {
+        $dateOfBirth = trim($dateOfBirth);
+        if ($dateOfBirth === '') {
+            return null;
+        }
+
+        try {
+            $dob = ChronosDate::parse($dateOfBirth);
+        } catch (Throwable) {
+            return null;
+        }
+
+        $today = new ChronosDate();
+        if ($dob > $today) {
+            return null;
+        }
+
+        return (int)$dob->diff($today)->y;
     }
 }

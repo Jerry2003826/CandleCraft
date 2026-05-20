@@ -11,6 +11,9 @@ class ResourcesController extends AppController
 {
     private const ACCESSIBLE_BOOKING_STATUSES = ['confirmed', 'completed'];
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -50,6 +53,11 @@ class ResourcesController extends AppController
         $this->set('title', 'Learning Center');
     }
 
+    /**
+     * View.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function view(?int $resourceId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -76,6 +84,7 @@ class ResourcesController extends AppController
 
         if (!$hasAccess) {
             $this->Flash->error(__('You do not have access to this resource.'));
+
             return $this->redirect(['action' => 'index']);
         }
 
@@ -85,6 +94,11 @@ class ResourcesController extends AppController
         return null;
     }
 
+    /**
+     * Download.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function download(?int $resourceId = null): Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -111,6 +125,12 @@ class ResourcesController extends AppController
         return $this->buildDownloadResponse($resource->file_path, $resource->resource_type === 'video');
     }
 
+    /**
+     * Build download response.
+     *
+     * @param mixed $relativePath Relativepath.
+     * @param mixed $allowInlineVideo Allowinlinevideo.
+     */
     private function buildDownloadResponse(?string $relativePath, bool $allowInlineVideo = false): Response
     {
         if (!$relativePath) {

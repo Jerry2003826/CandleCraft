@@ -9,6 +9,11 @@ use RuntimeException;
 
 class PaymentWebhookIncidentsController extends AppController
 {
+    /**
+     * Index.
+     *
+     * @return mixed
+     */
     public function index()
     {
         $status = (string)$this->request->getQuery('status', 'open');
@@ -33,16 +38,35 @@ class PaymentWebhookIncidentsController extends AppController
         $this->set(compact('incidents', 'status'));
     }
 
+    /**
+     * Resolve.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function resolve(int $id)
     {
         return $this->updateStatus($id, 'resolved');
     }
 
+    /**
+     * Ignore.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function ignore(int $id)
     {
         return $this->updateStatus($id, 'ignored');
     }
 
+    /**
+     * Update status.
+     *
+     * @param mixed $id Id.
+     * @param mixed $status Status.
+     * @return mixed
+     */
     private function updateStatus(int $id, string $status)
     {
         $this->request->allowMethod(['post']);
@@ -60,6 +84,9 @@ class PaymentWebhookIncidentsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Current admin id.
+     */
     private function currentAdminId(): int
     {
         $identity = $this->request->getAttribute('identity');

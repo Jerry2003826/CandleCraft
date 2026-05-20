@@ -7,25 +7,27 @@
 $this->assign('title', 'Teachers');
 ?>
 
-<div class="admin-page-header">
+<div class="admin-page-header admin-list-toolbar">
     <div class="admin-tabs">
         <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab <?= !$status ? 'active' : '' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'active']]) ?>" class="admin-tab <?= $status === 'active' ? 'active' : '' ?>">Active</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'inactive']]) ?>" class="admin-tab <?= $status === 'inactive' ? 'active' : '' ?>">Inactive</a>
     </div>
-    
-    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="flex-grow-1" style="max-width: 400px;">
-        <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
-        <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border);">
-            <i class="bi bi-search"></i>
-            <label for="teacher-search" class="visually-hidden">Search teachers</label>
-            <input type="text" id="teacher-search" name="search" placeholder="Search teachers..." value="<?= h($search ?? '') ?>" style="width: 100%;">
-        </div>
-    </form>
 
-    <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
-        <i class="bi bi-plus-lg"></i> Add Teacher
-    </a>
+    <div class="admin-list-toolbar__actions">
+        <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
+            <i class="bi bi-plus-lg"></i> Add Teacher
+        </a>
+
+        <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-list-toolbar__search" role="search">
+            <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
+            <div class="admin-search">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <label for="teacher-search" class="visually-hidden">Search teachers</label>
+                <input type="text" id="teacher-search" name="search" placeholder="Search teachers..." value="<?= h($search ?? '') ?>" aria-label="Search teachers">
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="admin-table-card">

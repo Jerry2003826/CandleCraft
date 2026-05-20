@@ -8,6 +8,9 @@ use Cake\Http\Response;
 
 class LegacyEndpointsController extends Controller
 {
+    /**
+     * Removed stripe webhook.
+     */
     public function removedStripeWebhook(): Response
     {
         $this->request->allowMethod(['post']);

@@ -13,11 +13,23 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class ConditionalAuthenticationMiddleware implements MiddlewareInterface
 {
+    /**
+     * Construct.
+     *
+     * @param mixed $authenticationMiddleware Authenticationmiddleware.
+     * @return mixed
+     */
     public function __construct(
         private readonly AuthenticationMiddleware $authenticationMiddleware,
     ) {
     }
 
+    /**
+     * Process.
+     *
+     * @param mixed $request Request.
+     * @param mixed $handler Handler.
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (

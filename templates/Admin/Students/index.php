@@ -7,25 +7,26 @@
 $this->assign('title', 'Customers');
 ?>
 
-<div class="admin-page-header">
+<div class="admin-page-header admin-list-toolbar">
     <div class="admin-tabs">
         <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-tab <?= !$status ? 'active' : '' ?>">All</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'active']]) ?>" class="admin-tab <?= $status === 'active' ? 'active' : '' ?>">Active</a>
         <a href="<?= $this->Url->build(['action' => 'index', '?' => ['status' => 'inactive']]) ?>" class="admin-tab <?= $status === 'inactive' ? 'active' : '' ?>">Inactive</a>
     </div>
-    
-    <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="flex-grow-1" style="max-width: 400px;">
-        <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
-        <div class="admin-search" style="background-color: var(--admin-card-bg); border: 1px solid var(--admin-card-border);">
-            <i class="bi bi-search"></i>
-            <label for="student-search" class="visually-hidden">Search customers</label>
-            <input type="text" id="student-search" name="search" placeholder="Search customers..." value="<?= h($search ?? '') ?>" style="width: 100%;">
-        </div>
-    </form>
 
-    <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
-        <i class="bi bi-plus-lg"></i> Register Customer
-    </a>
+    <div class="admin-list-toolbar__actions">
+        <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="admin-btn-primary">
+            <i class="bi bi-plus-lg"></i> Register Customer
+        </a>
+        <form method="get" action="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-list-toolbar__search" role="search">
+            <?php if ($status): ?><input type="hidden" name="status" value="<?= h($status) ?>"><?php endif; ?>
+            <div class="admin-search">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <label for="student-search" class="visually-hidden">Search customers</label>
+                <input type="text" id="student-search" name="search" placeholder="Search customers..." value="<?= h($search ?? '') ?>" aria-label="Search customers">
+            </div>
+        </form>
+    </div>
 </div>
 
 <div class="admin-table-card">
@@ -36,14 +37,15 @@ $this->assign('title', 'Customers');
                     <th>Name</th>
                     <th>Declared Age</th>
                     <th>Status</th>
-                    <th>Adult Verified</th>
+                    <th>Over 18?</th>
                     <th>Created</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($students as $student): ?>
-                <tr>
+                <?php $viewUrl = $this->Url->build(['action' => 'view', $student->student_id]); ?>
+                <tr class="admin-clickable-row" data-href="<?= h($viewUrl) ?>" tabindex="0" role="link" aria-label="View <?= h($student->student_name) ?>">
                     <td>
                         <p class="admin-table-primary-text"><?= h($student->student_name) ?></p>
                     </td>
@@ -72,7 +74,7 @@ $this->assign('title', 'Customers');
                     </td>
 	                    <td>
 	                        <div class="admin-action-links justify-content-end">
-                            <a href="<?= $this->Url->build(['action' => 'view', $student->student_id]) ?>" class="admin-action-link view" title="View" aria-label="View <?= h($student->student_name) ?>">
+                            <a href="<?= h($viewUrl) ?>" class="admin-action-link view" title="View" aria-label="View <?= h($student->student_name) ?>">
                                 <i class="bi bi-eye"></i>
                             </a>
 	                            <a href="<?= $this->Url->build(['action' => 'edit', $student->student_id]) ?>" class="admin-action-link edit" title="Edit" aria-label="Edit <?= h($student->student_name) ?>">
@@ -105,3 +107,34 @@ $this->assign('title', 'Customers');
         <?= $this->Paginator->next('<i class="bi bi-chevron-right"></i>', ['escape' => false, 'aria-label' => 'Next page']) ?>
     </div>
 </div>
+
+<style>
+    .admin-clickable-row {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.admin-clickable-row[data-href]').forEach(function (row) {
+        function openRow(event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            window.location.href = row.dataset.href;
+        }
+
+        row.addEventListener('click', openRow);
+        row.addEventListener('keydown', function (event) {
+            if (event.target.closest('a, button, form, input, select, textarea, label')) {
+                return;
+            }
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+            event.preventDefault();
+            window.location.href = row.dataset.href;
+        });
+    });
+});
+</script>

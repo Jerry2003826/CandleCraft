@@ -15,6 +15,7 @@ declare(strict_types=1);
  * @license   https://opensource.org/licenses/mit-license.php MIT License
  */
 
+use Cake\Cache\Cache;
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\TestSuite\ConnectionHelper;
@@ -30,6 +31,8 @@ use Migrations\TestSuite\Migrator;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 require dirname(__DIR__) . '/config/bootstrap.php';
+
+Cache::clear('_cake_model_');
 
 if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
@@ -68,3 +71,4 @@ if (file_exists($schemaFile)) {
     // Fall back to migrations when no generated schema file is present.
     (new Migrator())->run();
 }
+Cache::clear('_cake_model_');

@@ -5,6 +5,12 @@ namespace App\Service;
 
 final class PaymentNotes
 {
+    /**
+     * Merge.
+     *
+     * @param mixed $existingNotes Existingnotes.
+     * @param mixed $newNotes Newnotes.
+     */
     public static function merge(?string $existingNotes, array $newNotes): string
     {
         if (!$existingNotes) {

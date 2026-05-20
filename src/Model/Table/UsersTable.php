@@ -4,11 +4,17 @@ declare(strict_types=1);
 namespace App\Model\Table;
 
 use Cake\ORM\Query\SelectQuery;
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class UsersTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -39,6 +45,11 @@ class UsersTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -81,7 +92,12 @@ class UsersTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['username']), ['errorField' => 'username']);
         $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
@@ -89,6 +105,11 @@ class UsersTable extends Table
         return $rules;
     }
 
+    /**
+     * Validation register.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationRegister(Validator $validator): Validator
     {
         $validator
@@ -127,6 +148,11 @@ class UsersTable extends Table
         return $validator;
     }
 
+    /**
+     * Find auth.
+     *
+     * @param mixed $query Query.
+     */
     public function findAuth(SelectQuery $query): SelectQuery
     {
         return $query

@@ -3,10 +3,16 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use Cake\Database\Exception\QueryException;
+use Cake\Http\Response;
 use RuntimeException;
+use Throwable;
 
 class TeachersController extends AppController
 {
+    /**
+     * List teachers for admin management.
+     */
     public function index(): void
     {
         $teachersTable = $this->fetchTable('Teachers');
@@ -29,6 +35,9 @@ class TeachersController extends AppController
         $this->set(compact('teachers', 'status', 'search'));
     }
 
+    /**
+     * Show one teacher profile and assigned classes.
+     */
     public function view(?string $id = null): void
     {
         $teachersTable = $this->fetchTable('Teachers');
@@ -36,7 +45,10 @@ class TeachersController extends AppController
         $this->set(compact('teacher'));
     }
 
-    public function add()
+    /**
+     * Create a teacher user account and profile.
+     */
+    public function add(): ?Response
     {
         $teachersTable = $this->fetchTable('Teachers');
         $usersTable = $this->fetchTable('Users');
@@ -68,13 +80,19 @@ class TeachersController extends AppController
             ]);
 
             if ($user->hasErrors()) {
-                $this->Flash->error($this->extractFirstValidationError($user->getErrors(), 'The account information is invalid.'));
+                $this->Flash->error($this->extractFirstValidationError(
+                    $user->getErrors(),
+                    'The account information is invalid.',
+                ));
 
                 return null;
             }
 
             if ($teacher->hasErrors()) {
-                $this->Flash->error($this->extractFirstValidationError($teacher->getErrors(), 'The teacher profile information is invalid.'));
+                $this->Flash->error($this->extractFirstValidationError(
+                    $teacher->getErrors(),
+                    'The teacher profile information is invalid.',
+                ));
 
                 return null;
             }
@@ -86,18 +104,24 @@ class TeachersController extends AppController
             try {
                 $savedUser = $usersTable->save($user);
                 if (!$savedUser) {
-                    throw new RuntimeException($this->extractFirstValidationError($user->getErrors(), 'Could not create teacher account.'));
+                    throw new RuntimeException($this->extractFirstValidationError(
+                        $user->getErrors(),
+                        'Could not create teacher account.',
+                    ));
                 }
 
                 $teacher->user_id = $savedUser->user_id;
                 $savedTeacher = $teachersTable->save($teacher);
                 if (!$savedTeacher) {
-                    throw new RuntimeException($this->extractFirstValidationError($teacher->getErrors(), 'Could not save teacher profile.'));
+                    throw new RuntimeException($this->extractFirstValidationError(
+                        $teacher->getErrors(),
+                        'Could not save teacher profile.',
+                    ));
                 }
 
                 $connection->commit();
                 $saved = true;
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 $connection->rollback();
                 $this->Flash->error($exception->getMessage());
             }
@@ -110,9 +134,14 @@ class TeachersController extends AppController
         }
 
         $this->set(compact('teacher'));
+
+        return null;
     }
 
-    public function edit(?string $id = null)
+    /**
+     * Edit a teacher profile.
+     */
+    public function edit(?string $id = null): ?Response
     {
         $teachersTable = $this->fetchTable('Teachers');
         $teacher = $teachersTable->get($id, contain: ['Users']);
@@ -136,23 +165,55 @@ class TeachersController extends AppController
         }
 
         $this->set(compact('teacher'));
+
+        return null;
     }
 
-    public function delete(?string $id = null)
+    /**
+     * Delete an unassigned teacher profile.
+     */
+    public function delete(?string $id = null): Response
     {
         $this->request->allowMethod(['post', 'delete']);
 
         $teachersTable = $this->fetchTable('Teachers');
         $teacher = $teachersTable->get($id);
-        if ($teachersTable->delete($teacher)) {
-            $this->Flash->success(__('The teacher has been deleted.'));
-        } else {
+
+        $assignedClassCount = $this->fetchTable('Classes')->find()
+            ->where(['Classes.teacher_id' => $teacher->teacher_id])
+            ->count();
+        if ($assignedClassCount > 0) {
+            $this->Flash->error(__(
+                'This teacher cannot be deleted because they have assigned classes. ' .
+                'Set the teacher inactive or reassign their classes first.',
+            ));
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        try {
+            if ($teachersTable->delete($teacher)) {
+                $this->Flash->success(__('The teacher has been deleted.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+
             $this->Flash->error(__('The teacher could not be deleted. Please try again.'));
+        } catch (QueryException) {
+            $this->Flash->error(__(
+                'This teacher cannot be deleted because existing records still refer to them. ' .
+                'Set the teacher inactive instead or reassign related records first.',
+            ));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Extract the first validation error from a nested entity error array.
+     *
+     * @param array<string,mixed> $errors Validation errors.
+     */
     private function extractFirstValidationError(array $errors, string $fallback): string
     {
         foreach ($errors as $fieldErrors) {

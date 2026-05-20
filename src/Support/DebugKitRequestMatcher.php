@@ -10,6 +10,11 @@ final class DebugKitRequestMatcher
 {
     private const PATH_PREFIX = '/debug-kit';
 
+    /**
+     * Is debug kit request.
+     *
+     * @param mixed $request Request.
+     */
     public static function isDebugKitRequest(ServerRequestInterface $request): bool
     {
         if (!Configure::read('debug')) {
@@ -50,6 +55,11 @@ final class DebugKitRequestMatcher
         return false;
     }
 
+    /**
+     * Normalize path.
+     *
+     * @param mixed $candidate Candidate.
+     */
     private static function normalizePath(string $candidate): string
     {
         $normalized = strtok($candidate, '?') ?: '';

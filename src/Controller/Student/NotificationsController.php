@@ -7,6 +7,9 @@ use Cake\Http\Response;
 
 class NotificationsController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -22,6 +25,11 @@ class NotificationsController extends AppController
         $this->set('title', 'Notifications');
     }
 
+    /**
+     * Mark read.
+     *
+     * @param mixed $notificationId Notificationid.
+     */
     public function markRead(?int $notificationId = null): ?Response
     {
         $this->request->allowMethod(['post']);
@@ -41,6 +49,9 @@ class NotificationsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Mark all read.
+     */
     public function markAllRead(): ?Response
     {
         $this->request->allowMethod(['post']);

@@ -62,7 +62,7 @@ $this->assign('title', 'Browse Courses');
                             </div>
                             <div>
                                 <?php if ($class->available_slots > 0): ?>
-                                    <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>" class="btn btn-sm btn-primary">
+                                    <a href="<?= $this->Url->build(['prefix' => 'Student', 'controller' => 'Bookings', 'action' => 'add', $class->class_id]) ?>" class="btn btn-sm btn-primary stretched-link">
                                         <i class="bi bi-plus-circle me-1"></i> Book Now
                                     </a>
                                 <?php else: ?>

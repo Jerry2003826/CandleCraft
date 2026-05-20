@@ -67,6 +67,110 @@ foreach ($rawSchema as $tableName => $tableSchema) {
         ];
     }
 
+    if ($tableName === 'payments') {
+        $table['columns'] += [
+            'stripe_session_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_payment_intent_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_charge_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_customer_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_invoice_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_invoice_pdf_url' => [
+                'type' => 'string',
+                'length' => 500,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_receipt_url' => [
+                'type' => 'string',
+                'length' => 500,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_payment_method_type' => [
+                'type' => 'string',
+                'length' => 50,
+                'null' => true,
+                'default' => null,
+            ],
+        ];
+    }
+
+    if ($tableName === 'users') {
+        $table['columns'] += [
+            'reset_token' => [
+                'type' => 'string',
+                'length' => 128,
+                'null' => true,
+                'default' => null,
+            ],
+            'reset_token_expires' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+        ];
+
+        $table['indexes']['idx_users_reset_token'] = [
+            'type' => 'index',
+            'columns' => ['reset_token'],
+        ];
+    }
+
+    if ($tableName === 'bookings') {
+        $table['columns'] += [
+            'booking_confirmation_sent_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+        ];
+
+        $table['indexes']['idx_bookings_booking_confirmation_sent_at'] = [
+            'type' => 'index',
+            'columns' => ['booking_confirmation_sent_at'],
+        ];
+    }
+
+    if ($tableName === 'teacher_availabilities') {
+        $table['columns'] += [
+            'valid_from' => [
+                'type' => 'date',
+                'null' => true,
+                'default' => null,
+            ],
+            'valid_until' => [
+                'type' => 'date',
+                'null' => true,
+                'default' => null,
+            ],
+        ];
+    }
+
     $indexes = [];
     foreach ($tableSchema->indexes() as $indexName) {
         $index = $tableSchema->getIndex($indexName);
@@ -75,7 +179,7 @@ foreach ($rawSchema as $tableName => $tableSchema) {
         }
     }
     if ($indexes !== []) {
-        $table['indexes'] = $indexes;
+        $table['indexes'] = array_merge($table['indexes'] ?? [], $indexes);
     }
 
     $constraints = [];
@@ -226,6 +330,232 @@ if (!isset($schema['payment_webhook_incidents'])) {
             'payment_webhook_incidents_event_reason_status_uk' => [
                 'type' => 'unique',
                 'columns' => ['event_id', 'reason_code', 'status'],
+            ],
+        ],
+    ];
+}
+
+if (!isset($schema['payment_refunds'])) {
+    $schema['payment_refunds'] = [
+        'table' => 'payment_refunds',
+        'columns' => [
+            'refund_record_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+                'autoIncrement' => true,
+            ],
+            'payment_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+            ],
+            'stripe_refund_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_charge_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_payment_intent_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'amount' => [
+                'type' => 'decimal',
+                'length' => 10,
+                'precision' => 10,
+                'scale' => 2,
+                'null' => false,
+                'default' => null,
+            ],
+            'currency_code' => [
+                'type' => 'string',
+                'length' => 3,
+                'null' => false,
+                'default' => 'AUD',
+            ],
+            'status' => [
+                'type' => 'string',
+                'length' => 30,
+                'null' => false,
+                'default' => 'pending',
+            ],
+            'reason' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'initiated_by_admin_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => true,
+                'default' => null,
+            ],
+            'failure_message' => [
+                'type' => 'text',
+                'null' => true,
+                'default' => null,
+            ],
+            'raw_payload' => [
+                'type' => 'text',
+                'null' => true,
+                'default' => null,
+            ],
+            'created_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+            'updated_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'idx_payment_refunds_payment_id' => [
+                'type' => 'index',
+                'columns' => ['payment_id'],
+            ],
+            'idx_payment_refunds_status' => [
+                'type' => 'index',
+                'columns' => ['status'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['refund_record_id'],
+            ],
+            'uk_payment_refunds_stripe_refund_id' => [
+                'type' => 'unique',
+                'columns' => ['stripe_refund_id'],
+            ],
+        ],
+    ];
+}
+
+if (!isset($schema['payment_disputes'])) {
+    $schema['payment_disputes'] = [
+        'table' => 'payment_disputes',
+        'columns' => [
+            'dispute_record_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => false,
+                'default' => null,
+                'autoIncrement' => true,
+            ],
+            'payment_id' => [
+                'type' => 'integer',
+                'length' => 11,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_dispute_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => false,
+                'default' => null,
+            ],
+            'stripe_charge_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'stripe_payment_intent_id' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'amount' => [
+                'type' => 'decimal',
+                'length' => 10,
+                'precision' => 10,
+                'scale' => 2,
+                'null' => false,
+                'default' => null,
+            ],
+            'currency_code' => [
+                'type' => 'string',
+                'length' => 3,
+                'null' => false,
+                'default' => 'AUD',
+            ],
+            'reason' => [
+                'type' => 'string',
+                'length' => 100,
+                'null' => true,
+                'default' => null,
+            ],
+            'status' => [
+                'type' => 'string',
+                'length' => 50,
+                'null' => false,
+                'default' => null,
+            ],
+            'evidence_due_by' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+            'opened_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+            'closed_at' => [
+                'type' => 'datetime',
+                'null' => true,
+                'default' => null,
+            ],
+            'raw_payload' => [
+                'type' => 'text',
+                'null' => true,
+                'default' => null,
+            ],
+            'created_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+            'updated_at' => [
+                'type' => 'datetime',
+                'null' => false,
+                'default' => null,
+            ],
+        ],
+        'indexes' => [
+            'idx_payment_disputes_payment_id' => [
+                'type' => 'index',
+                'columns' => ['payment_id'],
+            ],
+            'idx_payment_disputes_status_due' => [
+                'type' => 'index',
+                'columns' => ['status', 'evidence_due_by'],
+            ],
+        ],
+        'constraints' => [
+            'primary' => [
+                'type' => 'primary',
+                'columns' => ['dispute_record_id'],
+            ],
+            'uk_payment_disputes_stripe_dispute_id' => [
+                'type' => 'unique',
+                'columns' => ['stripe_dispute_id'],
             ],
         ],
     ];

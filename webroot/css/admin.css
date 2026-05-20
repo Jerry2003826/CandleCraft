@@ -1,11 +1,11 @@
 /* ========================================
-   CandleCraft Academy — Bootstrap 5 Admin + Portal Styles
+   CandleCraft Academy Bootstrap 5 Admin + Portal Styles
    ======================================== */
 
 /* ---- Font ---- */
 @font-face {
-    font-family: 'Grown';
-    src: url('../font/Grown.ttf') format('truetype');
+    font-family: 'Playfair Display';
+    src: url('../font/PlayfairDisplay.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -164,6 +164,10 @@ body {
     background: #fff;
     border-bottom: 1px solid var(--cc-border-color);
     padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sidebar-navbar .page-title {
@@ -171,6 +175,12 @@ body {
     font-weight: 700;
     color: var(--cc-text-dark);
     margin: 0;
+}
+
+/* Right-side cluster always anchors to the right edge of the navbar so the
+   bell + avatar never float in the middle when the title is short. */
+.sidebar-navbar .admin-header-actions {
+    margin-left: auto;
 }
 
 /* ---- Admin Stat Cards (Bootstrap) ---- */
@@ -589,6 +599,13 @@ body {
     border: 1px solid var(--cc-border-color);
     border-radius: 12px;
     background: linear-gradient(180deg, #fffcf8, #f9f3eb);
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.portal-class-card:has(a.stretched-link):hover {
+    border-color: var(--cc-primary);
+    box-shadow: 0 2px 10px rgba(192, 135, 58, 0.14);
 }
 
 .portal-class-card__header {
@@ -625,6 +642,17 @@ body {
 .portal-muted {
     margin: 0;
     color: var(--cc-text-muted);
+}
+
+.admin-back-row {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    margin-bottom: 24px;
+}
+
+.admin-back-row .admin-back-link {
+    margin-bottom: 0;
 }
 
 /* ---- Portal Attendance ---- */
@@ -679,6 +707,41 @@ body {
     border-radius: 6px;
     font-size: 14px;
     background: #fff;
+}
+
+.attendance-status-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.attendance-status-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid var(--cc-border-color);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--cc-text-dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.attendance-status-option:has(input:checked) {
+    border-color: var(--cc-primary);
+    background: rgba(192, 135, 58, 0.12);
+    color: var(--cc-primary-dark);
+}
+
+.attendance-status-option input {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--cc-primary);
 }
 
 .portal-status-row {
@@ -824,7 +887,7 @@ body {
 }
 
 /* ========================================
-   Schedule Page — PerfectGym-style
+   Schedule Page  PerfectGym-style
    ======================================== */
 
 /* -- Toolbar -- */

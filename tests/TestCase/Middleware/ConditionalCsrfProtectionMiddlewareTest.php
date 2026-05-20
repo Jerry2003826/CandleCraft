@@ -10,6 +10,7 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 class ConditionalCsrfProtectionMiddlewareTest extends TestCase
@@ -78,7 +79,7 @@ class ConditionalCsrfProtectionMiddlewareTest extends TestCase
             {
             }
 
-            public function handle(\Psr\Http\Message\ServerRequestInterface $request): ResponseInterface
+            public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return (new Response())->withStringBody($this->body);
             }

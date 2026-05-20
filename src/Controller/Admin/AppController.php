@@ -8,6 +8,11 @@ use Cake\Event\EventInterface;
 
 class AppController extends BaseAppController
 {
+    /**
+     * Before filter.
+     *
+     * @param mixed $event Event.
+     */
     public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
@@ -16,7 +21,7 @@ class AppController extends BaseAppController
         if (!$identity) {
             $this->shortCircuitRequest(
                 $event,
-                $this->rejectUnauthenticatedAccess('You do not have permission to access the admin area.')
+                $this->rejectUnauthenticatedAccess('You do not have permission to access the admin area.'),
             );
 
             return;
@@ -30,12 +35,45 @@ class AppController extends BaseAppController
         if ((string)$currentUser->get('user_role') !== 'admin') {
             $this->shortCircuitRequest(
                 $event,
-                $this->redirectAuthenticatedRoleMismatch($currentUser, 'You do not have permission to access the admin area.')
+                $this->redirectAuthenticatedRoleMismatch($currentUser, 'You do not have permission to access the admin area.'),
             );
 
             return;
         }
 
         $this->viewBuilder()->setLayout('admin');
+    }
+
+    /**
+     * Before render.
+     *
+     * @param mixed $event Event.
+     */
+    public function beforeRender(EventInterface $event): void
+    {
+        parent::beforeRender($event);
+
+        $messagesTable = $this->fetchTable('Messages');
+        $pendingAccountRequestConditions = [
+            'Messages.message_type' => 'contact_form',
+            'Messages.message_status IN' => ['unread', 'read'],
+            'OR' => [
+                ['Messages.source_page' => 'account-request'],
+                ['Messages.message_text LIKE' => '%[REQUEST TYPE: account_access]%'],
+                ['Messages.message_text LIKE' => '%[REQUEST TYPE: customer_access]%'],
+            ],
+        ];
+
+        $adminPendingAccountRequestCount = $messagesTable->find()
+            ->where($pendingAccountRequestConditions)
+            ->count();
+        $adminPendingAccountRequests = $messagesTable->find()
+            ->where($pendingAccountRequestConditions)
+            ->orderBy(['Messages.sent_at' => 'DESC'])
+            ->limit(5)
+            ->all()
+            ->toList();
+
+        $this->set(compact('adminPendingAccountRequestCount', 'adminPendingAccountRequests'));
     }
 }

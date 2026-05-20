@@ -17,6 +17,12 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 class CsrfRetryMiddleware implements MiddlewareInterface
 {
+    /**
+     * Process.
+     *
+     * @param mixed $request Request.
+     * @param mixed $handler Handler.
+     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
@@ -35,6 +41,11 @@ class CsrfRetryMiddleware implements MiddlewareInterface
         }
     }
 
+    /**
+     * Resolve retry target.
+     *
+     * @param mixed $request Request.
+     */
     private function resolveRetryTarget(ServerRequestInterface $request): string
     {
         $referer = trim($request->getHeaderLine('Referer'));
@@ -70,6 +81,11 @@ class CsrfRetryMiddleware implements MiddlewareInterface
         return $path . $query;
     }
 
+    /**
+     * Login path.
+     *
+     * @param mixed $request Request.
+     */
     private function loginPath(ServerRequestInterface $request): string
     {
         $base = rtrim((string)$request->getAttribute('base', ''), '/');

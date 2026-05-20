@@ -4,41 +4,45 @@
  * @var iterable<\App\Model\Entity\Course> $courses
  * @var string|null $type
  */
-$this->assign('title', $type ? ucfirst($type) . ' Classes' : 'Our Courses');
+$coursesBundle = $this->Cms->all('courses');
+$pageTitle = $this->Cms->text('courses', 'intro.title', 'Our Courses');
+$pageEyebrow = $this->Cms->text('courses', 'intro.eyebrow', 'CandleCraft Academy');
+
+$this->assign('title', $type ? ucfirst($type) . ' Classes' : $pageTitle);
 $potteryUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'pottery']]);
 $knittingUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index', '?' => ['type' => 'knitting']]);
 ?>
 
-<div class="section-heading" style="text-align: center; padding: 60px 20px 20px;">
-    <p class="overline" style="font-family: var(--font-grown); color: var(--home-accent); letter-spacing: 0.3em; margin-bottom: 12px; font-size: 0.8rem;">
-        CandleCraft Academy
+<div class="section-heading courses-page-heading">
+    <p class="overline courses-page-eyebrow">
+        <?= h($pageEyebrow) ?>
     </p>
-    <h1 style="font-family: var(--font-grown); font-size: clamp(2.5rem, 5vw, 4rem); color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0; line-height: 1;">
-        <?= $type ? h(ucfirst($type)) . ' Classes' : 'Our Courses' ?>
+    <h1 class="courses-page-title">
+        <?= $type ? h(ucfirst($type)) . ' Classes' : h($pageTitle) ?>
     </h1>
-    <div style="width: 60px; height: 2px; background: var(--home-accent); margin: 24px auto 0; opacity: 0.6;"></div>
+    <div class="courses-page-divider"></div>
 </div>
 
 <?php if (!$type): ?>
 
     <!-- Category landing: two big cards -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 900px; margin: 60px auto 100px; padding: 0 20px;">
+    <div class="course-category-grid">
 
         <a href="<?= h($potteryUrl) ?>" class="course-category-link">
             <div class="course-category-card">
-                <div style="font-size: 3.5rem; margin-bottom: 20px;">&#x1F3FA;</div>
-                <h2 style="font-family: var(--font-grown); font-size: 2rem; color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 12px;">Pottery</h2>
-                <p style="font-family: var(--font-grown); color: var(--home-text-muted); font-size: 0.95rem; margin: 0;">Wheel throwing, hand building &amp; more</p>
-                <p style="font-family: var(--font-grown); color: var(--home-accent); font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; margin: 24px 0 0;">View Classes &rarr;</p>
+                <div class="course-category-card__icon">&#x1F3FA;</div>
+                <h2 class="course-category-card__title"><?= h($this->Cms->text('courses', 'category.pottery_title', 'Pottery')) ?></h2>
+                <div class="course-category-card__description"><?= $this->Cms->html('courses', 'category.pottery_description', 'Learn pottery through guided, hands-on lessons that build your skills from basic techniques to creating your own finished pieces.') ?></div>
+                <p class="course-category-card__cta">View Classes &rarr;</p>
             </div>
         </a>
 
         <a href="<?= h($knittingUrl) ?>" class="course-category-link">
             <div class="course-category-card">
-                <div style="font-size: 3.5rem; margin-bottom: 20px;">&#x1F9F6;</div> 
-                <h2 style="font-family: var(--font-grown); font-size: 2rem; color: #f5ecdf; text-transform: uppercase; letter-spacing: 0.15em; margin: 0 0 12px;">Knitting</h2>
-                <p style="font-family: var(--font-grown); color: var(--home-text-muted); font-size: 0.95rem; margin: 0;">Beginner to advanced stitches &amp; patterns</p>
-                <p style="font-family: var(--font-grown); color: var(--home-accent); font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; margin: 24px 0 0;">View Classes &rarr;</p>
+                <div class="course-category-card__icon">&#x1F9F6;</div>
+                <h2 class="course-category-card__title"><?= h($this->Cms->text('courses', 'category.knitting_title', 'Knitting')) ?></h2>
+                <div class="course-category-card__description"><?= $this->Cms->html('courses', 'category.knitting_description', 'Learn knitting step by step with practical lessons that help you master stitches and create your own handmade projects.') ?></div>
+                <p class="course-category-card__cta">View Classes &rarr;</p>
             </div>
         </a>
 
@@ -46,10 +50,11 @@ $knittingUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index'
 
 <?php else: ?>
 
-    <!-- Back link -->
-    <div style="text-align: center; margin-top: 20px;">
+    <div style="max-width: 1100px; margin: 0 auto 32px; padding: 0 20px;">
         <a href="<?= $this->Url->build(['controller' => 'Courses', 'action' => 'index']) ?>"
-           style="font-family: var(--font-grown); color: var(--home-accent); font-size: 0.85rem; letter-spacing: 0.1em; text-decoration: none;">
+           style="display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-grown); color: var(--home-accent); font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; text-decoration: none; padding: 10px 20px; border: 1px solid rgba(210, 154, 88, 0.45); border-radius: 999px; background: rgba(210, 154, 88, 0.08); transition: background 0.2s, border-color 0.2s;"
+           onmouseover="this.style.background='rgba(210,154,88,0.18)'; this.style.borderColor='rgba(210,154,88,0.7)'"
+           onmouseout="this.style.background='rgba(210,154,88,0.08)'; this.style.borderColor='rgba(210,154,88,0.45)'">
             &larr; All Courses
         </a>
     </div>
@@ -75,16 +80,9 @@ $knittingUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index'
                         <?= h($course->course_name) ?>
                     </h2>
 
-                    <p class="flip-card__description">
-                        <?= h($course->course_description ?: 'Explore guided, small-group sessions designed around practical making skills.') ?>
-                    </p>
-
                     <div class="flip-card__meta">
-                        <span class="flip-card__meta-label">
-                            <?= count($course->classes) ?> Classes
-                        </span>
                         <span class="flip-card__meta-value">
-                            $<?= number_format((float)$course->course_price, 0) ?>
+                            <span style="font-family: sans-serif;">$</span><?= number_format((float)$course->course_price, 0) ?>
                         </span>
                     </div>
 
@@ -100,5 +98,6 @@ $knittingUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index'
 
         </div>
     <?php endif; ?>
+
 
 <?php endif; ?>

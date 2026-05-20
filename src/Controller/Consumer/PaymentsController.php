@@ -5,25 +5,38 @@ namespace App\Controller\Consumer;
 
 use App\Service\BookingCancellationService;
 use App\Service\PaymentCheckoutService;
+use App\Service\PaymentReceiptEmailService;
+use App\Service\PaymentRefundRequestService;
 use App\Service\StripeConfiguration;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Log\Log;
 use Cake\Routing\Router;
+use DateTimeInterface;
 use RuntimeException;
+use Throwable;
 
 class PaymentsController extends AppController
 {
+    /**
+     * Is stripe configured.
+     */
     private function isStripeConfigured(): bool
     {
-        return StripeConfiguration::isCheckoutReady();
+        return StripeConfiguration::isHostedCheckoutReady();
     }
 
+    /**
+     * Is demo mode enabled.
+     */
     private function isDemoModeEnabled(): bool
     {
-        return (bool)Configure::read('debug') && (bool)Configure::read('Payments.demo_mode');
+        return (bool)Configure::read('Payments.demo_mode');
     }
 
+    /**
+     * Get request base url.
+     */
     private function getRequestBaseUrl(): string
     {
         $uri = $this->request->getUri();
@@ -31,6 +44,9 @@ class PaymentsController extends AppController
         return $uri->getScheme() . '://' . $uri->getAuthority();
     }
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -39,56 +55,139 @@ class PaymentsController extends AppController
             ->where(['Bookings.student_id' => $student->student_id])
             ->contain([
                 'Classes' => ['Courses'],
-                'Payments',
+                'Payments' => function ($query) {
+                    return $query->orderBy([
+                        'Payments.payment_id' => 'ASC',
+                    ]);
+                },
             ])
-            ->orderBy(['Bookings.booking_date' => 'DESC'])
-            ->all();
-
-        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
-        $paymentProfiles = $paymentProfilesTable->find()
-            ->where(['PaymentProfiles.user_id' => $identity->get('user_id')])
             ->orderBy([
-                'PaymentProfiles.is_default' => 'DESC',
-                'PaymentProfiles.updated_at' => 'DESC',
+                'Bookings.booking_date' => 'DESC',
+                'Bookings.booking_id' => 'DESC',
             ])
-            ->all();
+            ->all()
+            ->toList();
 
-        $requestedProfileId = $this->request->getQuery('profile');
-        $paymentProfile = null;
-        if ($requestedProfileId !== null && ctype_digit((string)$requestedProfileId)) {
-            $paymentProfile = $paymentProfilesTable->find()
-                ->where([
-                    'PaymentProfiles.payment_profile_id' => (int)$requestedProfileId,
-                    'PaymentProfiles.user_id' => $identity->get('user_id'),
-                ])
-                ->first();
-        }
+        usort($bookings, [$this, 'comparePaymentBookings']);
 
-        if (!$paymentProfile) {
-            $paymentProfile = $paymentProfilesTable->newEntity([
-                'billing_name' => (string)$student->student_name,
-                'billing_email' => (string)$identity->get('email'),
-                'billing_phone' => '',
-                'billing_address_line1' => '',
-                'billing_address_line2' => '',
-                'billing_city' => '',
-                'billing_state' => '',
-                'billing_postcode' => '',
-                'billing_country' => 'Australia',
-                'preferred_payment_method' => 'card',
-                'profile_status' => 'active',
-                'is_default' => $paymentProfiles->count() === 0,
-            ]);
-        }
-
-        $preferredPaymentMethods = [
-            'card' => 'Card',
-        ];
-
-        $this->set(compact('bookings', 'paymentProfiles', 'paymentProfile', 'preferredPaymentMethods'));
+        $this->set(compact('bookings'));
         $this->set('title', 'Payment Portal');
     }
 
+    /**
+     * Compare payment bookings.
+     *
+     * @param mixed $left Left.
+     * @param mixed $right Right.
+     */
+    private function comparePaymentBookings(object $left, object $right): int
+    {
+        $leftRank = $this->getPaymentBookingRank($left);
+        $rightRank = $this->getPaymentBookingRank($right);
+
+        if ($leftRank !== $rightRank) {
+            return $leftRank <=> $rightRank;
+        }
+
+        $dateCompare = $this->getPaymentBookingTimestamp($right) <=> $this->getPaymentBookingTimestamp($left);
+        if ($dateCompare !== 0) {
+            return $dateCompare;
+        }
+
+        return (int)($right->booking_id ?? 0) <=> (int)($left->booking_id ?? 0);
+    }
+
+    /**
+     * Get payment booking rank.
+     *
+     * @param mixed $booking Booking.
+     */
+    private function getPaymentBookingRank(object $booking): int
+    {
+        $latestPaymentStatus = $this->getLatestPaymentStatus($booking);
+        $hasPaidRecord = $this->hasPaidPayment($booking);
+        $bookingStatus = (string)($booking->booking_status ?? '');
+
+        if (
+            !$hasPaidRecord
+            && in_array($bookingStatus, ['pending', 'confirmed'], true)
+            && !in_array($latestPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'], true)
+        ) {
+            return 0;
+        }
+
+        if (in_array($latestPaymentStatus, ['failed', 'expired', 'voided'], true)) {
+            return 1;
+        }
+
+        if (in_array($latestPaymentStatus, ['refund_required', 'disputed'], true)) {
+            return 2;
+        }
+
+        if ($hasPaidRecord || in_array($latestPaymentStatus, ['paid', 'partially_refunded', 'refunded'], true)) {
+            return 3;
+        }
+
+        return 4;
+    }
+
+    /**
+     * Has paid payment.
+     *
+     * @param mixed $booking Booking.
+     */
+    private function hasPaidPayment(object $booking): bool
+    {
+        foreach ($booking->payments ?? [] as $payment) {
+            if ((string)($payment->payment_status ?? '') === 'paid') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get latest payment status.
+     *
+     * @param mixed $booking Booking.
+     */
+    private function getLatestPaymentStatus(object $booking): string
+    {
+        $latestStatus = 'pending';
+
+        foreach ($booking->payments ?? [] as $payment) {
+            $latestStatus = (string)($payment->payment_status ?? 'pending');
+        }
+
+        return $latestStatus;
+    }
+
+    /**
+     * Get payment booking timestamp.
+     *
+     * @param mixed $booking Booking.
+     */
+    private function getPaymentBookingTimestamp(object $booking): int
+    {
+        $date = $booking->class_entity?->start_datetime ?? $booking->booking_date ?? null;
+
+        if ($date instanceof DateTimeInterface) {
+            return $date->getTimestamp();
+        }
+
+        if ($date === null || $date === '') {
+            return 0;
+        }
+
+        return strtotime((string)$date) ?: 0;
+    }
+
+    /**
+     * Process.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function process(?int $bookingId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -116,7 +215,9 @@ class PaymentsController extends AppController
             $existingPayment->payment_status === 'paid' &&
             in_array($booking->booking_status, ['confirmed', 'completed'], true)
         ) {
-            $this->Flash->info(__('Payment already completed for this booking.'));
+            $this->Flash->info(__(
+                'Payment already completed for this booking.',
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
@@ -124,17 +225,26 @@ class PaymentsController extends AppController
         if ($this->request->is('post')) {
             try {
                 $result = (new PaymentCheckoutService())->startCheckout($booking, [
+                    // Pass the Stripe Checkout session id as a URL path
+                    // segment instead of a query string so shared-host
+                    // ModSecurity rules don't false-positive on the long
+                    // `cs_test_*` / `cs_live_*` token (which looks like a
+                    // SQL/RFI payload to the OWASP CRS family of rules).
                     'success_url' => $this->getRequestBaseUrl()
-                        . Router::url(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'success', '?' => ['session_id' => '{CHECKOUT_SESSION_ID}']]),
+                        . Router::url(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'success'])
+                        . '/{CHECKOUT_SESSION_ID}',
                     'cancel_url' => $this->getRequestBaseUrl()
                         . Router::url(['prefix' => 'Consumer', 'controller' => 'Payments', 'action' => 'cancel', $bookingId]),
                     'portal_source' => 'consumer_portal',
                     'payer_id' => $identity?->get('user_id'),
+                    'payer_email' => $identity?->get('email'),
                 ]);
 
                 return $this->handleCheckoutResult($result, $identity?->get('user_id'));
             } catch (RuntimeException $exception) {
-                $this->Flash->error(__($exception->getMessage()));
+                $this->Flash->error(__(
+                    $exception->getMessage(),
+                ));
             }
         }
 
@@ -146,6 +256,12 @@ class PaymentsController extends AppController
         return null;
     }
 
+    /**
+     * Handle checkout result.
+     *
+     * @param mixed $result Result.
+     * @param mixed $notifyUserId Notifyuserid.
+     */
     private function handleCheckoutResult(array $result, ?int $notifyUserId): ?Response
     {
         if (($result['kind'] ?? null) === 'redirect') {
@@ -165,7 +281,7 @@ class PaymentsController extends AppController
                         $className,
                         (float)$payment->amount,
                     );
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     Log::warning('Payment receipt notification failed.', [
                         'payment_id' => $payment->payment_id ?? null,
                         'booking_id' => $booking->booking_id ?? null,
@@ -174,6 +290,7 @@ class PaymentsController extends AppController
                     ]);
                 }
             }
+            $this->sendPaymentReceiptEmail((int)$payment->payment_id, 'Consumer');
 
             $message = ($result['completed_reason'] ?? null) === 'zero_amount'
                 ? __('Free booking confirmed successfully.')
@@ -183,20 +300,34 @@ class PaymentsController extends AppController
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->info(__('Payment already completed for this booking.'));
+        $this->Flash->info(__(
+            'Payment already completed for this booking.',
+        ));
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
     }
 
-    public function success(): ?Response
+    /**
+     * Success.
+     *
+     * @param mixed $sessionToken Sessiontoken.
+     */
+    public function success(?string $sessionToken = null): ?Response
     {
-        $sessionId = $this->request->getQuery('session_id');
+        // Prefer the path segment (new Stripe success_url format), fall
+        // back to the legacy `?session_id=...` query string so any in-flight
+        // Checkout sessions created before the redeploy still complete.
+        $sessionId = $sessionToken !== null && $sessionToken !== ''
+            ? $sessionToken
+            : $this->request->getQuery('session_id');
         $paymentsTable = $this->fetchTable('Payments');
         $identity = $this->Authentication->getIdentity();
         $student = $this->getStudentForIdentity($identity);
 
         if (!is_string($sessionId) || $sessionId === '') {
-            $this->Flash->error(__('Payment session could not be found.'));
+            $this->Flash->error(__(
+                'Payment session could not be found.',
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
@@ -210,20 +341,37 @@ class PaymentsController extends AppController
             ->first();
 
         if (!$payment) {
-            $this->Flash->error(__('Payment session not found for your account.'));
+            $this->Flash->error(__(
+                'Payment session not found for your account.',
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
 
+        if ($payment->payment_status !== 'paid') {
+            (new PaymentCheckoutService())->syncCheckoutSession($sessionId);
+            $payment = $paymentsTable->get((int)$payment->payment_id);
+        }
+
         if ($payment->payment_status === 'paid') {
-            $this->Flash->success(__('Payment completed successfully!'));
+            $this->sendPaymentReceiptEmail((int)$payment->payment_id, 'Consumer');
+            $this->Flash->success(__(
+                'Payment completed successfully!',
+            ));
         } else {
-            $this->Flash->info(__('Payment received. Confirmation will appear shortly once Stripe finishes processing the webhook.'));
+            $this->Flash->info(__(
+                'Payment received. Confirmation will appear shortly once Stripe finishes processing the webhook.',
+            ));
         }
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
     }
 
+    /**
+     * Cancel.
+     *
+     * @param mixed $bookingId Bookingid.
+     */
     public function cancel(?int $bookingId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -240,16 +388,25 @@ class PaymentsController extends AppController
                 'portal_source' => 'consumer_portal',
             ]);
         } catch (RuntimeException $exception) {
-            $this->Flash->error(__($exception->getMessage()));
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
 
-        $this->Flash->warning(__('Payment was cancelled, so the pending booking was removed.'));
+        $this->Flash->warning(__(
+            'Payment was cancelled, so the pending booking was removed.',
+        ));
 
         return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
     }
 
+    /**
+     * Receipt.
+     *
+     * @param mixed $paymentId Paymentid.
+     */
     public function receipt(?int $paymentId = null): ?Response
     {
         $identity = $this->Authentication->getIdentity();
@@ -271,7 +428,9 @@ class PaymentsController extends AppController
             ->first();
 
         if (!$booking) {
-            $this->Flash->error(__('Access denied.'));
+            $this->Flash->error(__(
+                'Access denied.',
+            ));
 
             return $this->redirect(['prefix' => 'Consumer', 'controller' => 'Bookings', 'action' => 'index']);
         }
@@ -282,159 +441,114 @@ class PaymentsController extends AppController
         return null;
     }
 
+    /**
+     * Request refund.
+     *
+     * @param mixed $paymentId Paymentid.
+     */
+    public function requestRefund(?int $paymentId = null): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        $identity = $this->Authentication->getIdentity();
+        $student = $this->getStudentForIdentity($identity);
+        $payment = $this->fetchTable('Payments')->find()
+            ->matching('Bookings', function ($query) use ($student) {
+                return $query->where(['Bookings.student_id' => $student->student_id]);
+            })
+            ->where(['Payments.payment_id' => $paymentId])
+            ->firstOrFail();
+
+        try {
+            (new PaymentRefundRequestService())->requestRefund((int)$payment->payment_id, [
+                'portal_source' => 'consumer_portal',
+                'requested_by_user_id' => $identity?->get('user_id'),
+                'recipient_email' => (string)($identity?->get('email') ?? ''),
+                'recipient_name' => (string)($identity?->get('username') ?? ''),
+            ]);
+            $this->Flash->success(__(
+                'Refund request submitted. Our team will review it shortly.',
+            ));
+        } catch (RuntimeException $exception) {
+            $this->Flash->error(__(
+                $exception->getMessage(),
+            ));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Save profile.
+     *
+     * @param mixed $paymentProfileId Paymentprofileid.
+     */
     public function saveProfile(?int $paymentProfileId = null): ?Response
     {
         $this->request->allowMethod(['post', 'put', 'patch']);
+        $this->Flash->info(__(
+            'Payment details are handled securely by our third-party checkout provider and are not saved here.',
+        ));
 
-        $identity = $this->Authentication->getIdentity();
-        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
-        $profile = $paymentProfileId
-            ? $paymentProfilesTable->find()
-                ->where([
-                    'PaymentProfiles.payment_profile_id' => $paymentProfileId,
-                    'PaymentProfiles.user_id' => $identity->get('user_id'),
-                ])
-                ->firstOrFail()
-            : $paymentProfilesTable->newEmptyEntity();
-
-        $data = $this->request->getData();
-        $profileData = [
-            'user_id' => $identity->get('user_id'),
-            'billing_name' => trim((string)($data['billing_name'] ?? '')),
-            'billing_email' => trim((string)($data['billing_email'] ?? '')),
-            'billing_phone' => trim((string)($data['billing_phone'] ?? '')),
-            'billing_address_line1' => trim((string)($data['billing_address_line1'] ?? '')),
-            'billing_address_line2' => trim((string)($data['billing_address_line2'] ?? '')),
-            'billing_city' => trim((string)($data['billing_city'] ?? '')),
-            'billing_state' => trim((string)($data['billing_state'] ?? '')),
-            'billing_postcode' => trim((string)($data['billing_postcode'] ?? '')),
-            'billing_country' => trim((string)($data['billing_country'] ?? '')),
-            'preferred_payment_method' => 'card',
-            'profile_status' => 'active',
-            'is_default' => !empty($data['is_default']),
-        ];
-
-        $profile = $paymentProfilesTable->patchEntity($profile, $profileData);
-        if ($paymentProfilesTable->save($profile)) {
-            $hasAnyDefault = $paymentProfilesTable->find()
-                ->where([
-                    'PaymentProfiles.user_id' => $identity->get('user_id'),
-                    'PaymentProfiles.profile_status' => 'active',
-                    'PaymentProfiles.is_default' => true,
-                ])
-                ->count() > 0;
-
-            if ($profile->is_default || !$hasAnyDefault) {
-                $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$profile->payment_profile_id);
-            }
-
-            $this->Flash->success(__('Payment details saved successfully.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        $this->Flash->error($this->extractFirstValidationError($profile->getErrors(), 'Could not save the payment details.'));
-
-        return $this->redirect(['action' => 'index', '?' => ['profile' => $paymentProfileId ?: 'new']]);
+        return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Set default profile.
+     *
+     * @param mixed $paymentProfileId Paymentprofileid.
+     */
     public function setDefaultProfile(?int $paymentProfileId = null): ?Response
     {
         $this->request->allowMethod(['post']);
-
-        $identity = $this->Authentication->getIdentity();
-        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
-        $profile = $paymentProfilesTable->find()
-            ->where([
-                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
-                'PaymentProfiles.user_id' => $identity->get('user_id'),
-                'PaymentProfiles.profile_status' => 'active',
-            ])
-            ->firstOrFail();
-
-        $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$profile->payment_profile_id);
-        $this->Flash->success(__('Default payment details updated.'));
+        $this->Flash->info(__(
+            'Saved payment details are no longer used because checkout is handled by a third-party provider.',
+        ));
 
         return $this->redirect(['action' => 'index']);
     }
 
+    /**
+     * Archive profile.
+     *
+     * @param mixed $paymentProfileId Paymentprofileid.
+     */
     public function archiveProfile(?int $paymentProfileId = null): ?Response
     {
         $this->request->allowMethod(['post']);
-
-        $identity = $this->Authentication->getIdentity();
-        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
-        $profile = $paymentProfilesTable->find()
-            ->where([
-                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
-                'PaymentProfiles.user_id' => $identity->get('user_id'),
-            ])
-            ->firstOrFail();
-
-        $wasDefault = (bool)$profile->is_default;
-        $profile->profile_status = 'archived';
-        $profile->is_default = false;
-
-        if ($paymentProfilesTable->save($profile)) {
-            if ($wasDefault) {
-                $replacement = $paymentProfilesTable->find()
-                    ->where([
-                        'PaymentProfiles.user_id' => $identity->get('user_id'),
-                        'PaymentProfiles.profile_status' => 'active',
-                    ])
-                    ->orderBy(['PaymentProfiles.updated_at' => 'DESC'])
-                    ->first();
-
-                if ($replacement) {
-                    $this->updateDefaultProfile((int)$identity->get('user_id'), (int)$replacement->payment_profile_id);
-                }
-            }
-
-            $this->Flash->success(__('Payment details archived.'));
-        } else {
-            $this->Flash->error(__('Could not archive the payment details.'));
-        }
+        $this->Flash->info(__(
+            'Saved payment details are no longer used because checkout is handled by a third-party provider.',
+        ));
 
         return $this->redirect(['action' => 'index']);
     }
 
-    private function getStudentForIdentity($identity)
+    /**
+     * Get student for identity.
+     *
+     * @param mixed $identity Identity.
+     * @return mixed
+     */
+    private function getStudentForIdentity(mixed $identity)
     {
         return $this->fetchTable('Students')->find()
             ->where(['Students.user_id' => $identity->get('user_id')])
             ->firstOrFail();
     }
 
-    private function updateDefaultProfile(int $userId, int $paymentProfileId): void
+    /**
+     * Send payment receipt email.
+     *
+     * @param mixed $paymentId Paymentid.
+     * @param mixed $portalPrefix Portalprefix.
+     */
+    private function sendPaymentReceiptEmail(int $paymentId, string $portalPrefix): void
     {
-        $paymentProfilesTable = $this->fetchTable('PaymentProfiles');
-        $paymentProfilesTable->updateAll(
-            ['is_default' => false],
-            ['PaymentProfiles.user_id' => $userId]
-        );
-        $paymentProfilesTable->updateAll(
-            ['is_default' => true],
-            [
-                'PaymentProfiles.user_id' => $userId,
-                'PaymentProfiles.payment_profile_id' => $paymentProfileId,
-            ]
-        );
-    }
-
-    private function extractFirstValidationError(array $errors, string $fallback): string
-    {
-        foreach ($errors as $fieldErrors) {
-            if (!is_array($fieldErrors)) {
-                continue;
-            }
-
-            foreach ($fieldErrors as $message) {
-                if (is_string($message) && $message !== '') {
-                    return $message;
-                }
-            }
-        }
-
-        return $fallback;
+        $identity = $this->Authentication->getIdentity();
+        (new PaymentReceiptEmailService())->sendForPayment($paymentId, [
+            'portal_prefix' => $portalPrefix,
+            'recipient_email' => (string)($identity?->get('email') ?? ''),
+            'recipient_name' => (string)($identity?->get('username') ?? ''),
+        ]);
     }
 }

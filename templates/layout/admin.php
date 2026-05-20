@@ -8,11 +8,22 @@ $adminName = 'Admin';
 if ($identity) {
     $adminName = h($identity->get('username'));
 }
+$adminInitial = strtoupper(mb_substr(trim((string)$adminName), 0, 1) ?: 'A');
+$adminPendingAccountRequestCount = (int)($adminPendingAccountRequestCount ?? 0);
+$adminPendingAccountRequests = $adminPendingAccountRequests ?? [];
 $logoutUrl = '/logout';
 $redesignCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'redesign.css')
     ? (string)filemtime(WWW_ROOT . 'css' . DS . 'redesign.css')
     : (string)time();
 $redesignCssUrl = $this->Url->assetUrl('css/redesign.css') . '?v=' . $redesignCssVersion;
+$mobileCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'mobile.css')
+    ? (string)filemtime(WWW_ROOT . 'css' . DS . 'mobile.css')
+    : (string)time();
+$mobileCssUrl = $this->Url->assetUrl('css/mobile.css') . '?v=' . $mobileCssVersion;
+$cmsAdminCssVersion = file_exists(WWW_ROOT . 'css' . DS . 'cms-admin.css')
+    ? (string)filemtime(WWW_ROOT . 'css' . DS . 'cms-admin.css')
+    : (string)time();
+$cmsAdminCssUrl = $this->Url->assetUrl('css/cms-admin.css') . '?v=' . $cmsAdminCssVersion;
 
 // Bootstrap FormHelper templates
 $this->Form->setTemplates([
@@ -47,24 +58,25 @@ $this->Paginator->setTemplates([
         <?php if ($this->fetch('title')): ?> | <?= $this->fetch('title') ?><?php endif; ?>
     </title>
     <script>
-        // Apply theme immediately to prevent FOUC
+        // Apply saved theme immediately to prevent FOUC. Light is the default.
         const savedTheme = localStorage.getItem('admin-theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        if (savedTheme === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
         }
     </script>
     <?= $this->Html->meta('icon') ?>
     <?= $this->Html->css(['admin-bootstrap', 'bootstrap-icons', 'admin']) ?>
     <link rel="stylesheet" href="<?= h($redesignCssUrl) ?>">
+    <link rel="stylesheet" href="<?= h($mobileCssUrl) ?>">
+    <link rel="stylesheet" href="<?= h($cmsAdminCssUrl) ?>">
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
 </head>
-<body class="redesign">
+<body class="redesign admin-portal">
     <a href="#main-content" class="visually-hidden-focusable">Skip to main content</a>
 
     <!-- Sidebar -->
-    <aside class="offcanvas-lg offcanvas-start" id="adminSidebar" tabindex="-1" aria-label="Admin navigation">
+    <aside class="offcanvas offcanvas-start" id="adminSidebar" tabindex="-1" aria-label="Admin navigation">
         <div class="offcanvas-header d-lg-none">
             <div class="d-flex align-items-center gap-3">
                 <div class="admin-brand-icon"></div>
@@ -86,42 +98,63 @@ $this->Paginator->setTemplates([
                        class="nav-link <?= $controller === 'Dashboard' ? 'active' : '' ?>">
                         <i class="bi bi-grid-1x2" aria-hidden="true"></i><span>Dashboard</span>
                     </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Students' ? 'active' : '' ?>">
-                        <i class="bi bi-people" aria-hidden="true"></i><span>Customers</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Teachers', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Teachers' ? 'active' : '' ?>">
-                        <i class="bi bi-person-badge" aria-hidden="true"></i><span>Teachers</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Classes', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Classes' ? 'active' : '' ?>">
-                        <i class="bi bi-calendar3" aria-hidden="true"></i><span>Classes</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Attendance' ? 'active' : '' ?>">
-                        <i class="bi bi-check-circle" aria-hidden="true"></i><span>Attendance</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Bookings', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Bookings' ? 'active' : '' ?>">
-                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Bookings</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Courses', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Courses' ? 'active' : '' ?>">
-                        <i class="bi bi-book" aria-hidden="true"></i><span>Courses</span>
-                    </a>
-                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Resources', 'action' => 'index']) ?>"
-                       class="nav-link <?= $controller === 'Resources' ? 'active' : '' ?>">
-                        <i class="bi bi-download" aria-hidden="true"></i><span>Resources</span>
-                    </a>
                     <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index']) ?>"
                        class="nav-link <?= $controller === 'Messages' ? 'active' : '' ?>">
                         <i class="bi bi-chat-square-text" aria-hidden="true"></i><span>Enquiries</span>
                     </a>
+
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Students', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Students' ? 'active' : '' ?>">
+                        <i class="bi bi-people" aria-hidden="true"></i><span>Customers</span>
+                    </a>
+                    
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Bookings', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Bookings' ? 'active' : '' ?>">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Bookings</span>
+                    </a>
+
+                    
+                        <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Teachers', 'action' => 'index']) ?>"
+                        class="nav-link <?= $controller === 'Teachers' ? 'active' : '' ?>">
+                            <i class="bi bi-person-badge" aria-hidden="true"></i><span>Teachers</span>
+                        </a> 
+                        
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Courses', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Courses' ? 'active' : '' ?>">
+                        <i class="bi bi-book" aria-hidden="true"></i><span>Courses</span>
+                    </a>
+
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Classes', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Classes' ? 'active' : '' ?>">
+                        <i class="bi bi-calendar3" aria-hidden="true"></i><span>Classes</span>
+                    </a>
+
+                   <!-- HIDDEN - add back later
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'PaymentDisputes', 'action' => 'index']) ?>"
+                    class="nav-link <?= $controller === 'PaymentDisputes' ? 'active' : '' ?>">
+                    <i class="bi bi-credit-card-2-front" aria-hidden="true"></i><span>Disputes</span>
+                    </a> 
+
                     <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'PaymentWebhookIncidents', 'action' => 'index']) ?>"
                        class="nav-link <?= $controller === 'PaymentWebhookIncidents' ? 'active' : '' ?>">
                         <i class="bi bi-exclamation-triangle" aria-hidden="true"></i><span>Webhook Incidents</span>
+                    </a> -->
+                    
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Attendance', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Attendance' ? 'active' : '' ?>">
+                        <i class="bi bi-check-circle" aria-hidden="true"></i><span>Attendance</span>
+                    </a> 
+
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Resources', 'action' => 'index']) ?>"
+                       class="nav-link <?= $controller === 'Resources' ? 'active' : '' ?>">
+                        <i class="bi bi-download" aria-hidden="true"></i><span>Resources</span>
+                    </a> 
+
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'CmsPages', 'action' => 'index']) ?>"
+                       class="nav-link <?= in_array($controller, ['CmsPages', 'CmsMedia'], true) ? 'active' : '' ?>">
+                        <i class="bi bi-pencil-square" aria-hidden="true"></i><span>Site Content</span>
                     </a>
+
                 </nav>
             </div>
 
@@ -130,16 +163,6 @@ $this->Paginator->setTemplates([
                 <button type="button" class="nav-link nav-link--button" id="themeToggle" aria-pressed="false">
                     <i class="bi bi-moon" aria-hidden="true"></i><span id="themeToggleText">Dark Mode</span>
                 </button>
-                <?= $this->Form->create(null, [
-                    'url' => $logoutUrl,
-                    'class' => 'm-0 sidebar-action-form',
-                ]) ?>
-                    <?= $this->Form->button('<i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span>', [
-                        'type' => 'submit',
-                        'escapeTitle' => false,
-                        'class' => 'nav-link nav-link--button logout',
-                    ]) ?>
-                <?= $this->Form->end() ?>
             </div>
         </div>
     </aside>
@@ -163,8 +186,65 @@ $this->Paginator->setTemplates([
                 <h1 class="page-title"><?= $this->fetch('title') ?></h1>
             </div>
             <div class="admin-header-actions d-flex align-items-center gap-2">
-                <span class="admin-user-label"><?= $adminName ?></span>
-                <div class="admin-avatar" title="<?= $adminName ?>"></div>
+                <div class="dropdown admin-notification-dropdown">
+                    <button
+                        class="admin-notification-button"
+                        type="button"
+                        id="adminNotificationDropdown"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
+                        aria-expanded="false"
+                        aria-label="<?= $adminPendingAccountRequestCount > 0 ? h($adminPendingAccountRequestCount . ' account setup request' . ($adminPendingAccountRequestCount === 1 ? '' : 's') . ' pending') : 'No pending account setup requests' ?>"
+                    >
+                        <i class="bi bi-bell" aria-hidden="true"></i>
+                        <?php if ($adminPendingAccountRequestCount > 0): ?>
+                            <span class="admin-notification-badge"><?= h((string)$adminPendingAccountRequestCount) ?></span>
+                        <?php endif; ?>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end admin-notification-menu" aria-labelledby="adminNotificationDropdown">
+                        <div class="admin-notification-menu__eyebrow">Action Required</div>
+                        <?php if ($adminPendingAccountRequestCount > 0): ?>
+                            <div class="admin-notification-menu__title">
+                                <?= h((string)$adminPendingAccountRequestCount) ?> account setup<?= $adminPendingAccountRequestCount !== 1 ? 's' : '' ?> pending
+                            </div>
+                            <div class="admin-notification-menu__list">
+                                <?php foreach ($adminPendingAccountRequests as $request): ?>
+                                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'view', $request->message_id]) ?>" class="admin-notification-item">
+                                        <span class="admin-notification-item__name"><?= h($request->sender_name ?: 'Customer request') ?></span>
+                                        <span class="admin-notification-item__meta"><?= h($request->sent_at ? $request->sent_at->format('j M') : 'Pending') ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="admin-notification-menu__actions">
+                                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index', '?' => ['status' => 'unread']]) ?>" class="admin-btn-primary admin-notification-menu__primary">
+                                    Process Requests
+                                </a>
+                                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Messages', 'action' => 'index']) ?>" class="admin-notification-menu__link">View All</a>
+                            </div>
+                        <?php else: ?>
+                            <div class="admin-notification-menu__empty">No pending account setup requests.</div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="d-flex align-items-center gap-2 btn p-0 border-0 bg-transparent"
+                            type="button" id="adminProfileDropdown"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="admin-user-label"><?= $adminName ?></span>
+                        <div class="admin-avatar" title="<?= $adminName ?>" aria-hidden="true"><?= $adminInitial ?></div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminProfileDropdown">
+                        <li><span class="dropdown-item-text fw-semibold"><?= $adminName ?></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <?= $this->Form->create(null, ['url' => $logoutUrl, 'class' => 'm-0']) ?>
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i><span>Logout</span>
+                                </button>
+                            <?= $this->Form->end() ?>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </nav>
 
@@ -173,6 +253,10 @@ $this->Paginator->setTemplates([
             <div aria-live="polite"><?= $this->Flash->render() ?></div>
             <?= $this->fetch('content') ?>
         </main>
+    </div>
+
+    <div class="login-toast-region" aria-live="polite" aria-atomic="true">
+        <?= $this->Flash->render('login_toast') ?>
     </div>
 
     <?= $this->Html->script(['site-accessibility', 'admin-bootstrap', 'admin-app']) ?>
@@ -223,6 +307,21 @@ $this->Paginator->setTemplates([
             sidebarElement.addEventListener('hidden.bs.offcanvas', () => {
                 sidebarToggle.setAttribute('aria-expanded', 'false');
             });
+
+            const mobileQuery = window.matchMedia('(max-width: 991.98px)');
+            const closeSidebarOnMobile = () => {
+                if (!mobileQuery.matches) return;
+                const instance = bootstrap.Offcanvas.getInstance(sidebarElement);
+                if (instance) {
+                    instance.hide();
+                }
+            };
+
+            sidebarElement
+                .querySelectorAll('a.nav-link, a.sidebar-link')
+                .forEach((link) => {
+                    link.addEventListener('click', closeSidebarOnMobile);
+                });
         }
 
         if (sidebarScrollContainer) {

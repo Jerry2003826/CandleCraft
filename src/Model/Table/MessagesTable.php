@@ -8,6 +8,11 @@ use Cake\Validation\Validator;
 
 class MessagesTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -41,6 +46,11 @@ class MessagesTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -98,6 +108,11 @@ class MessagesTable extends Table
         return $validator;
     }
 
+    /**
+     * Validation contact form.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationContactForm(Validator $validator): Validator
     {
         $validator = $this->validationDefault($validator);
@@ -115,8 +130,8 @@ class MessagesTable extends Table
             ->notEmptyString('sender_phone')
             ->regex(
                 'sender_phone',
-                '/^\+?[0-9][0-9\-\s()]{5,14}$/',
-                'Please enter a valid phone number.',
+                '/^(?:\+61|0)(?=(?:\D*\d){9,11}\D*$)[0-9\-\s()]+$/',
+                'Please enter a valid Australian phone number.',
             );
 
         $validator

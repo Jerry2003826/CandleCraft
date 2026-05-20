@@ -6,9 +6,13 @@ namespace App\Controller\Consumer;
 use Cake\Chronos\ChronosDate;
 use Cake\Http\Response;
 use RuntimeException;
+use Throwable;
 
 class AccountController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $student = $this->getStudentWithUser();
@@ -18,6 +22,9 @@ class AccountController extends AppController
         $this->set('title', 'My Account');
     }
 
+    /**
+     * Edit.
+     */
     public function edit(): ?Response
     {
         $studentsTable = $this->fetchTable('Students');
@@ -26,7 +33,31 @@ class AccountController extends AppController
         $user = $student->user ?: $usersTable->get($student->user_id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $student = $studentsTable->patchEntity($student, $this->request->getData(), [
+            $data = $this->request->getData();
+
+            // Defence in depth: parse the submitted DOB up-front so we can
+            // (a) reject future dates with a clear field error and
+            // (b) recompute declared_age from the freshly submitted DOB rather
+            //     than the previously stored record. The StudentsTable validator
+            //     also enforces these rules, but bypassing it via patchEntity's
+            //     "fields" option must not silently drop the check.
+            $dobInput = trim((string)($data['date_of_birth'] ?? ''));
+            $dobError = null;
+            if ($dobInput !== '') {
+                try {
+                    $parsedDob = ChronosDate::parse($dobInput);
+                    $today = new ChronosDate();
+                    if ($parsedDob > $today) {
+                        $dobError = __('Date of birth cannot be in the future.');
+                    } else {
+                        $data['declared_age'] = (int)$parsedDob->diff($today)->y;
+                    }
+                } catch (Throwable) {
+                    $dobError = __('Date of birth is not a valid date.');
+                }
+            }
+
+            $student = $studentsTable->patchEntity($student, $data, [
                 'fields' => [
                     'student_name',
                     'declared_age',
@@ -34,7 +65,10 @@ class AccountController extends AppController
                     'medical_notes',
                 ],
             ]);
-            $user = $usersTable->patchEntity($user, $this->request->getData(), [
+            if ($dobError !== null) {
+                $student->setError('date_of_birth', ['notFuture' => $dobError]);
+            }
+            $user = $usersTable->patchEntity($user, $data, [
                 'fields' => ['email'],
             ]);
             $student->set('user', $user);
@@ -42,7 +76,7 @@ class AccountController extends AppController
             if ($student->hasErrors() || $user->hasErrors()) {
                 $this->Flash->error(
                     $this->extractFirstValidationError($student->getErrors(), null)
-                    ?? $this->extractFirstValidationError($user->getErrors(), 'Your account details could not be updated.')
+                    ?? $this->extractFirstValidationError($user->getErrors(), 'Your account details could not be updated.'),
                 );
             } else {
                 $verificationCleared = false;
@@ -59,24 +93,29 @@ class AccountController extends AppController
                 try {
                     if (!$usersTable->save($user)) {
                         throw new RuntimeException(
-                            $this->extractFirstValidationError($user->getErrors(), 'Your account email could not be updated.')
+                            $this->extractFirstValidationError($user->getErrors(), 'Your account email could not be updated.'),
                         );
                     }
 
                     if (!$studentsTable->save($student)) {
                         throw new RuntimeException(
-                            $this->extractFirstValidationError($student->getErrors(), 'Your personal details could not be updated.')
+                            $this->extractFirstValidationError($student->getErrors(), 'Your personal details could not be updated.'),
                         );
                     }
 
                     $connection->commit();
-                    $this->Flash->success(__('Your account details have been updated.'));
+                    $this->Flash->success(__(
+                        'Your account details have been updated.',
+                    ));
                     if ($verificationCleared) {
-                        $this->Flash->warning(__('Adult verification was removed automatically because the updated age details show you are under 18.'));
+                        $this->Flash->warning(__(
+                            'Adult verification was removed automatically because the updated age details show you' .
+                            'are under 18.',
+                        ));
                     }
 
                     return $this->redirect(['action' => 'index']);
-                } catch (\Throwable $exception) {
+                } catch (Throwable $exception) {
                     $connection->rollback();
                     $this->Flash->error($exception->getMessage());
                 }
@@ -89,6 +128,9 @@ class AccountController extends AppController
         return null;
     }
 
+    /**
+     * Get student with user.
+     */
     private function getStudentWithUser(): object
     {
         $identity = $this->Authentication->getIdentity();
@@ -99,6 +141,11 @@ class AccountController extends AppController
             ->firstOrFail();
     }
 
+    /**
+     * Determine recorded age.
+     *
+     * @param mixed $student Student.
+     */
     private function determineRecordedAge(object $student): ?int
     {
         if (!empty($student->date_of_birth)) {
@@ -145,6 +192,12 @@ class AccountController extends AppController
         ];
     }
 
+    /**
+     * Extract first validation error.
+     *
+     * @param mixed $errors Errors.
+     * @param mixed $fallback Fallback.
+     */
     private function extractFirstValidationError(array $errors, ?string $fallback = null): ?string
     {
         foreach ($errors as $fieldErrors) {

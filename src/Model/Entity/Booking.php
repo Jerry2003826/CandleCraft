@@ -16,6 +16,7 @@ class Booking extends Entity
         'price_at_booking' => true,
         'notes' => true,
         'reminder_sent_at' => true,
+        'booking_confirmation_sent_at' => true,
         'created_at' => true,
         'updated_at' => true,
         'class' => true,
@@ -28,17 +29,32 @@ class Booking extends Entity
         'attendance_records' => true,
     ];
 
-    protected function _getClassEntity()
+    /**
+     * Get class entity.
+     *
+     * @return mixed
+     */
+    protected function _getClassEntity(): mixed
     {
         return $this->get('class');
     }
 
-    protected function _getParentEntity()
+    /**
+     * Get parent entity.
+     *
+     * @return mixed
+     */
+    protected function _getParentEntity(): mixed
     {
         return $this->get('parent');
     }
 
-    protected function _getAttendanceRecords()
+    /**
+     * Get attendance records.
+     *
+     * @return mixed
+     */
+    protected function _getAttendanceRecords(): mixed
     {
         return $this->get('attendance_record');
     }

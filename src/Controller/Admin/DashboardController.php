@@ -5,6 +5,9 @@ namespace App\Controller\Admin;
 
 class DashboardController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $messagesTable = $this->fetchTable('Messages');
@@ -81,10 +84,18 @@ class DashboardController extends AppController
         }
 
         $this->set(compact(
-            'totalEnquiries', 'newMessages', 'repliedMessages',
-            'totalStudents', 'totalTeachers', 'totalClasses', 'totalBookings',
-            'recentMessages', 'pendingAccountRequestCount', 'pendingAccountRequests',
-            'existingUsersByEmail', 'linkedStudentsByUserId',
+            'totalEnquiries',
+            'newMessages',
+            'repliedMessages',
+            'totalStudents',
+            'totalTeachers',
+            'totalClasses',
+            'totalBookings',
+            'recentMessages',
+            'pendingAccountRequestCount',
+            'pendingAccountRequests',
+            'existingUsersByEmail',
+            'linkedStudentsByUserId',
         ));
 
         // Recent bookings for admin management

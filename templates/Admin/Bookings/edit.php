@@ -3,7 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Booking $booking
  */
-$this->assign('title', 'Edit Booking #' . $booking->booking_id);
+$bookingLabel = 'BK-' . str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT);
+$this->assign('title', 'Edit Booking ' . $bookingLabel);
 ?>
 
 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
@@ -12,7 +13,7 @@ $this->assign('title', 'Edit Booking #' . $booking->booking_id);
 
 <div class="admin-form-card">
     <div class="admin-form-header">
-        <h2 class="admin-form-title">Edit Booking BK-<?= str_pad((string)$booking->booking_id, 3, '0', STR_PAD_LEFT) ?></h2>
+        <h2 class="admin-form-title">Edit Booking <?= h($bookingLabel) ?></h2>
     </div>
     
     <div class="admin-form-group p-4 mb-4" style="background-color: var(--admin-search-bg); border-radius: 12px;">

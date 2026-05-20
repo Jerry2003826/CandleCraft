@@ -49,7 +49,7 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-sm btn-outline-primary">Today</a>
             <?php endif; ?>
             <a href="<?= $this->Url->build(['action' => 'index', '?' => ['week_start' => $nextWeek]]) ?>" class="btn btn-sm btn-outline-secondary" aria-label="Show next week"><i class="bi bi-chevron-right"></i></a>
-            <span class="sp-toolbar__title"><?= h($weekStart->format('M j')) ?> — <?= h($weekEnd->format('M j, Y')) ?></span>
+            <span class="sp-toolbar__title"><?= h($weekStart->format('j M')) ?> - <?= h($weekEnd->format('j M Y')) ?></span>
         </div>
         <div class="sp-toolbar__right">
             <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle me-1"></i> Book Class</a>
@@ -96,7 +96,7 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                                    href="#booking-<?= $ev['booking_id'] ?>"
                                    title="<?= h($ev['title']) ?>">
                                     <strong class="wc-evt__title"><?= h($ev['title']) ?></strong>
-                                    <span class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></span>
+                                    <span class="wc-evt__time"><?= $startFmt ?> - <?= $endFmt ?></span>
                                     <span class="wc-evt__loc"><?= h($ev['student_name'] ?? '') ?><?= !empty($ev['student_name']) && $ev['location'] ? ' · ' : '' ?><?= h($ev['location'] ?? '') ?></span>
                                 </a>
                             <?php endforeach; ?>
@@ -137,7 +137,7 @@ $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $boo
                 <div class="sp-list-date">
                     <div class="sp-list-date__label">
                         <?php if ($dateKey === $todayStr): ?><span class="sp-list-date__badge">Today</span><?php endif; ?>
-                        <?= $dateKey !== '0000-00-00' ? date('l, M j, Y', strtotime($dateKey)) : 'Unscheduled' ?>
+                        <?= $dateKey !== '0000-00-00' ? date('l, j M Y', strtotime($dateKey)) : 'Unscheduled' ?>
                     </div>
                     <?php foreach ($dateBookings as $booking): ?>
                         <div class="sp-list-card" id="booking-<?= $booking->booking_id ?>">

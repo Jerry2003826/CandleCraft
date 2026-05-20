@@ -16,9 +16,9 @@ declare(strict_types=1);
  */
 namespace App;
 
-use App\Middleware\CsrfRetryMiddleware;
 use App\Middleware\ConditionalAuthenticationMiddleware;
 use App\Middleware\ConditionalCsrfProtectionMiddleware;
+use App\Middleware\CsrfRetryMiddleware;
 use App\Middleware\HostHeaderMiddleware;
 use App\Support\WebhookRequestMatcher;
 use Authentication\AuthenticationService;
@@ -111,6 +111,11 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         return $middlewareQueue;
     }
 
+    /**
+     * Get authentication service.
+     *
+     * @param mixed $request Request.
+     */
     public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
     {
         $loginUrl = ['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'];

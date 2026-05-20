@@ -15,13 +15,52 @@ $isDeclared18 = is_int($declaredAge) && $declaredAge >= 18;
 $hasAgeDeclaration = $declaredAge !== null;
 $displayText = $isAccountRequest
     ? (string)($requestMeta['clean_message_text'] ?? '')
-    : str_replace(['[AGE DECLARATION: 18+]', '[AGE DECLARATION: Under 18]'], '', (string)$message->message_text);
+    : (string)preg_replace(
+        [
+            '/^\[AGE DECLARATION:\s*[^\]]+\]\s*$/mi',
+            '/^\[STUDENT_NAME:\s*[^\]]+\]\s*$/mi',
+            '/^\[STUDENT_DOB:\s*[^\]]+\]\s*$/mi',
+            '/^\[CLASS_TYPE:\s*[^\]]+\]\s*$/mi',
+        ],
+        '',
+        (string)$message->message_text,
+    );
 $displayText = trim($displayText);
+$returnUrl = (string)($this->request->getQuery('return_url') ?? '');
+$webrootPrefix = (string)($this->request->getAttribute('webroot') ?? '/');
+$normaliseReturnUrl = static function (string $url) use ($webrootPrefix): string {
+    if ($url === '' || preg_match('#^https?://#i', $url) === 1) {
+        return $url;
+    }
+
+    $prefix = rtrim($webrootPrefix, '/');
+    $normalised = '/' . ltrim($url, '/');
+    if ($prefix !== '' && str_starts_with($normalised, $prefix . '/')) {
+        return $normalised;
+    }
+
+    return $prefix . $normalised;
+};
+$backUrl = $returnUrl !== ''
+    ? $normaliseReturnUrl($returnUrl)
+    : '#';
+$formatDate = static function (?string $date): string {
+    $date = trim((string)$date);
+    if ($date === '') {
+        return '-';
+    }
+
+    try {
+        return (new \DateTimeImmutable($date))->format('j M Y');
+    } catch (\Throwable) {
+        return $date;
+    }
+};
 ?>
 
 <div class="admin-page-header d-flex justify-content-between align-items-center mb-4">
-    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link mb-0">
-        <i class="bi bi-arrow-left"></i> Back to Enquiries
+    <a href="<?= h($backUrl) ?>" <?= $returnUrl === '' ? 'onclick="history.back(); return false;"' : '' ?> class="admin-back-link mb-0">
+        <i class="bi bi-arrow-left"></i> Back
     </a>
     <div class="d-flex align-items-center gap-2">
         <?php if ($isAccountRequest && !$existingUser): ?>
@@ -34,9 +73,24 @@ $displayText = trim($displayText);
             </a>
         <?php endif; ?>
         <?php if ($message->message_status !== 'archived'): ?>
-            <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id]) ?>" class="admin-btn-secondary" style="color: #10B981; padding: 6px 16px; font-size: 13px;">
+            <a href="<?= $this->Url->build(['action' => 'reply', $message->message_id, '?' => ['return_url' => $this->request->getRequestTarget()]]) ?>" class="admin-btn-secondary" style="color: #10B981; padding: 6px 16px; font-size: 13px;">
                 <i class="bi bi-reply me-1"></i> Respond
             </a>
+            <?php if ($message->message_status === 'unread'): ?>
+                <span class="admin-badge admin-badge-info" style="padding: 7px 16px; font-size: 13px;">
+                    <i class="bi bi-envelope me-1"></i> Already Unread
+                </span>
+            <?php else: ?>
+                <?= $this->Form->postLink(
+                    '<i class="bi bi-envelope me-1"></i> Mark as Unread',
+                    ['action' => 'markUnread', $message->message_id, '?' => ['return_url' => $returnUrl]],
+                    [
+                        'class' => 'admin-btn-primary',
+                        'style' => 'padding: 6px 16px; font-size: 13px;',
+                        'escape' => false,
+                    ]
+                ) ?>
+            <?php endif; ?>
             <?= $this->Form->postLink(
                 '<i class="bi bi-archive me-1"></i> Archive',
                 ['action' => 'archive', $message->message_id],
@@ -154,12 +208,6 @@ $displayText = trim($displayText);
                 </div>
             </div>
             <div style="margin-bottom: 16px;">
-                <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Type</div>
-                <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
-                    <?= $isAccountRequest ? 'Customer Access Request' : 'Enquiry' ?>
-                </div>
-            </div>
-            <div style="margin-bottom: 16px;">
                 <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Received</div>
                 <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--admin-text-primary);">
                     <?php if ($message->sent_at): ?>
@@ -176,7 +224,29 @@ $displayText = trim($displayText);
                     <?= h($message->source_page ?: '-') ?>
                 </div>
             </div>
-        </div>
+
+            <?php 
+                $messageText = (string)($message->message_text ?? '');
+                preg_match('/\[STUDENT_NAME:\s*(.+?)\]/i', $messageText, $nameMatch);
+                preg_match('/\[STUDENT_DOB:\s*(.+?)\]/i', $messageText, $dobMatch);
+                $studentName = $nameMatch[1] ?? null;
+                $studentDob = $dobMatch[1] ?? null;
+            ?>
+            <?php if ($studentName || $studentDob): ?>
+                <?php if ($studentName): ?>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Student Name</div>
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= h($studentName) ?></div>
+                </div>
+                <?php endif; ?>
+                <?php if ($studentDob): ?>
+                <div style="margin-bottom: 16px;">
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--admin-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Student Date of Birth</div>
+                    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--admin-text-primary);"><?= h($formatDate($studentDob)) ?></div>
+                </div>
+                <?php endif; ?>
+            <?php endif; ?>
+                    </div>
         
         <div class="col-md-6">
             <?php if ($isAccountRequest): ?>
@@ -300,4 +370,4 @@ $displayText = trim($displayText);
             </div>
         <?php endforeach; ?>
     </div>
-</div>
+<div style="padding-bottom: 48px;"></div>

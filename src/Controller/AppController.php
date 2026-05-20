@@ -47,6 +47,11 @@ class AppController extends Controller
         $this->loadComponent('Authentication.Authentication');
     }
 
+    /**
+     * Reject unauthenticated access.
+     *
+     * @param mixed $message Message.
+     */
     protected function rejectUnauthenticatedAccess(string $message): Response
     {
         $this->Flash->error(__($message));
@@ -54,6 +59,12 @@ class AppController extends Controller
         return $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']);
     }
 
+    /**
+     * Redirect authenticated role mismatch.
+     *
+     * @param mixed $identity Identity.
+     * @param mixed $message Message.
+     */
     protected function redirectAuthenticatedRoleMismatch(mixed $identity, string $message): Response
     {
         $role = $this->identityRole($identity);
@@ -66,6 +77,11 @@ class AppController extends Controller
         return $this->redirect($this->dashboardRouteForRole($role));
     }
 
+    /**
+     * Sync authenticated user state.
+     *
+     * @param mixed $user User.
+     */
     protected function syncAuthenticatedUserState(mixed $user): void
     {
         if (!is_object($user) || !method_exists($user, 'get')) {
@@ -75,7 +91,8 @@ class AppController extends Controller
         $session = $this->request->getSession();
         $auth = (array)$session->read('Auth');
 
-        foreach ([
+        foreach (
+            [
             'user_id',
             'email',
             'username',
@@ -83,7 +100,8 @@ class AppController extends Controller
             'account_status',
             'age_verified_by_admin',
             'self_declared_adult',
-        ] as $field) {
+            ] as $field
+        ) {
             $value = $user->get($field);
             if ($value !== null) {
                 $auth[$field] = $value;
@@ -93,16 +111,23 @@ class AppController extends Controller
         $session->write('Auth', $auth);
     }
 
+    /**
+     * Load active authenticated user.
+     *
+     * @param mixed $event Event.
+     * @param mixed $identity Identity.
+     * @param mixed $inactiveMessage Inactivemessage.
+     */
     protected function loadActiveAuthenticatedUser(
         EventInterface $event,
         mixed $identity,
-        string $inactiveMessage = 'Your account is no longer active. Please contact an administrator.'
+        string $inactiveMessage = 'Your account is no longer active. Please contact an administrator.',
     ): ?object {
         if (!is_object($identity) || !method_exists($identity, 'get')) {
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']),
             );
 
             return null;
@@ -117,7 +142,7 @@ class AppController extends Controller
             $this->Authentication->logout();
             $this->shortCircuitRequest(
                 $event,
-                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login'])
+                $this->redirect(['plugin' => false, 'prefix' => false, 'controller' => 'Users', 'action' => 'login']),
             );
 
             return null;
@@ -128,6 +153,11 @@ class AppController extends Controller
         return $currentUser;
     }
 
+    /**
+     * Identity role.
+     *
+     * @param mixed $identity Identity.
+     */
     private function identityRole(mixed $identity): string
     {
         if (!is_object($identity) || !method_exists($identity, 'get')) {
@@ -152,6 +182,12 @@ class AppController extends Controller
         };
     }
 
+    /**
+     * Short circuit request.
+     *
+     * @param mixed $event Event.
+     * @param mixed $response Response.
+     */
     protected function shortCircuitRequest(EventInterface $event, Response $response): void
     {
         $event->stopPropagation();

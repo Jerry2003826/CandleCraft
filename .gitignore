@@ -78,3 +78,7 @@ yarn-error.log
 
 # Test output logs
 output/
+
+# CMS uploaded media (keep the directory, ignore contents)
+/webroot/uploads/site/*
+!/webroot/uploads/site/.gitkeep

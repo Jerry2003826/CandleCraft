@@ -14,12 +14,14 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CandleCraft Academy - Portal Login</title>
     <?= $this->Html->meta('icon') ?>
-    <?= $this->Html->css(['fonts', 'cake', 'admin', 'home']) ?>
+    <?= $this->Html->css(['fonts', 'cake', 'admin']) ?>
+    <link rel="stylesheet" href="<?= h($this->Url->css('home', ['timestamp' => 'force'])) ?>">
+    <link rel="stylesheet" href="<?= h($this->Url->css('mobile', ['timestamp' => 'force'])) ?>">
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 </head>
-<body class="site-home">
+<body class="site-home site-default site-login">
     <div class="home-shell">
         <a href="#main-content" class="skip-link">Skip to main content</a>
         <header class="hero-home hero-home--compact">
@@ -28,7 +30,7 @@ $coursesUrl = $this->Url->build(['controller' => 'Courses', 'action' => 'index']
                 'coursesUrl' => $coursesUrl,
                 'contactUrl' => $contactUrl,
                 'loginUrl' => $loginUrl,
-                'showHomeLink' => true,
+                'showHomeLink' => false,
                 'contactLabel' => 'Enquire',
                 'menuId' => 'login-courses-menu',
             ]) ?>

@@ -8,15 +8,11 @@
 $this->assign('title', 'Edit Resource');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Resources
-</a>
+<button onclick="history.back()" class="admin-btn-secondary mb-4" style="display: inline-flex; align-items: center; gap: 8px;">
+    <i class="bi bi-arrow-left"></i> Back
+</button>
 
 <div class="admin-form-card">
-    <div class="admin-form-header">
-        <h2 class="admin-form-title">Edit Resource: <?= h($resource->resource_name) ?></h2>
-    </div>
-    
     <?= $this->Form->create($resource, ['type' => 'file']) ?>
         <div class="row g-4">
             <div class="col-md-6">

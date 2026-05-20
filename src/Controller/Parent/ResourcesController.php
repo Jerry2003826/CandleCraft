@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Parent;
 
 use App\Service\ResourceUploadService;
+use Cake\Collection\Collection;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 
@@ -11,6 +12,9 @@ class ResourcesController extends AppController
 {
     private const ACCESSIBLE_BOOKING_STATUSES = ['confirmed', 'completed'];
 
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $identity = $this->Authentication->getIdentity();
@@ -29,7 +33,7 @@ class ResourcesController extends AppController
             ->extract('student_id')
             ->toArray();
 
-        $bookings = new \Cake\Collection\Collection([]);
+        $bookings = new Collection([]);
         $resources = [];
 
         if (!empty($studentIds)) {
@@ -61,6 +65,11 @@ class ResourcesController extends AppController
         $this->set('title', 'Learning Center');
     }
 
+    /**
+     * Download.
+     *
+     * @param mixed $resourceId Resourceid.
+     */
     public function download(?int $resourceId = null): Response
     {
         $identity = $this->Authentication->getIdentity();

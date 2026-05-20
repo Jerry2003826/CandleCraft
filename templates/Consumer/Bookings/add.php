@@ -11,8 +11,8 @@ $typeColor = $courseType === 'pottery' ? '#1D4ED8' : ($courseType === 'knitting'
 $typeBg = $courseType === 'pottery' ? '#DBEAFE' : ($courseType === 'knitting' ? '#FEF3C7' : '#F3F4F6');
 ?>
 
-<a href="<?= $this->Url->build(['prefix' => 'Consumer', 'controller' => 'Courses', 'action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Book a Class
+<a href="#" onclick="history.back(); return false;" class="admin-back-link">
+    <i class="bi bi-arrow-left"></i> Back
 </a>
 
 <div class="admin-form-card">

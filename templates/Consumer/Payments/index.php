@@ -2,20 +2,13 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable $bookings
- * @var iterable $paymentProfiles
- * @var \App\Model\Entity\PaymentProfile $paymentProfile
- * @var array<string, string> $preferredPaymentMethods
  */
 $this->assign('title', 'Payment Portal');
 
 $bookingList = is_object($bookings) && method_exists($bookings, 'toList') ? $bookings->toList() : (array)$bookings;
-$profileList = is_object($paymentProfiles) && method_exists($paymentProfiles, 'toList') ? $paymentProfiles->toList() : (array)$paymentProfiles;
-$activeProfiles = array_values(array_filter($profileList, fn($profile) => $profile->profile_status === 'active'));
-$archivedProfiles = array_values(array_filter($profileList, fn($profile) => $profile->profile_status === 'archived'));
-$editingExistingProfile = !$paymentProfile->isNew() && !empty($paymentProfile->payment_profile_id);
-$profileSaveUrl = $editingExistingProfile
-    ? ['action' => 'saveProfile', $paymentProfile->payment_profile_id]
-    : ['action' => 'saveProfile'];
+$identity = $this->request->getAttribute('identity');
+$billingName = $identity ? (string)($identity->get('username') ?: $identity->get('email')) : '';
+$billingEmail = $identity ? (string)$identity->get('email') : '';
 
 $paidCount = 0;
 $pendingCount = 0;
@@ -47,7 +40,7 @@ foreach ($bookingList as $booking) {
         <div class="z-billing-tabs">
             <button type="button" class="z-billing-tab active" data-tab="overview" aria-pressed="true" aria-controls="overview">Overview</button>
             <button type="button" class="z-billing-tab" data-tab="history" aria-pressed="false" aria-controls="history">Payment History</button>
-            <button type="button" class="z-billing-tab" data-tab="details" aria-pressed="false" aria-controls="details">Saved Details</button>
+            <button type="button" class="z-billing-tab" data-tab="details" aria-pressed="false" aria-controls="details">Billing Details</button>
         </div>
     </div>
 
@@ -68,9 +61,12 @@ foreach ($bookingList as $booking) {
                 </div>
             </div>
             <div class="z-billing-balance-actions">
-                <button type="button" class="z-billing-btn-primary" data-tab-trigger="details">Add payment details</button>
+                <button type="button" class="z-billing-btn-primary" data-tab-trigger="history">View payments</button>
                 <button type="button" data-tab-trigger="history" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); text-decoration: none; margin-left: 16px; border: 0; background: transparent; padding: 0;">
                     View History
+                </button>
+                <button type="button" data-tab-trigger="details" style="font-family: 'Inter', sans-serif; font-size: 13px; color: var(--admin-text-secondary); text-decoration: none; margin-left: 16px; border: 0; background: transparent; padding: 0;">
+                    Edit billing details
                 </button>
             </div>
         </div>
@@ -92,29 +88,44 @@ foreach ($bookingList as $booking) {
                         <?php foreach ($bookingList as $booking): ?>
                             <?php
                                 $latestPayment = null;
+                                $latestPaymentStatus = 'pending';
                                 $hasPaidRecord = false;
+                                $refundablePayment = null;
                                 foreach ($booking->payments ?? [] as $payment) {
                                     $latestPayment = $payment;
+                                    $latestPaymentStatus = (string)$payment->payment_status;
                                     if ($payment->payment_status === 'paid') {
                                         $hasPaidRecord = true;
+                                    }
+                                    if (
+                                        in_array((string)$payment->payment_status, ['paid', 'partially_refunded'], true)
+                                        && round((float)$payment->refunded_amount, 2) < round((float)$payment->amount, 2)
+                                    ) {
+                                        $refundablePayment = $payment;
                                     }
                                 }
 
                                 $isPaid = in_array($booking->booking_status, ['confirmed', 'completed'], true) && $hasPaidRecord;
-                                if ($isPaid) {
+                                if ($latestPaymentStatus === 'refund_required') {
+                                    $paymentBadgeClass = 'admin-badge-warning';
+                                    $paymentBadgeLabel = 'Refund Required';
+                                } elseif ($isPaid) {
                                     $paymentBadgeClass = 'admin-badge-success';
                                     $paymentBadgeLabel = 'Payment Paid';
                                 } else {
-                                    $latestPaymentStatus = (string)($latestPayment->payment_status ?? 'pending');
                                     [$paymentBadgeClass, $paymentBadgeLabel] = match ($latestPaymentStatus) {
                                         'failed' => ['admin-badge-danger', 'Payment Failed'],
                                         'expired', 'voided' => ['admin-badge-neutral', 'Payment Cancelled'],
                                         'refund_required' => ['admin-badge-warning', 'Refund Required'],
                                         'refunded' => ['admin-badge-neutral', 'Refunded'],
                                         'partially_refunded' => ['admin-badge-info', 'Partially Refunded'],
+                                        'disputed' => ['admin-badge-danger', 'Disputed'],
                                         default => ['admin-badge-warning', 'Payment Pending'],
                                     };
                                 }
+                                $canPay = !$isPaid
+                                    && in_array($booking->booking_status, ['pending', 'confirmed'], true)
+                                    && !in_array($latestPaymentStatus, ['paid', 'refund_required', 'partially_refunded', 'refunded', 'disputed'], true);
                             ?>
                             <tr>
                                 <td style="padding: 20px 24px;">
@@ -129,10 +140,19 @@ foreach ($bookingList as $booking) {
                                     <span class="admin-badge <?= $paymentBadgeClass ?>" style="font-size: 11px; padding: 4px 8px;"><?= h($paymentBadgeLabel) ?></span>
                                 </td>
                                 <td class="text-end" style="padding: 20px 24px;">
-                                    <?php if (!$isPaid && in_array($booking->booking_status, ['pending', 'confirmed'], true)): ?>
+                                    <?php if ($canPay): ?>
                                         <a href="<?= $this->Url->build(['action' => 'process', $booking->booking_id]) ?>" class="z-billing-btn-primary" style="padding: 8px 16px; font-size: 13px;">Pay Now</a>
-                                    <?php elseif ($isPaid && $latestPayment): ?>
-                                        <a href="<?= $this->Url->build(['action' => 'receipt', $latestPayment->payment_id]) ?>" class="admin-action-link view" style="text-decoration: none; font-size: 13px;">View Receipt</a>
+                                    <?php elseif ($refundablePayment): ?>
+                                        <div class="d-flex gap-2 justify-content-end align-items-center">
+                                            <a href="<?= $this->Url->build(['action' => 'receipt', $refundablePayment->payment_id]) ?>" class="admin-action-link view" style="text-decoration: none; font-size: 13px;">View Receipt</a>
+                                            <?= $this->Form->postLink('Request Refund', ['action' => 'requestRefund', $refundablePayment->payment_id], [
+                                                'class' => 'admin-action-link admin-action-link--delete',
+                                                'style' => 'text-decoration: none; font-size: 13px;',
+                                                'confirm' => 'Submit this payment for admin refund review?',
+                                            ]) ?>
+                                        </div>
+                                    <?php elseif ($latestPaymentStatus === 'refund_required'): ?>
+                                        <span style="color: var(--admin-text-secondary); font-size: 13px;">Refund requested</span>
                                     <?php else: ?>
                                         <span style="color: var(--admin-text-secondary); font-size: 13px;">No action needed</span>
                                     <?php endif; ?>
@@ -146,148 +166,39 @@ foreach ($bookingList as $booking) {
     </div>
 
     <div id="details" class="z-billing-section" hidden>
-        <h2 class="z-billing-section-title">Saved Payment Details</h2>
-        <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 20px;">
-            Online checkout currently accepts card payments only, so saved details are stored as card billing details.
+        <h2 class="z-billing-section-title">Billing Details</h2>
+        <p class="text-muted" style="font-size:13px; margin-bottom:16px;">
+            We use these details on receipts and refund correspondence. Update your account
+            email or display name from <a href="<?= $this->Url->build(['controller' => 'Account', 'action' => 'edit']) ?>">My Account</a>.
         </p>
-        
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <?php if ($activeProfiles === []): ?>
-                    <div class="admin-form-card text-center py-5" style="border-radius: 12px; height: 100%;">
-                        <p style="color: var(--admin-text-secondary); font-family: 'Inter', sans-serif; margin: 0;">No payment details have been saved yet.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="d-flex flex-column gap-3">
-                        <?php foreach ($activeProfiles as $profile): ?>
-                            <div class="admin-form-card" style="border-radius: 12px; padding: 24px;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <strong style="display: block; font-family: 'Inter', sans-serif; font-size: 16px; color: var(--admin-text-primary); margin-bottom: 4px;"><?= h($profile->billing_name) ?></strong>
-                                        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary);"><?= h($profile->billing_email) ?></div>
-                                    </div>
-                                    <?php if ($profile->is_default): ?>
-                                        <span class="admin-badge admin-badge-success" style="font-size: 11px; padding: 4px 8px;">Default</span>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-secondary); margin-bottom: 16px; line-height: 1.6;">
-                                    <div style="color: var(--admin-text-primary); font-weight: 500; margin-bottom: 4px;">Card</div>
-                                    <div>
-                                        <?= h(trim(implode(', ', array_filter([
-                                            $profile->billing_address_line1,
-                                            $profile->billing_address_line2,
-                                            $profile->billing_city,
-                                            $profile->billing_state,
-                                            $profile->billing_postcode,
-                                            $profile->billing_country,
-                                        ])))) ?: 'No billing address saved yet.' ?>
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex gap-3 mt-auto pt-3" style="border-top: 1px solid var(--admin-card-border);">
-                                    <a href="<?= $this->Url->build(['action' => 'index', '?' => ['profile' => $profile->payment_profile_id]]) ?>#payment-details-form" class="admin-action-link edit" style="text-decoration: none; font-size: 13px;">Edit</a>
-                                    <?php if (!$profile->is_default): ?>
-                                        <?= $this->Form->create(null, [
-                                            'url' => ['action' => 'setDefaultProfile', $profile->payment_profile_id],
-                                            'class' => 'd-inline m-0',
-                                        ]) ?>
-                                            <?= $this->Form->button('Set Default', [
-                                                'class' => 'admin-action-link view',
-                                                'style' => 'text-decoration: none; font-size: 13px;',
-                                                'type' => 'submit',
-                                            ]) ?>
-                                        <?= $this->Form->end() ?>
-                                    <?php endif; ?>
-                                    <?= $this->Form->create(null, [
-                                        'url' => ['action' => 'archiveProfile', $profile->payment_profile_id],
-                                        'class' => 'd-inline m-0',
-                                    ]) ?>
-                                        <?= $this->Form->button('Archive', [
-                                            'class' => 'admin-action-link delete',
-                                            'style' => 'text-decoration: none; font-size: 13px;',
-                                            'type' => 'submit',
-                                            'onclick' => "return confirm('Archive these payment details?');",
-                                        ]) ?>
-                                    <?= $this->Form->end() ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+        <div class="admin-form-card" style="border-radius:12px; padding:24px; max-width:520px;">
+            <div class="mb-3">
+                <label for="billing-name" class="admin-form-label">Billing name</label>
+                <input
+                    type="text"
+                    id="billing-name"
+                    name="billing_name"
+                    value="<?= h($billingName) ?>"
+                    class="admin-form-input"
+                    autocomplete="name"
+                    readonly
+                >
             </div>
-            
-            <div class="col-lg-6">
-                <div class="admin-form-card" id="payment-details-form" style="border-radius: 12px; padding: 24px;">
-                    <h3 class="admin-form-title mb-4" style="font-size: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--admin-card-border);">
-                        <?= $editingExistingProfile ? 'Update Card Billing Details' : 'Add Card Billing Details' ?>
-                    </h3>
-                    
-                    <?= $this->Form->create($paymentProfile, [
-                        'url' => $profileSaveUrl,
-                            'templates' => ['inputContainer' => '{{content}}'],
-                    ]) ?>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-name">Billing Name</label>
-                                <?= $this->Form->control('billing_name', ['label' => false, 'id' => 'billing-name', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-email">Billing Email</label>
-                                <?= $this->Form->control('billing_email', ['label' => false, 'id' => 'billing-email', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-12">
-                                <label class="admin-form-label" style="font-size: 13px;" for="preferred-payment-method">Payment Method</label>
-                                <?= $this->Form->control('preferred_payment_method', [
-                                    'label' => false,
-                                    'id' => 'preferred-payment-method',
-                                    'options' => $preferredPaymentMethods,
-                                    'class' => 'admin-form-select',
-                                    'empty' => false,
-                                    'default' => 'card',
-                                    'value' => 'card',
-                                ]) ?>
-                            </div>
-                            <div class="col-12">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-address-line1">Billing Address Line 1</label>
-                                <?= $this->Form->control('billing_address_line1', ['label' => false, 'id' => 'billing-address-line1', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-city">City</label>
-                                <?= $this->Form->control('billing_city', ['label' => false, 'id' => 'billing-city', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-state">State</label>
-                                <?= $this->Form->control('billing_state', ['label' => false, 'id' => 'billing-state', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-postcode">Postcode</label>
-                                <?= $this->Form->control('billing_postcode', ['label' => false, 'id' => 'billing-postcode', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="admin-form-label" style="font-size: 13px;" for="billing-country">Country</label>
-                                <?= $this->Form->control('billing_country', ['label' => false, 'id' => 'billing-country', 'class' => 'admin-form-input']) ?>
-                            </div>
-                            <div class="col-12 mt-3">
-                                <label for="is-default-profile" style="display: flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--admin-text-primary); cursor: pointer;">
-                                    <?= $this->Form->checkbox('is_default', ['id' => 'is-default-profile', 'hiddenField' => true, 'style' => 'accent-color: var(--admin-brand-icon);']) ?>
-                                    <span>Set as default payment details</span>
-                                </label>
-                            </div>
-                            <div class="col-12 mt-4 pt-4" style="border-top: 1px solid var(--admin-card-border);">
-                                <div class="d-flex gap-3">
-                                    <?= $this->Form->button($editingExistingProfile ? 'Update Details' : 'Save Details', ['class' => 'z-billing-btn-primary', 'style' => 'border: none; cursor: pointer;']) ?>
-                                    <?php if ($editingExistingProfile): ?>
-                                        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-btn-secondary" style="text-decoration: none; border-radius: 24px; padding: 10px 20px;">Cancel</a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?= $this->Form->end() ?>
-                </div>
+            <div class="mb-3">
+                <label for="billing-email" class="admin-form-label">Billing email</label>
+                <input
+                    type="email"
+                    id="billing-email"
+                    name="billing_email"
+                    value="<?= h($billingEmail) ?>"
+                    class="admin-form-input"
+                    autocomplete="email"
+                    readonly
+                >
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -295,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.z-billing-tab');
     const sections = document.querySelectorAll('.z-billing-section');
     const tabTriggers = document.querySelectorAll('[data-tab-trigger]');
+    const availableTabs = ['overview', 'history', 'details'];
 
     function switchTab(tabId) {
         // Update tabs
@@ -344,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check initial hash
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['overview', 'history', 'details'].includes(hash)) {
+    if (hash && availableTabs.includes(hash)) {
         switchTab(hash);
     } else {
         switchTab('overview');

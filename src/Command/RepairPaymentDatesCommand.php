@@ -13,16 +13,27 @@ class RepairPaymentDatesCommand extends Command
 {
     private const NON_CAPTURED_STATUSES = ['pending', 'failed', 'expired', 'voided'];
 
+    /**
+     * Default name.
+     */
     public static function defaultName(): string
     {
         return 'repair_payment_dates';
     }
 
+    /**
+     * Get description.
+     */
     public static function getDescription(): string
     {
         return 'Clear legacy payment_date values from non-paid payments.';
     }
 
+    /**
+     * Build option parser.
+     *
+     * @param mixed $parser Parser.
+     */
     protected function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
         return $parser->addOption('dry-run', [
@@ -31,6 +42,12 @@ class RepairPaymentDatesCommand extends Command
         ]);
     }
 
+    /**
+     * Execute.
+     *
+     * @param mixed $args Args.
+     * @param mixed $io Io.
+     */
     public function execute(Arguments $args, ConsoleIo $io): int
     {
         $paymentsTable = TableRegistry::getTableLocator()->get('Payments');
@@ -69,6 +86,12 @@ class RepairPaymentDatesCommand extends Command
         return static::CODE_SUCCESS;
     }
 
+    /**
+     * Fetch status counts.
+     *
+     * @param mixed $paymentsTable Paymentstable.
+     * @param mixed $conditions Conditions.
+     */
     private function fetchStatusCounts(object $paymentsTable, array $conditions): array
     {
         $query = $paymentsTable->find();
@@ -95,6 +118,12 @@ class RepairPaymentDatesCommand extends Command
         return $statusCounts;
     }
 
+    /**
+     * Write status summary.
+     *
+     * @param mixed $io Io.
+     * @param mixed $statusCounts Statuscounts.
+     */
     private function writeStatusSummary(ConsoleIo $io, array $statusCounts): void
     {
         foreach ($statusCounts as $status => $count) {

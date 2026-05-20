@@ -5,17 +5,35 @@ namespace App\Controller\Admin;
 
 class CoursesController extends AppController
 {
+    /**
+     * Index.
+     */
     public function index(): void
     {
         $coursesTable = $this->fetchTable('Courses');
         $query = $coursesTable->find()
             ->orderBy(['Courses.course_name' => 'ASC']);
 
+        $search = $this->request->getQuery('search');
+        if ($search) {
+            $query->where([
+                'OR' => [
+                    'Courses.course_name LIKE' => "%{$search}%",
+                    'Courses.course_type LIKE' => "%{$search}%",
+                ],
+            ]);
+        }
+
         $courses = $this->paginate($query, ['limit' => 20]);
 
-        $this->set(compact('courses'));
+        $this->set(compact('courses', 'search'));
     }
 
+    /**
+     * Add.
+     *
+     * @return mixed
+     */
     public function add()
     {
         $coursesTable = $this->fetchTable('Courses');
@@ -34,6 +52,12 @@ class CoursesController extends AppController
         $this->set(compact('course'));
     }
 
+    /**
+     * Edit.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function edit(?string $id = null)
     {
         $coursesTable = $this->fetchTable('Courses');
@@ -52,6 +76,12 @@ class CoursesController extends AppController
         $this->set(compact('course'));
     }
 
+    /**
+     * Delete.
+     *
+     * @param mixed $id Id.
+     * @return mixed
+     */
     public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);

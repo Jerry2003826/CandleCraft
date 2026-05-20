@@ -5,9 +5,15 @@ namespace App\Model\Table;
 
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use DateTimeImmutable;
 
 class TeachersTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -28,6 +34,11 @@ class TeachersTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -77,7 +88,7 @@ class TeachersTable extends Table
                         return true;
                     }
 
-                    return $value <= new \DateTimeImmutable('today');
+                    return $value <= new DateTimeImmutable('today');
                 },
                 'message' => 'Hire date cannot be in the future.',
             ]);

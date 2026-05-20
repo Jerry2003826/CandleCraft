@@ -15,7 +15,7 @@ $this->assign('title', 'Classes');
 $courseDurationsJson = json_encode($courseDurations, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '{}';
 $dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 $today = (new \DateTimeImmutable())->format('Y-m-d');
-$weekLabel = $days[0]->format('j M') . ' – ' . $days[6]->format('j M Y');
+$weekLabel = $days[0]->format('j M') . ' - ' . $days[6]->format('j M Y');
 $totalSlots = 0;
 $calendarEvents = [];
 $earliestMinutes = null;
@@ -174,7 +174,7 @@ $nowMinute = (int)date('i');
                             title="<?= h($event['title']) ?>"
                             aria-label="<?= h($event['title'] . '. ' . $startFmt . ' to ' . $endFmt . '. ' . $event['teacher'] . '. ' . $event['class_code'] . ($event['location'] !== '' ? ' at ' . $event['location'] : '') . '. ' . $event['spots']) ?>"
                         >
-                            <strong class="wc-evt__time"><?= $startFmt ?> – <?= $endFmt ?></strong>
+                            <strong class="wc-evt__time"><?= $startFmt ?> - <?= $endFmt ?></strong>
                             <strong class="wc-evt__title"><?= h($event['title']) ?></strong>
                             <span class="wc-evt__loc"><?= h($event['teacher']) ?></span>
                             <span class="wc-evt__loc"><?= h($event['class_code']) ?><?= $event['location'] !== '' ? ' · ' . h($event['location']) : '' ?></span>

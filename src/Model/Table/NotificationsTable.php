@@ -3,11 +3,17 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 class NotificationsTable extends Table
 {
+    /**
+     * Initialize.
+     *
+     * @param mixed $config Config.
+     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -31,6 +37,11 @@ class NotificationsTable extends Table
         ]);
     }
 
+    /**
+     * Validation default.
+     *
+     * @param mixed $validator Validator.
+     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -50,7 +61,7 @@ class NotificationsTable extends Table
 
         $validator
             ->scalar('notification_type')
-            ->inList('notification_type', ['booking_confirmation', 'class_reminder', 'payment_receipt', 'system'])
+            ->inList('notification_type', ['booking_confirmation', 'class_reminder', 'payment_receipt', 'payment_alert', 'system'])
             ->requirePresence('notification_type', 'create')
             ->notEmptyString('notification_type');
 
@@ -61,7 +72,12 @@ class NotificationsTable extends Table
         return $validator;
     }
 
-    public function buildRules(\Cake\ORM\RulesChecker $rules): \Cake\ORM\RulesChecker
+    /**
+     * Build rules.
+     *
+     * @param mixed $rules Rules.
+     */
+    public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn('user_id', 'Users'), ['errorField' => 'user_id']);
 

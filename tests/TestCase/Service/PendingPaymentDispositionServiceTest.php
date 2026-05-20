@@ -128,7 +128,7 @@ class PendingPaymentDispositionServiceTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'The current payment session is still open with an unknown payment status. Please try again shortly.'
+            'The current payment session is still open with an unknown payment status. Please try again shortly.',
         );
 
         try {

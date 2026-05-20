@@ -10,7 +10,7 @@ $this->assign('title', 'Book Class');
 ?>
 
 <div class="mb-3">
-    <a href="<?= $this->Url->build(['prefix' => 'Parent', 'controller' => 'Courses', 'action' => 'index']) ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Courses</a>
+    <a href="#" onclick="history.back(); return false;" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
 </div>
 
 <div class="card">
@@ -31,10 +31,6 @@ $this->assign('title', 'Book Class');
                 <span><i class="bi bi-person me-1"></i><?= h($class->teacher?->teacher_name ?? 'TBA') ?></span>
             </div>
             <div class="portal-status-row">
-                <div>
-                    <span class="portal-status-row__label">Availability</span>
-                    <strong><?= h((string)$availableSlots) ?> / <?= h((string)$class->capacity) ?> spots</strong>
-                </div>
                 <div>
                     <span class="portal-status-row__label">Price</span>
                     <strong>$<?= number_format((float)($class->course?->course_price ?? 0), 2) ?></strong>

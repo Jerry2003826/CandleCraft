@@ -6,9 +6,11 @@
 $this->assign('title', 'Add Course');
 ?>
 
-<a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Courses
-</a>
+<div class="mb-4">
+    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="admin-back-link" onclick="history.back(); return false;">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
 <div class="admin-form-card">
     <div class="admin-form-header">
@@ -17,11 +19,11 @@ $this->assign('title', 'Add Course');
     
     <?= $this->Form->create($course) ?>
         <div class="admin-form-group">
-            <label for="course-name" class="admin-form-label">Course Name</label>
+            <label for="course-name" class="admin-form-label">Course Name <span aria-hidden="true" style="color:#c0392b;">*</span></label>
             <?= $this->Form->text('course_name', [
                 'id' => 'course-name', 
                 'required' => true, 
-                'placeholder' => 'e.g. Pottery for Beginners', 
+                'placeholder' => 'e.g. Knitting', 
                 'maxlength' => 100,
                 'class' => 'admin-form-input'
             ]) ?>
@@ -30,11 +32,11 @@ $this->assign('title', 'Add Course');
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="course-type" class="admin-form-label">Course Type</label>
+                    <label for="course-type" class="admin-form-label">Course Type <span aria-hidden="true" style="color:#c0392b;">*</span></label>
                     <?= $this->Form->text('course_type', [
                         'id' => 'course-type', 
                         'required' => true, 
-                        'placeholder' => 'e.g. pottery, knitting, candle', 
+                        'placeholder' => 'e.g. knitting', 
                         'maxlength' => 50,
                         'class' => 'admin-form-input'
                     ]) ?>
@@ -60,7 +62,7 @@ $this->assign('title', 'Add Course');
         <div class="row g-4 mt-1">
             <div class="col-md-6">
                 <div class="admin-form-group mb-0">
-                    <label for="course-price" class="admin-form-label">Price ($)</label>
+                    <label for="course-price" class="admin-form-label">Price ($) <span aria-hidden="true" style="color:#c0392b;">*</span></label>
                     <?= $this->Form->text('course_price', [
                         'id' => 'course-price', 
                         'type' => 'number', 

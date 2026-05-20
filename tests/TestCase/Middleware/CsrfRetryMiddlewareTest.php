@@ -9,6 +9,7 @@ use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Laminas\Diactoros\Uri;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 class CsrfRetryMiddlewareTest extends TestCase
@@ -55,7 +56,7 @@ class CsrfRetryMiddlewareTest extends TestCase
     private function invalidCsrfHandler(): RequestHandlerInterface
     {
         return new class implements RequestHandlerInterface {
-            public function handle(\Psr\Http\Message\ServerRequestInterface $request): ResponseInterface
+            public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 throw new InvalidCsrfTokenException('Bad CSRF token.');
             }
